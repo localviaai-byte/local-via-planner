@@ -112,6 +112,7 @@ export function useCreateConnection() {
           local_tip: formData.local_tip || null,
           warning: formData.warning || null,
           seasonality_note: formData.seasonality_note || null,
+          day_worth: formData.day_worth || null,
           created_by: userId,
         })
         .select()

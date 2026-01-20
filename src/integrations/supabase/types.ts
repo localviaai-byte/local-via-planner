@@ -158,6 +158,7 @@ export type Database = {
           cost_note: string | null
           created_at: string
           created_by: string | null
+          day_worth: Database["public"]["Enums"]["day_worth_type"] | null
           friction_score: number | null
           id: string
           is_active: boolean
@@ -180,6 +181,7 @@ export type Database = {
           cost_note?: string | null
           created_at?: string
           created_by?: string | null
+          day_worth?: Database["public"]["Enums"]["day_worth_type"] | null
           friction_score?: number | null
           id?: string
           is_active?: boolean
@@ -202,6 +204,7 @@ export type Database = {
           cost_note?: string | null
           created_at?: string
           created_by?: string | null
+          day_worth?: Database["public"]["Enums"]["day_worth_type"] | null
           friction_score?: number | null
           id?: string
           is_active?: boolean
@@ -972,6 +975,7 @@ export type Database = {
       city_walkability: "yes" | "no" | "depends"
       connection_type: "day_trip" | "metro" | "nearby_city" | "multi_city"
       crowd_type: "low" | "medium" | "high" | "variable"
+      day_worth_type: "full_day" | "half_day" | "combine_with_other"
       gender_balance: "balanced" | "more_men" | "more_women" | "unknown"
       ideal_for:
         | "couple"
@@ -1174,6 +1178,7 @@ export const Constants = {
       city_walkability: ["yes", "no", "depends"],
       connection_type: ["day_trip", "metro", "nearby_city", "multi_city"],
       crowd_type: ["low", "medium", "high", "variable"],
+      day_worth_type: ["full_day", "half_day", "combine_with_other"],
       gender_balance: ["balanced", "more_men", "more_women", "unknown"],
       ideal_for: [
         "couple",
