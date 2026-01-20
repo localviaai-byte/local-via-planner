@@ -27,8 +27,9 @@ export function StepStyle({ preferences, onUpdate }: StepStyleProps) {
       exit={{ opacity: 0, y: -20 }}
       className="space-y-8"
     >
+      {/* Editorial header */}
       <div className="text-center mb-8">
-        <h2 className="font-display text-3xl font-bold text-foreground mb-2">
+        <h2 className="font-display text-3xl font-semibold text-foreground mb-3 tracking-tight">
           Come ti muovi?
         </h2>
         <p className="text-muted-foreground">
@@ -38,8 +39,8 @@ export function StepStyle({ preferences, onUpdate }: StepStyleProps) {
 
       {/* Activity Style */}
       <div className="space-y-4">
-        <label className="flex items-center gap-2 text-sm font-medium text-foreground">
-          <Compass className="w-4 h-4 text-primary" />
+        <label className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
+          <Compass className="w-4 h-4" />
           Stile di visita
         </label>
         <div className="grid grid-cols-2 gap-3">
@@ -47,33 +48,29 @@ export function StepStyle({ preferences, onUpdate }: StepStyleProps) {
             type="button"
             variant={preferences.activityStyle === 'highlights' ? 'default' : 'outline'}
             onClick={() => onUpdate({ activityStyle: 'highlights' })}
-            className={`h-auto py-4 flex flex-col gap-2 ${
-              preferences.activityStyle === 'highlights' ? 'bg-gradient-hero border-0' : ''
-            }`}
+            className="h-auto py-5 flex flex-col gap-2"
           >
             <span className="text-2xl">🎯</span>
             <span className="font-medium">Pochi highlight</span>
-            <span className="text-xs opacity-80">Qualità &gt; quantità</span>
+            <span className="text-xs opacity-70">Qualità &gt; quantità</span>
           </Button>
           <Button
             type="button"
             variant={preferences.activityStyle === 'maximize' ? 'default' : 'outline'}
             onClick={() => onUpdate({ activityStyle: 'maximize' })}
-            className={`h-auto py-4 flex flex-col gap-2 ${
-              preferences.activityStyle === 'maximize' ? 'bg-gradient-hero border-0' : ''
-            }`}
+            className="h-auto py-5 flex flex-col gap-2"
           >
             <span className="text-2xl">✨</span>
             <span className="font-medium">Massimizza</span>
-            <span className="text-xs opacity-80">Vedi tutto il possibile</span>
+            <span className="text-xs opacity-70">Vedi tutto il possibile</span>
           </Button>
         </div>
       </div>
 
       {/* Guided Tours */}
       <div className="space-y-4">
-        <label className="flex items-center gap-2 text-sm font-medium text-foreground">
-          <Users className="w-4 h-4 text-primary" />
+        <label className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
+          <Users className="w-4 h-4" />
           Visite guidate
         </label>
         <div className="grid grid-cols-2 gap-3">
@@ -81,25 +78,25 @@ export function StepStyle({ preferences, onUpdate }: StepStyleProps) {
             type="button"
             variant={!preferences.guidedTours ? 'default' : 'outline'}
             onClick={() => onUpdate({ guidedTours: false })}
-            className={`h-auto py-3 ${!preferences.guidedTours ? 'bg-gradient-hero border-0' : ''}`}
+            className="h-12"
           >
-            <span>🚶 Autonomo</span>
+            🚶 Autonomo
           </Button>
           <Button
             type="button"
             variant={preferences.guidedTours ? 'default' : 'outline'}
             onClick={() => onUpdate({ guidedTours: true })}
-            className={`h-auto py-3 ${preferences.guidedTours ? 'bg-gradient-hero border-0' : ''}`}
+            className="h-12"
           >
-            <span>🎤 Con guida</span>
+            🎤 Con guida
           </Button>
         </div>
       </div>
 
       {/* Walking Tolerance */}
       <div className="space-y-4">
-        <label className="flex items-center gap-2 text-sm font-medium text-foreground">
-          <Footprints className="w-4 h-4 text-primary" />
+        <label className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
+          <Footprints className="w-4 h-4" />
           Tolleranza camminate
         </label>
         <div className="grid grid-cols-3 gap-3">
@@ -113,11 +110,9 @@ export function StepStyle({ preferences, onUpdate }: StepStyleProps) {
               type="button"
               variant={preferences.walkingTolerance === option.value ? 'default' : 'outline'}
               onClick={() => onUpdate({ walkingTolerance: option.value as TripPreferences['walkingTolerance'] })}
-              className={`h-auto py-3 flex flex-col gap-1 ${
-                preferences.walkingTolerance === option.value ? 'bg-gradient-hero border-0' : ''
-              }`}
+              className="h-auto py-4 flex flex-col gap-1"
             >
-              <span className="text-lg">{option.icon}</span>
+              <span className="text-xl">{option.icon}</span>
               <span className="text-sm">{option.label}</span>
             </Button>
           ))}
@@ -126,8 +121,8 @@ export function StepStyle({ preferences, onUpdate }: StepStyleProps) {
 
       {/* Transport */}
       <div className="space-y-4">
-        <label className="flex items-center gap-2 text-sm font-medium text-foreground">
-          <Car className="w-4 h-4 text-primary" />
+        <label className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
+          <Car className="w-4 h-4" />
           Come ti sposti?
         </label>
         <div className="grid grid-cols-2 gap-3">
@@ -142,12 +137,10 @@ export function StepStyle({ preferences, onUpdate }: StepStyleProps) {
               type="button"
               variant={preferences.transport === option.value ? 'default' : 'outline'}
               onClick={() => onUpdate({ transport: option.value as TripPreferences['transport'] })}
-              className={`h-auto py-3 ${
-                preferences.transport === option.value ? 'bg-gradient-hero border-0' : ''
-              }`}
+              className="h-12"
             >
               <span className="mr-2">{option.icon}</span>
-              <span>{option.label}</span>
+              {option.label}
             </Button>
           ))}
         </div>
@@ -155,20 +148,20 @@ export function StepStyle({ preferences, onUpdate }: StepStyleProps) {
 
       {/* Things to Avoid */}
       <div className="space-y-4">
-        <label className="text-sm font-medium text-foreground">
+        <label className="text-sm font-medium text-muted-foreground">
           Cose da evitare
         </label>
         <div className="space-y-2">
           {avoidOptions.map((option) => (
             <label
               key={option.id}
-              className="flex items-center gap-3 p-3 bg-card rounded-xl border border-border hover:border-primary/30 cursor-pointer transition-colors"
+              className="flex items-center gap-3 p-4 bg-card rounded-2xl cursor-pointer transition-all hover:shadow-soft"
             >
               <Checkbox
                 checked={preferences.avoid.includes(option.id)}
                 onCheckedChange={() => toggleAvoid(option.id)}
               />
-              <span className="text-sm">{option.label}</span>
+              <span className="text-sm text-foreground">{option.label}</span>
             </label>
           ))}
         </div>
@@ -176,14 +169,14 @@ export function StepStyle({ preferences, onUpdate }: StepStyleProps) {
 
       {/* Wishes */}
       <div className="space-y-4">
-        <label className="text-sm font-medium text-foreground">
-          Desideri particolari <span className="text-muted-foreground">(opzionale)</span>
+        <label className="text-sm font-medium text-muted-foreground">
+          Desideri particolari <span className="opacity-60">(opzionale)</span>
         </label>
         <Textarea
           value={preferences.wishes}
           onChange={(e) => onUpdate({ wishes: e.target.value })}
           placeholder="Es: Vorrei vedere il tramonto sul mare, provare la vera pizza napoletana..."
-          className="min-h-[100px] resize-none"
+          className="min-h-[100px] resize-none rounded-2xl"
         />
       </div>
     </motion.div>

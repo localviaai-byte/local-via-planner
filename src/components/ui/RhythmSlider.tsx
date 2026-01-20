@@ -22,12 +22,12 @@ export function RhythmSlider({ value, onChange }: RhythmSliderProps) {
     <div className="space-y-6">
       <div className="flex items-center justify-between text-muted-foreground">
         <div className="flex items-center gap-2">
-          <Turtle className="w-5 h-5" />
-          <span className="text-sm font-medium">Calmo</span>
+          <Turtle className="w-4 h-4" />
+          <span className="text-sm">Calmo</span>
         </div>
         <div className="flex items-center gap-2">
-          <span className="text-sm font-medium">Intenso</span>
-          <Rabbit className="w-5 h-5" />
+          <span className="text-sm">Intenso</span>
+          <Rabbit className="w-4 h-4" />
         </div>
       </div>
 
@@ -44,7 +44,7 @@ export function RhythmSlider({ value, onChange }: RhythmSliderProps) {
         key={value}
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
-        className="text-center p-4 bg-secondary rounded-xl"
+        className="text-center p-4 bg-secondary/50 rounded-xl"
       >
         <p className="font-display text-lg font-semibold text-foreground">
           {currentRhythm.label}

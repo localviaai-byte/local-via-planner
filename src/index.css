@@ -6,131 +6,140 @@
 
 @layer base {
   :root {
-    /* Mediterranean warm palette */
-    --background: 40 30% 98%;
-    --foreground: 20 25% 15%;
+    /* Urban Local Journal Palette - NOT WHITE, warm and human */
+    --background: 36 27% 94%; /* Warm Sand #F4F1EC */
+    --foreground: 0 0% 12%; /* Charcoal #1F1F1F */
 
-    --card: 40 25% 97%;
-    --card-foreground: 20 25% 15%;
+    --card: 40 33% 98%; /* Soft Ivory #FBFAF8 */
+    --card-foreground: 0 0% 12%;
 
-    --popover: 40 30% 98%;
-    --popover-foreground: 20 25% 15%;
+    --popover: 40 33% 98%;
+    --popover-foreground: 0 0% 12%;
 
-    /* Terracotta primary */
-    --primary: 16 65% 55%;
-    --primary-foreground: 40 30% 98%;
+    /* Terracotta primary - emotional, not tech */
+    --primary: 15 52% 53%; /* #C46A4A */
+    --primary-foreground: 40 33% 98%;
 
     /* Sand secondary */
-    --secondary: 38 35% 90%;
-    --secondary-foreground: 20 25% 25%;
+    --secondary: 36 20% 90%;
+    --secondary-foreground: 30 8% 40%; /* Warm Gray #6E6A65 */
 
-    /* Muted olive tones */
-    --muted: 45 20% 92%;
-    --muted-foreground: 30 15% 45%;
+    /* Muted with warm gray */
+    --muted: 36 15% 88%;
+    --muted-foreground: 30 8% 43%; /* Warm Gray #6E6A65 */
 
-    /* Mediterranean blue accent */
-    --accent: 200 60% 50%;
-    --accent-foreground: 40 30% 98%;
+    /* Olive accent - culture/relax */
+    --accent: 85 18% 52%; /* Olive #7A8F7A */
+    --accent-foreground: 40 33% 98%;
 
     --destructive: 0 72% 51%;
-    --destructive-foreground: 40 30% 98%;
+    --destructive-foreground: 40 33% 98%;
 
-    --border: 35 20% 88%;
-    --input: 35 20% 88%;
-    --ring: 16 65% 55%;
+    --border: 35 15% 85%;
+    --input: 35 15% 85%;
+    --ring: 15 52% 53%;
 
-    --radius: 0.75rem;
+    --radius: 1rem; /* Larger border-radius: 16-20px */
 
-    /* Custom LocalVia tokens */
-    --olive: 85 25% 45%;
-    --olive-light: 85 20% 92%;
-    --sand: 38 40% 85%;
-    --sand-light: 40 35% 95%;
-    --sea: 200 60% 50%;
-    --sea-light: 200 50% 92%;
-    --terracotta: 16 65% 55%;
-    --terracotta-light: 16 55% 92%;
-    --gold: 45 85% 55%;
-    --gold-light: 45 70% 92%;
+    /* Custom LocalVia tokens - new palette */
+    --olive: 85 18% 52%; /* #7A8F7A */
+    --olive-light: 85 15% 92%;
+    
+    --sand: 36 27% 94%; /* Warm Sand #F4F1EC */
+    --sand-light: 40 33% 98%; /* Soft Ivory */
+    
+    --terracotta: 15 52% 53%; /* #C46A4A */
+    --terracotta-light: 15 40% 94%;
+    
+    --wine: 348 42% 30%; /* Deep Wine #6B2E3A - for night/flirt/social */
+    --wine-light: 348 35% 92%;
+    
+    --gold: 42 68% 56%; /* Warm accent #D9A441 - warning/highlight */
+    --gold-light: 42 60% 92%;
 
-    /* Gradients */
-    --gradient-hero: linear-gradient(135deg, hsl(16 65% 55%) 0%, hsl(30 70% 60%) 50%, hsl(45 85% 55%) 100%);
-    --gradient-sea: linear-gradient(135deg, hsl(200 60% 50%) 0%, hsl(180 50% 55%) 100%);
-    --gradient-card: linear-gradient(180deg, hsl(40 30% 98%) 0%, hsl(38 35% 95%) 100%);
-    --gradient-overlay: linear-gradient(180deg, transparent 0%, hsla(20, 25%, 15%, 0.8) 100%);
+    /* Status colors - soft */
+    --status-warning: 42 68% 56%; /* #D9A441 */
+    --status-info: 200 15% 58%; /* #8A9EA7 */
+    --status-success: 85 18% 50%; /* #6E8F7A */
 
-    /* Shadows */
-    --shadow-soft: 0 4px 20px -4px hsla(20, 25%, 15%, 0.08);
-    --shadow-card: 0 8px 30px -8px hsla(20, 25%, 15%, 0.12);
-    --shadow-elevated: 0 20px 50px -12px hsla(20, 25%, 15%, 0.2);
+    /* Gradients - NO TECH GRADIENTS, subtle and warm */
+    --gradient-hero: linear-gradient(145deg, hsl(15 52% 53%) 0%, hsl(15 45% 48%) 100%);
+    --gradient-card: linear-gradient(180deg, hsl(40 33% 98%) 0%, hsl(36 27% 96%) 100%);
+    --gradient-overlay: linear-gradient(180deg, transparent 0%, hsla(0, 0%, 12%, 0.85) 100%);
+    --gradient-night: linear-gradient(180deg, hsl(20 15% 10%) 0%, hsl(348 42% 15%) 100%);
+
+    /* Shadows - very soft, almost invisible */
+    --shadow-soft: 0 2px 12px -2px hsla(30, 20%, 20%, 0.06);
+    --shadow-card: 0 4px 20px -4px hsla(30, 20%, 20%, 0.08);
+    --shadow-elevated: 0 12px 40px -8px hsla(30, 20%, 20%, 0.12);
 
     /* Typography */
     --font-display: 'Playfair Display', serif;
     --font-body: 'Inter', sans-serif;
 
-    /* Sidebar */
-    --sidebar-background: 40 25% 97%;
-    --sidebar-foreground: 20 25% 25%;
-    --sidebar-primary: 16 65% 55%;
-    --sidebar-primary-foreground: 40 30% 98%;
-    --sidebar-accent: 38 35% 92%;
-    --sidebar-accent-foreground: 20 25% 25%;
-    --sidebar-border: 35 20% 88%;
-    --sidebar-ring: 16 65% 55%;
+    /* Sidebar - matching new palette */
+    --sidebar-background: 40 33% 98%;
+    --sidebar-foreground: 30 8% 40%;
+    --sidebar-primary: 15 52% 53%;
+    --sidebar-primary-foreground: 40 33% 98%;
+    --sidebar-accent: 36 20% 92%;
+    --sidebar-accent-foreground: 0 0% 12%;
+    --sidebar-border: 35 15% 85%;
+    --sidebar-ring: 15 52% 53%;
   }
 
+  /* Dark mode - Night/Social vibe with Deep Wine */
   .dark {
-    --background: 20 20% 10%;
-    --foreground: 40 25% 95%;
+    --background: 20 12% 8%; /* Dark warm background #1C1A19 */
+    --foreground: 40 25% 92%; /* Ivory text */
 
-    --card: 20 18% 14%;
-    --card-foreground: 40 25% 95%;
+    --card: 20 10% 12%;
+    --card-foreground: 40 25% 92%;
 
-    --popover: 20 18% 14%;
-    --popover-foreground: 40 25% 95%;
+    --popover: 20 10% 12%;
+    --popover-foreground: 40 25% 92%;
 
-    --primary: 16 60% 60%;
-    --primary-foreground: 20 20% 10%;
+    --primary: 15 48% 58%;
+    --primary-foreground: 20 12% 8%;
 
-    --secondary: 30 15% 20%;
-    --secondary-foreground: 40 25% 95%;
+    --secondary: 25 12% 18%;
+    --secondary-foreground: 40 20% 75%;
 
-    --muted: 25 15% 18%;
-    --muted-foreground: 35 15% 60%;
+    --muted: 25 10% 16%;
+    --muted-foreground: 35 12% 55%;
 
-    --accent: 200 55% 55%;
-    --accent-foreground: 20 20% 10%;
+    --accent: 348 35% 40%; /* Deep Wine in dark mode */
+    --accent-foreground: 40 25% 92%;
 
-    --destructive: 0 65% 45%;
-    --destructive-foreground: 40 25% 95%;
+    --destructive: 0 55% 45%;
+    --destructive-foreground: 40 25% 92%;
 
-    --border: 25 15% 22%;
-    --input: 25 15% 22%;
-    --ring: 16 60% 60%;
+    --border: 25 10% 20%;
+    --input: 25 10% 20%;
+    --ring: 15 48% 58%;
 
-    --olive: 85 20% 50%;
-    --olive-light: 85 15% 20%;
-    --sand: 38 30% 30%;
-    --sand-light: 40 25% 18%;
-    --sea: 200 55% 55%;
-    --sea-light: 200 40% 20%;
-    --terracotta: 16 60% 60%;
-    --terracotta-light: 16 50% 20%;
-    --gold: 45 80% 55%;
-    --gold-light: 45 60% 20%;
+    --olive: 85 15% 45%;
+    --olive-light: 85 12% 18%;
+    --sand: 36 20% 25%;
+    --sand-light: 40 18% 15%;
+    --terracotta: 15 48% 58%;
+    --terracotta-light: 15 35% 18%;
+    --wine: 348 35% 40%;
+    --wine-light: 348 30% 18%;
+    --gold: 42 60% 55%;
+    --gold-light: 42 50% 18%;
 
-    --gradient-hero: linear-gradient(135deg, hsl(16 60% 60%) 0%, hsl(30 65% 55%) 50%, hsl(45 80% 55%) 100%);
-    --gradient-sea: linear-gradient(135deg, hsl(200 55% 55%) 0%, hsl(180 45% 50%) 100%);
-    --gradient-card: linear-gradient(180deg, hsl(20 18% 14%) 0%, hsl(25 15% 12%) 100%);
+    --gradient-hero: linear-gradient(145deg, hsl(348 35% 35%) 0%, hsl(348 40% 28%) 100%);
+    --gradient-night: linear-gradient(180deg, hsl(20 12% 8%) 0%, hsl(348 35% 12%) 100%);
 
-    --sidebar-background: 20 18% 12%;
-    --sidebar-foreground: 40 25% 95%;
-    --sidebar-primary: 16 60% 60%;
-    --sidebar-primary-foreground: 20 20% 10%;
-    --sidebar-accent: 25 15% 18%;
-    --sidebar-accent-foreground: 40 25% 95%;
-    --sidebar-border: 25 15% 22%;
-    --sidebar-ring: 16 60% 60%;
+    --sidebar-background: 20 10% 10%;
+    --sidebar-foreground: 40 25% 92%;
+    --sidebar-primary: 15 48% 58%;
+    --sidebar-primary-foreground: 20 12% 8%;
+    --sidebar-accent: 25 12% 16%;
+    --sidebar-accent-foreground: 40 25% 92%;
+    --sidebar-border: 25 10% 20%;
+    --sidebar-ring: 15 48% 58%;
   }
 }
 
@@ -146,6 +155,7 @@
 
   h1, h2, h3, h4, h5, h6 {
     font-family: var(--font-display);
+    letter-spacing: -0.01em;
   }
 }
 
@@ -158,25 +168,24 @@
     font-family: var(--font-body);
   }
 
-  .text-gradient {
-    background: var(--gradient-hero);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-  }
-
+  /* Gradient utilities */
   .bg-gradient-hero {
     background: var(--gradient-hero);
-  }
-
-  .bg-gradient-sea {
-    background: var(--gradient-sea);
   }
 
   .bg-gradient-card {
     background: var(--gradient-card);
   }
 
+  .bg-gradient-night {
+    background: var(--gradient-night);
+  }
+
+  .bg-gradient-overlay {
+    background: var(--gradient-overlay);
+  }
+
+  /* Shadow utilities */
   .shadow-soft {
     box-shadow: var(--shadow-soft);
   }
@@ -187,5 +196,57 @@
 
   .shadow-elevated {
     box-shadow: var(--shadow-elevated);
+  }
+
+  /* Editorial card style */
+  .card-editorial {
+    @apply bg-card rounded-2xl shadow-soft border-0;
+  }
+
+  /* Skeleton loader - sand color, not gray */
+  .skeleton-sand {
+    @apply animate-pulse;
+    background: linear-gradient(
+      90deg,
+      hsl(36 20% 90%) 0%,
+      hsl(40 25% 94%) 50%,
+      hsl(36 20% 90%) 100%
+    );
+    background-size: 200% 100%;
+    animation: shimmer 1.5s ease-in-out infinite;
+  }
+
+  @keyframes shimmer {
+    0% { background-position: 200% 0; }
+    100% { background-position: -200% 0; }
+  }
+
+  /* Loading text animation */
+  .loading-text {
+    @apply text-muted-foreground italic;
+    animation: fade-pulse 2s ease-in-out infinite;
+  }
+
+  @keyframes fade-pulse {
+    0%, 100% { opacity: 0.6; }
+    50% { opacity: 1; }
+  }
+}
+
+/* Smooth scrolling */
+html {
+  scroll-behavior: smooth;
+}
+
+/* Better focus styles */
+:focus-visible {
+  outline: 2px solid hsl(var(--ring));
+  outline-offset: 2px;
+}
+
+/* Remove tap highlight on mobile */
+@media (hover: none) {
+  * {
+    -webkit-tap-highlight-color: transparent;
   }
 }

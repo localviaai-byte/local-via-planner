@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion';
-import { MapPin, Calendar, Users, ChevronDown } from 'lucide-react';
+import { MapPin, Calendar, Users } from 'lucide-react';
 import { cities, type TripPreferences } from '@/lib/mockData';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
@@ -31,19 +31,20 @@ export function StepDestination({ preferences, onUpdate }: StepDestinationProps)
       exit={{ opacity: 0, y: -20 }}
       className="space-y-8"
     >
+      {/* Editorial header */}
       <div className="text-center mb-8">
-        <h2 className="font-display text-3xl font-bold text-foreground mb-2">
+        <h2 className="font-display text-3xl font-semibold text-foreground mb-3 tracking-tight">
           Dove vuoi andare?
         </h2>
         <p className="text-muted-foreground">
-          Seleziona la tua destinazione e raccontaci del tuo viaggio
+          Raccontaci come sarà questo viaggio
         </p>
       </div>
 
-      {/* City Selection */}
+      {/* City Selection - Editorial cards */}
       <div className="space-y-4">
-        <label className="flex items-center gap-2 text-sm font-medium text-foreground">
-          <MapPin className="w-4 h-4 text-primary" />
+        <label className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
+          <MapPin className="w-4 h-4" />
           Destinazione
         </label>
         <div className="grid gap-3">
@@ -53,21 +54,20 @@ export function StepDestination({ preferences, onUpdate }: StepDestinationProps)
               type="button"
               onClick={() => onUpdate({ city: city.id })}
               className={`
-                relative p-4 rounded-xl border-2 text-left transition-all
+                relative p-4 rounded-2xl text-left transition-all duration-200
                 ${preferences.city === city.id
-                  ? 'border-primary bg-terracotta-light shadow-card'
-                  : 'border-border bg-card hover:border-primary/50'
+                  ? 'bg-card ring-2 ring-primary shadow-card'
+                  : 'bg-card hover:shadow-soft'
                 }
               `}
-              whileHover={{ scale: 1.01 }}
-              whileTap={{ scale: 0.99 }}
+              whileTap={{ scale: 0.98 }}
             >
               <div className="flex items-center gap-4">
-                <div className="w-16 h-16 rounded-lg bg-secondary flex items-center justify-center text-2xl">
+                <div className="w-14 h-14 rounded-xl bg-secondary flex items-center justify-center text-2xl">
                   {city.id === 'pompei' ? '🏛️' : city.id === 'napoli' ? '🌋' : '🌊'}
                 </div>
                 <div className="flex-1">
-                  <h3 className="font-display text-lg font-semibold">{city.name}</h3>
+                  <h3 className="font-display text-lg font-semibold text-foreground">{city.name}</h3>
                   <p className="text-sm text-muted-foreground">{city.description}</p>
                   <div className="flex gap-2 mt-2">
                     {city.popularFor.slice(0, 3).map((tag) => (
@@ -85,15 +85,16 @@ export function StepDestination({ preferences, onUpdate }: StepDestinationProps)
           ))}
         </div>
 
+        {/* Nearby toggle */}
         {preferences.city && (
           <motion.div
             initial={{ opacity: 0, height: 0 }}
             animate={{ opacity: 1, height: 'auto' }}
-            className="flex items-center justify-between p-4 bg-sea-light rounded-xl"
+            className="flex items-center justify-between p-4 bg-olive-light rounded-2xl"
           >
             <div>
               <p className="text-sm font-medium text-foreground">Includi dintorni</p>
-              <p className="text-xs text-muted-foreground">Aggiungi attrazioni nelle vicinanze</p>
+              <p className="text-xs text-muted-foreground">Aggiungi attrazioni vicine</p>
             </div>
             <Switch
               checked={preferences.nearbyAreas}
@@ -105,8 +106,8 @@ export function StepDestination({ preferences, onUpdate }: StepDestinationProps)
 
       {/* Duration */}
       <div className="space-y-4">
-        <label className="flex items-center gap-2 text-sm font-medium text-foreground">
-          <Calendar className="w-4 h-4 text-primary" />
+        <label className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
+          <Calendar className="w-4 h-4" />
           Durata del viaggio
         </label>
         <div className="grid grid-cols-4 gap-2">
@@ -116,7 +117,7 @@ export function StepDestination({ preferences, onUpdate }: StepDestinationProps)
               type="button"
               variant={preferences.numDays === days ? 'default' : 'outline'}
               onClick={() => onUpdate({ numDays: days })}
-              className={preferences.numDays === days ? 'bg-gradient-hero border-0' : ''}
+              className="h-12"
             >
               {days} {days === 1 ? 'giorno' : 'giorni'}
             </Button>
@@ -126,8 +127,8 @@ export function StepDestination({ preferences, onUpdate }: StepDestinationProps)
 
       {/* Travel Composition */}
       <div className="space-y-4">
-        <label className="flex items-center gap-2 text-sm font-medium text-foreground">
-          <Users className="w-4 h-4 text-primary" />
+        <label className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
+          <Users className="w-4 h-4" />
           Con chi viaggi?
         </label>
         <div className="grid grid-cols-2 gap-3">
@@ -137,9 +138,7 @@ export function StepDestination({ preferences, onUpdate }: StepDestinationProps)
               type="button"
               variant={preferences.travelWith === option.value ? 'default' : 'outline'}
               onClick={() => onUpdate({ travelWith: option.value as TripPreferences['travelWith'] })}
-              className={`h-auto py-4 flex flex-col gap-1 ${
-                preferences.travelWith === option.value ? 'bg-gradient-hero border-0' : ''
-              }`}
+              className="h-auto py-4 flex flex-col gap-1"
             >
               <span className="text-2xl">{option.icon}</span>
               <span>{option.label}</span>
@@ -153,7 +152,7 @@ export function StepDestination({ preferences, onUpdate }: StepDestinationProps)
         <motion.div
           initial={{ opacity: 0, height: 0 }}
           animate={{ opacity: 1, height: 'auto' }}
-          className="space-y-4 p-4 bg-secondary rounded-xl"
+          className="space-y-4 p-4 bg-card rounded-2xl shadow-soft"
         >
           <div className="grid grid-cols-3 gap-4">
             <div>
@@ -164,7 +163,7 @@ export function StepDestination({ preferences, onUpdate }: StepDestinationProps)
                   travelers: { ...preferences.travelers, adults: Number(v) }
                 })}
               >
-                <SelectTrigger>
+                <SelectTrigger className="mt-1">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -182,7 +181,7 @@ export function StepDestination({ preferences, onUpdate }: StepDestinationProps)
                   travelers: { ...preferences.travelers, children: Number(v) }
                 })}
               >
-                <SelectTrigger>
+                <SelectTrigger className="mt-1">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -200,7 +199,7 @@ export function StepDestination({ preferences, onUpdate }: StepDestinationProps)
                   travelers: { ...preferences.travelers, seniors: Number(v) }
                 })}
               >
-                <SelectTrigger>
+                <SelectTrigger className="mt-1">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>

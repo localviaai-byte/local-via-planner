@@ -78,15 +78,15 @@ export function PlanningWizard({ onComplete }: PlanningWizardProps) {
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
-      {/* Header with Progress */}
-      <header className="sticky top-0 z-50 bg-background/95 backdrop-blur-sm border-b border-border">
+      {/* Header with Progress - clean, minimal */}
+      <header className="sticky top-0 z-50 bg-background/95 backdrop-blur-sm">
         <div className="container max-w-2xl py-4">
           <WizardProgress currentStep={currentStep} totalSteps={steps.length} steps={steps} />
         </div>
       </header>
 
       {/* Step Content */}
-      <main className="flex-1 container max-w-2xl py-8 px-4">
+      <main className="flex-1 container max-w-2xl py-6 px-5">
         <AnimatePresence mode="wait">
           <motion.div
             key={currentStep}
@@ -100,9 +100,9 @@ export function PlanningWizard({ onComplete }: PlanningWizardProps) {
         </AnimatePresence>
       </main>
 
-      {/* Navigation Footer */}
-      <footer className="sticky bottom-0 bg-background/95 backdrop-blur-sm border-t border-border">
-        <div className="container max-w-2xl py-4 px-4 flex gap-3">
+      {/* Navigation Footer - Sticky CTA, thumb-friendly */}
+      <footer className="sticky bottom-0 bg-background/95 backdrop-blur-sm pb-safe-bottom">
+        <div className="container max-w-2xl py-4 px-5 flex gap-3">
           {currentStep > 0 && (
             <Button
               variant="outline"
@@ -116,9 +116,8 @@ export function PlanningWizard({ onComplete }: PlanningWizardProps) {
           <Button
             onClick={handleNext}
             disabled={!canProceed()}
-            className={`flex-1 ${currentStep === 0 ? 'w-full' : ''} ${
-              currentStep === steps.length - 1 ? 'bg-gradient-hero hover:opacity-90' : ''
-            }`}
+            variant={currentStep === steps.length - 1 ? 'hero' : 'default'}
+            className={`flex-1 ${currentStep === 0 ? 'w-full' : ''}`}
           >
             {currentStep === steps.length - 1 ? (
               <>

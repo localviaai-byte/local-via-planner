@@ -24,22 +24,26 @@ export function InterestChip({
       type="button"
       onClick={() => onToggle(id)}
       className={cn(
-        'relative flex items-center gap-2 px-4 py-3 rounded-xl border-2 transition-all duration-200',
-        'font-medium text-sm',
+        'relative w-full flex items-center gap-3 p-4 rounded-2xl transition-all duration-200',
+        'text-left',
         selected
-          ? 'border-primary bg-terracotta-light text-foreground shadow-soft'
-          : 'border-border bg-card hover:border-primary/50 text-muted-foreground hover:text-foreground'
+          ? 'bg-card ring-2 ring-primary shadow-card'
+          : 'bg-card hover:shadow-soft'
       )}
-      whileHover={{ scale: 1.02 }}
-      whileTap={{ scale: 0.98 }}
+      whileTap={{ scale: 0.97 }}
     >
-      <span className="text-lg">{icon}</span>
-      <span>{label}</span>
+      <span className="text-xl">{icon}</span>
+      <span className={cn(
+        'font-medium text-sm',
+        selected ? 'text-foreground' : 'text-muted-foreground'
+      )}>{label}</span>
+      
+      {/* Priority badge */}
       {selected && priority !== undefined && priority > 0 && (
         <motion.span
-          initial={{ scale: 0 }}
-          animate={{ scale: 1 }}
-          className="absolute -top-2 -right-2 w-6 h-6 rounded-full bg-gradient-hero text-primary-foreground text-xs font-bold flex items-center justify-center shadow-card"
+          initial={{ scale: 0, opacity: 0 }}
+          animate={{ scale: 1, opacity: 1 }}
+          className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-primary text-primary-foreground text-xs font-semibold flex items-center justify-center shadow-soft"
         >
           {priority}
         </motion.span>

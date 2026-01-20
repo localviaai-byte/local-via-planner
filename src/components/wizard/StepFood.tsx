@@ -35,8 +35,9 @@ export function StepFood({ preferences, onUpdate }: StepFoodProps) {
       exit={{ opacity: 0, y: -20 }}
       className="space-y-8"
     >
+      {/* Editorial header */}
       <div className="text-center mb-8">
-        <h2 className="font-display text-3xl font-bold text-foreground mb-2">
+        <h2 className="font-display text-3xl font-semibold text-foreground mb-3 tracking-tight">
           Gusti e preferenze
         </h2>
         <p className="text-muted-foreground">
@@ -46,8 +47,8 @@ export function StepFood({ preferences, onUpdate }: StepFoodProps) {
 
       {/* Cuisine Preferences */}
       <div className="space-y-4">
-        <label className="flex items-center gap-2 text-sm font-medium text-foreground">
-          <UtensilsCrossed className="w-4 h-4 text-primary" />
+        <label className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
+          <UtensilsCrossed className="w-4 h-4" />
           Tipo di cucina
         </label>
         <div className="grid grid-cols-2 gap-3">
@@ -57,16 +58,15 @@ export function StepFood({ preferences, onUpdate }: StepFoodProps) {
               type="button"
               onClick={() => toggleCuisine(cuisine.id)}
               className={`
-                p-4 rounded-xl border-2 text-left transition-all
+                p-4 rounded-2xl text-left transition-all duration-200
                 ${preferences.cuisinePreferences.includes(cuisine.id)
-                  ? 'border-primary bg-terracotta-light'
-                  : 'border-border bg-card hover:border-primary/50'
+                  ? 'bg-card ring-2 ring-primary shadow-card'
+                  : 'bg-card hover:shadow-soft'
                 }
               `}
-              whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
             >
-              <span className="font-medium">{cuisine.label}</span>
+              <span className="font-medium text-foreground">{cuisine.label}</span>
             </motion.button>
           ))}
         </div>
@@ -74,8 +74,8 @@ export function StepFood({ preferences, onUpdate }: StepFoodProps) {
 
       {/* Budget */}
       <div className="space-y-4">
-        <label className="flex items-center gap-2 text-sm font-medium text-foreground">
-          <Euro className="w-4 h-4 text-primary" />
+        <label className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
+          <Euro className="w-4 h-4" />
           Budget per i pasti
         </label>
         <div className="grid grid-cols-3 gap-3">
@@ -89,12 +89,10 @@ export function StepFood({ preferences, onUpdate }: StepFoodProps) {
               type="button"
               variant={preferences.budget === option.value ? 'default' : 'outline'}
               onClick={() => onUpdate({ budget: option.value as 1 | 2 | 3 })}
-              className={`h-auto py-4 flex flex-col gap-1 ${
-                preferences.budget === option.value ? 'bg-gradient-hero border-0' : ''
-              }`}
+              className="h-auto py-4 flex flex-col gap-1"
             >
-              <span className="text-lg font-bold">{option.label}</span>
-              <span className="text-xs opacity-80">{option.description}</span>
+              <span className="text-lg font-semibold">{option.label}</span>
+              <span className="text-xs opacity-70">{option.description}</span>
             </Button>
           ))}
         </div>
@@ -102,21 +100,21 @@ export function StepFood({ preferences, onUpdate }: StepFoodProps) {
 
       {/* Dietary Restrictions */}
       <div className="space-y-4">
-        <label className="flex items-center gap-2 text-sm font-medium text-foreground">
-          <AlertCircle className="w-4 h-4 text-primary" />
+        <label className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
+          <AlertCircle className="w-4 h-4" />
           Esigenze alimentari
         </label>
-        <div className="space-y-3">
+        <div className="space-y-2">
           {dietaryRestrictions.map((restriction) => (
             <label
               key={restriction.id}
-              className="flex items-center gap-3 p-3 bg-card rounded-xl border border-border hover:border-primary/30 cursor-pointer transition-colors"
+              className="flex items-center gap-3 p-4 bg-card rounded-2xl cursor-pointer transition-all hover:shadow-soft"
             >
               <Checkbox
                 checked={preferences.dietaryRestrictions.includes(restriction.id)}
                 onCheckedChange={() => toggleRestriction(restriction.id)}
               />
-              <span className="text-sm font-medium">{restriction.label}</span>
+              <span className="text-sm font-medium text-foreground">{restriction.label}</span>
             </label>
           ))}
         </div>

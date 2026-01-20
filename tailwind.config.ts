@@ -61,6 +61,7 @@ export default {
           border: "hsl(var(--sidebar-border))",
           ring: "hsl(var(--sidebar-ring))",
         },
+        // Custom LocalVia colors
         olive: {
           DEFAULT: "hsl(var(--olive))",
           light: "hsl(var(--olive-light))",
@@ -69,17 +70,23 @@ export default {
           DEFAULT: "hsl(var(--sand))",
           light: "hsl(var(--sand-light))",
         },
-        sea: {
-          DEFAULT: "hsl(var(--sea))",
-          light: "hsl(var(--sea-light))",
-        },
         terracotta: {
           DEFAULT: "hsl(var(--terracotta))",
           light: "hsl(var(--terracotta-light))",
         },
+        wine: {
+          DEFAULT: "hsl(var(--wine))",
+          light: "hsl(var(--wine-light))",
+        },
         gold: {
           DEFAULT: "hsl(var(--gold))",
           light: "hsl(var(--gold-light))",
+        },
+        // Status colors
+        status: {
+          warning: "hsl(var(--status-warning))",
+          info: "hsl(var(--status-info))",
+          success: "hsl(var(--status-success))",
         },
       },
       borderRadius: {
@@ -88,6 +95,7 @@ export default {
         sm: "calc(var(--radius) - 4px)",
         xl: "calc(var(--radius) + 4px)",
         "2xl": "calc(var(--radius) + 8px)",
+        "3xl": "calc(var(--radius) + 12px)",
       },
       keyframes: {
         "accordion-down": {
@@ -114,6 +122,10 @@ export default {
           "0%, 100%": { opacity: "1" },
           "50%": { opacity: "0.7" },
         },
+        "fade-up": {
+          "0%": { opacity: "0", transform: "translateY(20px)" },
+          "100%": { opacity: "1", transform: "translateY(0)" },
+        },
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
@@ -122,6 +134,11 @@ export default {
         "slide-in-right": "slide-in-right 0.4s ease-out",
         "scale-in": "scale-in 0.3s ease-out",
         "pulse-soft": "pulse-soft 2s ease-in-out infinite",
+        "fade-up": "fade-up 0.6s ease-out",
+      },
+      spacing: {
+        "safe-bottom": "env(safe-area-inset-bottom)",
+        "safe-top": "env(safe-area-inset-top)",
       },
     },
   },

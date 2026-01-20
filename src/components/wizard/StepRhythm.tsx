@@ -17,8 +17,8 @@ export function StepRhythm({ preferences, onUpdate }: StepRhythmProps) {
   ];
 
   const lunchOptions = [
-    { value: 'quick', label: 'Pranzo veloce', description: '45 min - 1 ora' },
-    { value: 'long', label: 'Pranzo rilassato', description: '1.5 - 2 ore' },
+    { value: 'quick', label: 'Pranzo veloce', description: '45 min - 1 ora', emoji: '🥪' },
+    { value: 'long', label: 'Pranzo rilassato', description: '1.5 - 2 ore', emoji: '🍝' },
   ];
 
   return (
@@ -28,8 +28,9 @@ export function StepRhythm({ preferences, onUpdate }: StepRhythmProps) {
       exit={{ opacity: 0, y: -20 }}
       className="space-y-8"
     >
+      {/* Editorial header */}
       <div className="text-center mb-8">
-        <h2 className="font-display text-3xl font-bold text-foreground mb-2">
+        <h2 className="font-display text-3xl font-semibold text-foreground mb-3 tracking-tight">
           Il tuo ritmo ideale
         </h2>
         <p className="text-muted-foreground">
@@ -38,7 +39,7 @@ export function StepRhythm({ preferences, onUpdate }: StepRhythmProps) {
       </div>
 
       {/* Rhythm Slider */}
-      <div className="space-y-4">
+      <div className="space-y-4 p-5 bg-card rounded-2xl shadow-soft">
         <label className="text-sm font-medium text-foreground">
           Intensità del viaggio
         </label>
@@ -50,25 +51,24 @@ export function StepRhythm({ preferences, onUpdate }: StepRhythmProps) {
 
       {/* Start Time */}
       <div className="space-y-4">
-        <label className="text-sm font-medium text-foreground">
+        <label className="text-sm font-medium text-muted-foreground">
           A che ora preferisci partire?
         </label>
         <div className="grid grid-cols-3 gap-3">
           {startTimeOptions.map((option) => {
             const Icon = option.icon;
+            const isSelected = preferences.startTime === option.value;
             return (
               <Button
                 key={option.value}
                 type="button"
-                variant={preferences.startTime === option.value ? 'default' : 'outline'}
+                variant={isSelected ? 'default' : 'outline'}
                 onClick={() => onUpdate({ startTime: option.value as TripPreferences['startTime'] })}
-                className={`h-auto py-4 flex flex-col gap-2 ${
-                  preferences.startTime === option.value ? 'bg-gradient-hero border-0' : ''
-                }`}
+                className="h-auto py-4 flex flex-col gap-2"
               >
                 <Icon className="w-5 h-5" />
-                <span className="font-medium">{option.label}</span>
-                <span className="text-xs opacity-80">{option.description}</span>
+                <span className="font-medium text-xs">{option.label}</span>
+                <span className="text-[10px] opacity-70">{option.description}</span>
               </Button>
             );
           })}
@@ -77,25 +77,26 @@ export function StepRhythm({ preferences, onUpdate }: StepRhythmProps) {
 
       {/* Lunch Style */}
       <div className="space-y-4">
-        <label className="text-sm font-medium text-foreground">
+        <label className="text-sm font-medium text-muted-foreground">
           Come preferisci il pranzo?
         </label>
         <div className="grid grid-cols-2 gap-3">
-          {lunchOptions.map((option) => (
-            <Button
-              key={option.value}
-              type="button"
-              variant={preferences.lunchStyle === option.value ? 'default' : 'outline'}
-              onClick={() => onUpdate({ lunchStyle: option.value as TripPreferences['lunchStyle'] })}
-              className={`h-auto py-4 flex flex-col gap-1 ${
-                preferences.lunchStyle === option.value ? 'bg-gradient-hero border-0' : ''
-              }`}
-            >
-              <span className="text-2xl">{option.value === 'quick' ? '🥪' : '🍝'}</span>
-              <span className="font-medium">{option.label}</span>
-              <span className="text-xs opacity-80">{option.description}</span>
-            </Button>
-          ))}
+          {lunchOptions.map((option) => {
+            const isSelected = preferences.lunchStyle === option.value;
+            return (
+              <Button
+                key={option.value}
+                type="button"
+                variant={isSelected ? 'default' : 'outline'}
+                onClick={() => onUpdate({ lunchStyle: option.value as TripPreferences['lunchStyle'] })}
+                className="h-auto py-5 flex flex-col gap-2"
+              >
+                <span className="text-2xl">{option.emoji}</span>
+                <span className="font-medium">{option.label}</span>
+                <span className="text-xs opacity-70">{option.description}</span>
+              </Button>
+            );
+          })}
         </div>
       </div>
     </motion.div>
