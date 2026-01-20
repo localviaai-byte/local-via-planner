@@ -478,14 +478,14 @@ function ProductForm({ cityId, zones, product, onCancel, onSaved }: ProductFormP
         <div className="space-y-2">
           <Label>Zona</Label>
           <Select
-            value={formData.zone_id || ''}
-            onValueChange={v => updateField('zone_id', v || null)}
+            value={formData.zone_id || 'none'}
+            onValueChange={v => updateField('zone_id', v === 'none' ? null : v)}
           >
             <SelectTrigger>
               <SelectValue placeholder="Seleziona zona" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">Nessuna zona</SelectItem>
+              <SelectItem value="none">Nessuna zona</SelectItem>
               {zones.map(zone => (
                 <SelectItem key={zone.id} value={zone.id}>
                   {zone.name}
