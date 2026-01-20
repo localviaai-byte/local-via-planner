@@ -85,35 +85,59 @@ export type Database = {
       }
       city_zones: {
         Row: {
+          best_time: Database["public"]["Enums"]["time_bucket"] | null
           city_id: string
           created_at: string
           created_by: string
+          description: string | null
           id: string
+          local_tip: string | null
           name: string
+          safety_note: string | null
+          status: Database["public"]["Enums"]["place_status"]
+          touristy_score: number | null
           updated_at: string
           vibe: string[] | null
+          vibe_primary: Database["public"]["Enums"]["vibe_label"] | null
+          vibe_secondary: Database["public"]["Enums"]["vibe_label"] | null
           when_to_go: string | null
           why_go: string | null
         }
         Insert: {
+          best_time?: Database["public"]["Enums"]["time_bucket"] | null
           city_id: string
           created_at?: string
           created_by: string
+          description?: string | null
           id?: string
+          local_tip?: string | null
           name: string
+          safety_note?: string | null
+          status?: Database["public"]["Enums"]["place_status"]
+          touristy_score?: number | null
           updated_at?: string
           vibe?: string[] | null
+          vibe_primary?: Database["public"]["Enums"]["vibe_label"] | null
+          vibe_secondary?: Database["public"]["Enums"]["vibe_label"] | null
           when_to_go?: string | null
           why_go?: string | null
         }
         Update: {
+          best_time?: Database["public"]["Enums"]["time_bucket"] | null
           city_id?: string
           created_at?: string
           created_by?: string
+          description?: string | null
           id?: string
+          local_tip?: string | null
           name?: string
+          safety_note?: string | null
+          status?: Database["public"]["Enums"]["place_status"]
+          touristy_score?: number | null
           updated_at?: string
           vibe?: string[] | null
+          vibe_primary?: Database["public"]["Enums"]["vibe_label"] | null
+          vibe_secondary?: Database["public"]["Enums"]["vibe_label"] | null
           when_to_go?: string | null
           why_go?: string | null
         }
@@ -164,6 +188,156 @@ export type Database = {
             columns: ["place_id"]
             isOneToOne: false
             referencedRelation: "places"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      place_media: {
+        Row: {
+          caption: string | null
+          created_at: string
+          created_by: string | null
+          id: string
+          media_url: string
+          place_id: string
+          sort_order: number
+        }
+        Insert: {
+          caption?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          media_url: string
+          place_id: string
+          sort_order?: number
+        }
+        Update: {
+          caption?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          media_url?: string
+          place_id?: string
+          sort_order?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "place_media_place_id_fkey"
+            columns: ["place_id"]
+            isOneToOne: false
+            referencedRelation: "places"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      place_opening_hours: {
+        Row: {
+          close_time: string
+          created_at: string
+          day_of_week: number
+          id: string
+          is_closed: boolean
+          note: string | null
+          open_time: string
+          place_id: string
+        }
+        Insert: {
+          close_time: string
+          created_at?: string
+          day_of_week: number
+          id?: string
+          is_closed?: boolean
+          note?: string | null
+          open_time: string
+          place_id: string
+        }
+        Update: {
+          close_time?: string
+          created_at?: string
+          day_of_week?: number
+          id?: string
+          is_closed?: boolean
+          note?: string | null
+          open_time?: string
+          place_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "place_opening_hours_place_id_fkey"
+            columns: ["place_id"]
+            isOneToOne: false
+            referencedRelation: "places"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      place_reviews: {
+        Row: {
+          comment: string | null
+          created_at: string
+          decision: Database["public"]["Enums"]["review_decision"]
+          editor_id: string
+          id: string
+          place_id: string
+        }
+        Insert: {
+          comment?: string | null
+          created_at?: string
+          decision: Database["public"]["Enums"]["review_decision"]
+          editor_id: string
+          id?: string
+          place_id: string
+        }
+        Update: {
+          comment?: string | null
+          created_at?: string
+          decision?: Database["public"]["Enums"]["review_decision"]
+          editor_id?: string
+          id?: string
+          place_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "place_reviews_place_id_fkey"
+            columns: ["place_id"]
+            isOneToOne: false
+            referencedRelation: "places"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      place_tags: {
+        Row: {
+          created_at: string
+          place_id: string
+          tag_id: string
+          weight: number | null
+        }
+        Insert: {
+          created_at?: string
+          place_id: string
+          tag_id: string
+          weight?: number | null
+        }
+        Update: {
+          created_at?: string
+          place_id?: string
+          tag_id?: string
+          weight?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "place_tags_place_id_fkey"
+            columns: ["place_id"]
+            isOneToOne: false
+            referencedRelation: "places"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "place_tags_tag_id_fkey"
+            columns: ["tag_id"]
+            isOneToOne: false
+            referencedRelation: "tags"
             referencedColumns: ["id"]
           },
         ]
@@ -219,25 +393,35 @@ export type Database = {
           created_by: string
           crowd_level: string | null
           cuisine_type: string | null
+          dead_times_note: string | null
           dress_code: string | null
           drink_focus: string | null
           duration_minutes: number | null
           flirt_friendly: boolean | null
+          gender_balance: Database["public"]["Enums"]["gender_balance"] | null
           google_place_id: string | null
           group_friendly: boolean | null
           id: string
+          ideal_for: Database["public"]["Enums"]["ideal_for"][]
           indoor_outdoor: string | null
           is_repeatable: boolean | null
           latitude: number | null
           local_one_liner: string | null
+          local_secret: boolean
           local_warning: string | null
           longitude: number | null
           meal_time: string | null
+          mental_effort: number | null
+          mood_primary: Database["public"]["Enums"]["vibe_label"] | null
+          mood_secondary: Database["public"]["Enums"]["vibe_label"] | null
           name: string
           needs_booking: boolean | null
+          notes_internal: string | null
+          overrated: boolean
           pace: string | null
           periods_to_avoid: string | null
           photo_url: string | null
+          physical_effort: number | null
           place_type: Database["public"]["Enums"]["place_type"]
           pre_or_post: string | null
           price_range: string | null
@@ -246,14 +430,18 @@ export type Database = {
           review_notes: string | null
           reviewed_at: string | null
           reviewed_by: string | null
+          search_tsv: unknown
           shared_tables: boolean | null
           social_level: number | null
           solo_friendly: boolean | null
           standing_ok: boolean | null
           status: Database["public"]["Enums"]["place_status"]
+          suggested_stay: Database["public"]["Enums"]["suggested_stay"] | null
           target_audience: Database["public"]["Enums"]["target_audience"] | null
           time_to_spend: string | null
+          tourist_trap: boolean
           updated_at: string
+          updated_by: string | null
           vibe_calm_to_energetic: number | null
           vibe_empty_to_crowded: number | null
           vibe_quiet_to_loud: number | null
@@ -277,25 +465,35 @@ export type Database = {
           created_by: string
           crowd_level?: string | null
           cuisine_type?: string | null
+          dead_times_note?: string | null
           dress_code?: string | null
           drink_focus?: string | null
           duration_minutes?: number | null
           flirt_friendly?: boolean | null
+          gender_balance?: Database["public"]["Enums"]["gender_balance"] | null
           google_place_id?: string | null
           group_friendly?: boolean | null
           id?: string
+          ideal_for?: Database["public"]["Enums"]["ideal_for"][]
           indoor_outdoor?: string | null
           is_repeatable?: boolean | null
           latitude?: number | null
           local_one_liner?: string | null
+          local_secret?: boolean
           local_warning?: string | null
           longitude?: number | null
           meal_time?: string | null
+          mental_effort?: number | null
+          mood_primary?: Database["public"]["Enums"]["vibe_label"] | null
+          mood_secondary?: Database["public"]["Enums"]["vibe_label"] | null
           name: string
           needs_booking?: boolean | null
+          notes_internal?: string | null
+          overrated?: boolean
           pace?: string | null
           periods_to_avoid?: string | null
           photo_url?: string | null
+          physical_effort?: number | null
           place_type: Database["public"]["Enums"]["place_type"]
           pre_or_post?: string | null
           price_range?: string | null
@@ -304,16 +502,20 @@ export type Database = {
           review_notes?: string | null
           reviewed_at?: string | null
           reviewed_by?: string | null
+          search_tsv?: unknown
           shared_tables?: boolean | null
           social_level?: number | null
           solo_friendly?: boolean | null
           standing_ok?: boolean | null
           status?: Database["public"]["Enums"]["place_status"]
+          suggested_stay?: Database["public"]["Enums"]["suggested_stay"] | null
           target_audience?:
             | Database["public"]["Enums"]["target_audience"]
             | null
           time_to_spend?: string | null
+          tourist_trap?: boolean
           updated_at?: string
+          updated_by?: string | null
           vibe_calm_to_energetic?: number | null
           vibe_empty_to_crowded?: number | null
           vibe_quiet_to_loud?: number | null
@@ -337,25 +539,35 @@ export type Database = {
           created_by?: string
           crowd_level?: string | null
           cuisine_type?: string | null
+          dead_times_note?: string | null
           dress_code?: string | null
           drink_focus?: string | null
           duration_minutes?: number | null
           flirt_friendly?: boolean | null
+          gender_balance?: Database["public"]["Enums"]["gender_balance"] | null
           google_place_id?: string | null
           group_friendly?: boolean | null
           id?: string
+          ideal_for?: Database["public"]["Enums"]["ideal_for"][]
           indoor_outdoor?: string | null
           is_repeatable?: boolean | null
           latitude?: number | null
           local_one_liner?: string | null
+          local_secret?: boolean
           local_warning?: string | null
           longitude?: number | null
           meal_time?: string | null
+          mental_effort?: number | null
+          mood_primary?: Database["public"]["Enums"]["vibe_label"] | null
+          mood_secondary?: Database["public"]["Enums"]["vibe_label"] | null
           name?: string
           needs_booking?: boolean | null
+          notes_internal?: string | null
+          overrated?: boolean
           pace?: string | null
           periods_to_avoid?: string | null
           photo_url?: string | null
+          physical_effort?: number | null
           place_type?: Database["public"]["Enums"]["place_type"]
           pre_or_post?: string | null
           price_range?: string | null
@@ -364,16 +576,20 @@ export type Database = {
           review_notes?: string | null
           reviewed_at?: string | null
           reviewed_by?: string | null
+          search_tsv?: unknown
           shared_tables?: boolean | null
           social_level?: number | null
           solo_friendly?: boolean | null
           standing_ok?: boolean | null
           status?: Database["public"]["Enums"]["place_status"]
+          suggested_stay?: Database["public"]["Enums"]["suggested_stay"] | null
           target_audience?:
             | Database["public"]["Enums"]["target_audience"]
             | null
           time_to_spend?: string | null
+          tourist_trap?: boolean
           updated_at?: string
+          updated_by?: string | null
           vibe_calm_to_energetic?: number | null
           vibe_empty_to_crowded?: number | null
           vibe_quiet_to_loud?: number | null
@@ -401,6 +617,33 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      tags: {
+        Row: {
+          created_at: string
+          id: string
+          label_en: string | null
+          label_it: string
+          tag_group: string
+          tag_key: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          label_en?: string | null
+          label_it: string
+          tag_group: string
+          tag_key: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          label_en?: string | null
+          label_it?: string
+          tag_group?: string
+          tag_key?: string
+        }
+        Relationships: []
       }
       user_roles: {
         Row: {
@@ -475,6 +718,18 @@ export type Database = {
         | "nature"
         | "shopping"
       city_walkability: "yes" | "no" | "depends"
+      crowd_type: "low" | "medium" | "high" | "variable"
+      gender_balance: "balanced" | "more_men" | "more_women" | "unknown"
+      ideal_for:
+        | "couple"
+        | "friends"
+        | "solo_traveler"
+        | "family"
+        | "first_time"
+        | "meet_people"
+        | "chill"
+        | "party"
+        | "flirt_friendly"
       place_status:
         | "draft"
         | "pending_review"
@@ -489,7 +744,36 @@ export type Database = {
         | "zone"
         | "experience"
         | "view"
+      price_level: "budget" | "moderate" | "expensive" | "luxury"
+      review_decision: "approve" | "reject" | "request_changes"
+      suggested_stay: "short" | "medium" | "long"
       target_audience: "locals" | "tourists" | "mixed" | "students" | "couples"
+      time_bucket:
+        | "morning"
+        | "lunch"
+        | "afternoon"
+        | "aperitivo"
+        | "dinner"
+        | "evening"
+        | "night"
+      vibe_label:
+        | "easy"
+        | "energetic"
+        | "romantic"
+        | "chaotic"
+        | "chic"
+        | "underground"
+        | "authentic"
+      why_go:
+        | "have_fun"
+        | "socialize"
+        | "date_spot"
+        | "eat_drink_well"
+        | "relax"
+        | "do_something_different"
+        | "culture"
+        | "scenic"
+      yes_no_maybe: "yes" | "no" | "depends"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -634,6 +918,19 @@ export const Constants = {
         "shopping",
       ],
       city_walkability: ["yes", "no", "depends"],
+      crowd_type: ["low", "medium", "high", "variable"],
+      gender_balance: ["balanced", "more_men", "more_women", "unknown"],
+      ideal_for: [
+        "couple",
+        "friends",
+        "solo_traveler",
+        "family",
+        "first_time",
+        "meet_people",
+        "chill",
+        "party",
+        "flirt_friendly",
+      ],
       place_status: [
         "draft",
         "pending_review",
@@ -650,7 +947,39 @@ export const Constants = {
         "experience",
         "view",
       ],
+      price_level: ["budget", "moderate", "expensive", "luxury"],
+      review_decision: ["approve", "reject", "request_changes"],
+      suggested_stay: ["short", "medium", "long"],
       target_audience: ["locals", "tourists", "mixed", "students", "couples"],
+      time_bucket: [
+        "morning",
+        "lunch",
+        "afternoon",
+        "aperitivo",
+        "dinner",
+        "evening",
+        "night",
+      ],
+      vibe_label: [
+        "easy",
+        "energetic",
+        "romantic",
+        "chaotic",
+        "chic",
+        "underground",
+        "authentic",
+      ],
+      why_go: [
+        "have_fun",
+        "socialize",
+        "date_spot",
+        "eat_drink_well",
+        "relax",
+        "do_something_different",
+        "culture",
+        "scenic",
+      ],
+      yes_no_maybe: ["yes", "no", "depends"],
     },
   },
 } as const

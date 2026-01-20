@@ -189,15 +189,51 @@ export function useUpdateCity() {
   });
 }
 
+// Zone creation payload - only required fields
+interface CreateZonePayload {
+  city_id: string;
+  name: string;
+  created_by: string;
+  vibe?: string[] | null;
+  why_go?: string | null;
+  when_to_go?: string | null;
+  description?: string | null;
+  vibe_primary?: string | null;
+  vibe_secondary?: string | null;
+  best_time?: string | null;
+  touristy_score?: number | null;
+  safety_note?: string | null;
+  local_tip?: string | null;
+}
+
 // Create a zone
 export function useCreateZone() {
   const queryClient = useQueryClient();
   
   return useMutation({
-    mutationFn: async (zone: Omit<CityZone, 'id' | 'created_at' | 'updated_at'>) => {
+    mutationFn: async (zone: CreateZonePayload) => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const insertData: any = {
+        city_id: zone.city_id,
+        name: zone.name,
+        created_by: zone.created_by,
+        vibe: zone.vibe || null,
+        why_go: zone.why_go || null,
+        when_to_go: zone.when_to_go || null,
+      };
+      
+      // Add optional new fields if provided
+      if (zone.description) insertData.description = zone.description;
+      if (zone.vibe_primary) insertData.vibe_primary = zone.vibe_primary;
+      if (zone.vibe_secondary) insertData.vibe_secondary = zone.vibe_secondary;
+      if (zone.best_time) insertData.best_time = zone.best_time;
+      if (zone.touristy_score) insertData.touristy_score = zone.touristy_score;
+      if (zone.safety_note) insertData.safety_note = zone.safety_note;
+      if (zone.local_tip) insertData.local_tip = zone.local_tip;
+      
       const { data, error } = await supabase
         .from('city_zones')
-        .insert(zone)
+        .insert(insertData)
         .select()
         .single();
       

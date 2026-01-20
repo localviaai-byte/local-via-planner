@@ -11,6 +11,72 @@ export type PlaceStatus = 'draft' | 'pending_review' | 'approved' | 'rejected' |
 export type TargetAudience = 'locals' | 'tourists' | 'mixed' | 'students' | 'couples';
 
 // =====================================================
+// NEW ENUMS FROM SCHEMA UPGRADE
+// =====================================================
+
+export type VibeLabel = 'easy' | 'energetic' | 'romantic' | 'chaotic' | 'chic' | 'underground' | 'authentic';
+
+export type WhyGoEnum = 'have_fun' | 'socialize' | 'date_spot' | 'eat_drink_well' | 'relax' | 'do_something_different' | 'culture' | 'scenic';
+
+export type IdealFor = 'couple' | 'friends' | 'solo_traveler' | 'family' | 'first_time' | 'meet_people' | 'chill' | 'party' | 'flirt_friendly';
+
+export type TimeBucket = 'morning' | 'lunch' | 'afternoon' | 'aperitivo' | 'dinner' | 'evening' | 'night';
+
+export type CrowdType = 'low' | 'medium' | 'high' | 'variable';
+
+export type PriceLevel = 'budget' | 'moderate' | 'expensive' | 'luxury';
+
+export type YesNoMaybe = 'yes' | 'no' | 'depends';
+
+export type GenderBalance = 'balanced' | 'more_men' | 'more_women' | 'unknown';
+
+export type SuggestedStay = 'short' | 'medium' | 'long';
+
+export type ReviewDecision = 'approve' | 'reject' | 'request_changes';
+
+// =====================================================
+// VIBE LABEL OPTIONS
+// =====================================================
+
+export const VIBE_LABEL_OPTIONS = [
+  { id: 'easy', label: 'Easy', icon: '😌' },
+  { id: 'energetic', label: 'Energetico', icon: '⚡' },
+  { id: 'romantic', label: 'Romantico', icon: '💕' },
+  { id: 'chaotic', label: 'Caotico', icon: '🔥' },
+  { id: 'chic', label: 'Chic', icon: '✨' },
+  { id: 'underground', label: 'Underground', icon: '🎸' },
+  { id: 'authentic', label: 'Autentico', icon: '🏛️' },
+] as const;
+
+export const IDEAL_FOR_OPTIONS = [
+  { id: 'couple', label: 'Coppia', icon: '💑' },
+  { id: 'friends', label: 'Amici', icon: '👥' },
+  { id: 'solo_traveler', label: 'Solo traveler', icon: '🎒' },
+  { id: 'family', label: 'Famiglia', icon: '👨‍👩‍👧‍👦' },
+  { id: 'first_time', label: 'Prima volta', icon: '🌟' },
+  { id: 'meet_people', label: 'Conoscere gente', icon: '🤝' },
+  { id: 'chill', label: 'Chill', icon: '🧘' },
+  { id: 'party', label: 'Party', icon: '🎉' },
+  { id: 'flirt_friendly', label: 'Flirt friendly', icon: '😏' },
+] as const;
+
+export const TIME_BUCKET_OPTIONS = [
+  { id: 'morning', label: 'Mattina', icon: '🌅' },
+  { id: 'lunch', label: 'Pranzo', icon: '🍽️' },
+  { id: 'afternoon', label: 'Pomeriggio', icon: '☀️' },
+  { id: 'aperitivo', label: 'Aperitivo', icon: '🥂' },
+  { id: 'dinner', label: 'Cena', icon: '🌙' },
+  { id: 'evening', label: 'Sera', icon: '🌆' },
+  { id: 'night', label: 'Notte', icon: '🌃' },
+] as const;
+
+export const SUGGESTED_STAY_OPTIONS = [
+  { id: 'short', label: 'Breve (< 1h)' },
+  { id: 'medium', label: 'Media (1-3h)' },
+  { id: 'long', label: 'Lunga (> 3h)' },
+] as const;
+
+// =====================================================
 // CITY TYPES
 // =====================================================
 
@@ -75,7 +141,6 @@ export interface City {
   created_at: string;
   updated_at: string;
   created_by: string | null;
-  // New city-level data labeling fields
   status: CityStatus;
   tags: CityTag[];
   walkable: CityWalkability | null;
@@ -89,9 +154,17 @@ export interface CityZone {
   id: string;
   city_id: string;
   name: string;
-  vibe: string[];
+  description: string | null;
+  vibe: string[] | null;
+  vibe_primary: VibeLabel | null;
+  vibe_secondary: VibeLabel | null;
+  best_time: TimeBucket | null;
+  touristy_score: number | null;
+  safety_note: string | null;
+  local_tip: string | null;
   why_go: string | null;
   when_to_go: string | null;
+  status: PlaceStatus;
   created_by: string;
   created_at: string;
   updated_at: string;
@@ -99,22 +172,17 @@ export interface CityZone {
 
 // City form data for wizard
 export interface CityFormData {
-  // Step 1: Identity
   name: string;
   region: string;
   country: string;
   latitude: number | null;
   longitude: number | null;
   tags: CityTag[];
-  
-  // Step 2: Structure
   walkable: CityWalkability | null;
   rhythm: CityRhythm | null;
   best_times: BestTimeOfDay[];
   tourist_errors: string;
   local_warning: string;
-  
-  // Step 3: Zones (managed separately)
 }
 
 export const DEFAULT_CITY_FORM_DATA: CityFormData = {
@@ -131,7 +199,11 @@ export const DEFAULT_CITY_FORM_DATA: CityFormData = {
   local_warning: '',
 };
 
-// Why people go options
+// =====================================================
+// PLACE OPTIONS
+// =====================================================
+
+// Why people go options (legacy, kept for backward compatibility)
 export const WHY_PEOPLE_GO_OPTIONS = [
   { id: 'fun', label: 'Divertirti', icon: '🎉' },
   { id: 'meet_people', label: 'Conoscere gente', icon: '👥' },
@@ -169,7 +241,7 @@ export const BEST_DAYS_OPTIONS = [
 
 export type BestDay = typeof BEST_DAYS_OPTIONS[number]['id'];
 
-// Place type options - expanded
+// Place type options
 export const PLACE_TYPE_OPTIONS = [
   { id: 'attraction', label: 'Attrazione', icon: '🏛️', description: 'Musei, monumenti, siti archeologici' },
   { id: 'restaurant', label: 'Ristorante', icon: '🍽️', description: 'Dove mangiare bene' },
@@ -233,6 +305,18 @@ export const TARGET_AUDIENCE_OPTIONS = [
   { id: 'couples', label: 'Coppie', icon: '💑' },
 ] as const;
 
+// Gender balance options
+export const GENDER_BALANCE_OPTIONS = [
+  { id: 'balanced', label: 'Equilibrato' },
+  { id: 'more_men', label: 'Più uomini' },
+  { id: 'more_women', label: 'Più donne' },
+  { id: 'unknown', label: 'Variabile' },
+] as const;
+
+// =====================================================
+// PLACE INTERFACE
+// =====================================================
+
 export interface Place {
   id: string;
   city_id: string;
@@ -259,16 +343,35 @@ export interface Place {
   group_friendly: boolean;
   target_audience: TargetAudience | null;
   
-  // Vibe (1-5)
+  // NEW: Enhanced mood/vibe
+  mood_primary: VibeLabel | null;
+  mood_secondary: VibeLabel | null;
+  gender_balance: GenderBalance | null;
+  
+  // Vibe sliders (1-5)
   vibe_calm_to_energetic: number | null;
   vibe_quiet_to_loud: number | null;
   vibe_empty_to_crowded: number | null;
   vibe_touristy_to_local: number | null;
   
+  // NEW: Insider insights
+  tourist_trap: boolean;
+  overrated: boolean;
+  local_secret: boolean;
+  
+  // NEW: Effort levels
+  physical_effort: number | null;
+  mental_effort: number | null;
+  suggested_stay: SuggestedStay | null;
+  
+  // NEW: Ideal for (matching)
+  ideal_for: IdealFor[];
+  
   // Timing
   best_days: BestDay[];
   best_times: BestTime[];
   periods_to_avoid: string | null;
+  dead_times_note: string | null;
   
   // Local secrets
   local_warning: string | null;
@@ -314,12 +417,78 @@ export interface Place {
   // Metadata
   status: PlaceStatus;
   quality_score: number;
+  notes_internal: string | null;
   created_by: string;
+  updated_by: string | null;
   created_at: string;
   updated_at: string;
   reviewed_by: string | null;
   reviewed_at: string | null;
   review_notes: string | null;
+}
+
+// =====================================================
+// TAGS SYSTEM
+// =====================================================
+
+export type TagGroup = 'interest' | 'experience_style' | 'social_scene' | 'nightlife' | 'food' | 'logistics' | 'crowd_risk' | 'seasonality';
+
+export interface Tag {
+  id: string;
+  tag_group: TagGroup;
+  tag_key: string;
+  label_it: string;
+  label_en: string | null;
+  created_at: string;
+}
+
+export interface PlaceTag {
+  place_id: string;
+  tag_id: string;
+  weight: number;
+  created_at: string;
+}
+
+// =====================================================
+// OPENING HOURS
+// =====================================================
+
+export interface PlaceOpeningHours {
+  id: string;
+  place_id: string;
+  day_of_week: number; // 1=Mon, 7=Sun
+  open_time: string;
+  close_time: string;
+  is_closed: boolean;
+  note: string | null;
+  created_at: string;
+}
+
+// =====================================================
+// MEDIA
+// =====================================================
+
+export interface PlaceMedia {
+  id: string;
+  place_id: string;
+  media_url: string;
+  caption: string | null;
+  sort_order: number;
+  created_by: string | null;
+  created_at: string;
+}
+
+// =====================================================
+// EDITORIAL WORKFLOW
+// =====================================================
+
+export interface PlaceReview {
+  id: string;
+  place_id: string;
+  editor_id: string;
+  decision: ReviewDecision;
+  comment: string | null;
+  created_at: string;
 }
 
 export interface PlaceVersion {
@@ -343,7 +512,10 @@ export interface PlaceFlag {
   resolved_by: string | null;
 }
 
-// Form data for wizard
+// =====================================================
+// FORM DATA FOR WIZARD
+// =====================================================
+
 export interface PlaceFormData {
   // Step 0: Context
   city_id: string;
@@ -366,22 +538,37 @@ export interface PlaceFormData {
   flirt_friendly: boolean;
   group_friendly: boolean;
   target_audience: TargetAudience | null;
+  gender_balance: GenderBalance | null;
   
   // Step 4: Vibe
+  mood_primary: VibeLabel | null;
+  mood_secondary: VibeLabel | null;
   vibe_calm_to_energetic: number;
   vibe_quiet_to_loud: number;
   vibe_empty_to_crowded: number;
   vibe_touristy_to_local: number;
   
-  // Step 5: Timing
+  // Step 5: Insider insights
+  tourist_trap: boolean;
+  overrated: boolean;
+  local_secret: boolean;
+  ideal_for: IdealFor[];
+  
+  // Step 6: Effort
+  physical_effort: number | null;
+  mental_effort: number | null;
+  suggested_stay: SuggestedStay | null;
+  
+  // Step 7: Timing
   best_days: BestDay[];
   best_times: BestTime[];
   periods_to_avoid: string;
+  dead_times_note: string;
   
-  // Step 6: Warning
+  // Step 8: Warning
   local_warning: string;
   
-  // Step 7: One-liner
+  // Step 9: One-liner
   local_one_liner: string;
   
   // --- TYPE-SPECIFIC FIELDS ---
@@ -437,13 +624,24 @@ export const DEFAULT_PLACE_FORM_DATA: PlaceFormData = {
   flirt_friendly: false,
   group_friendly: false,
   target_audience: null,
+  gender_balance: null,
+  mood_primary: null,
+  mood_secondary: null,
   vibe_calm_to_energetic: 3,
   vibe_quiet_to_loud: 3,
   vibe_empty_to_crowded: 3,
   vibe_touristy_to_local: 3,
+  tourist_trap: false,
+  overrated: false,
+  local_secret: false,
+  ideal_for: [],
+  physical_effort: null,
+  mental_effort: null,
+  suggested_stay: null,
   best_days: [],
   best_times: [],
   periods_to_avoid: '',
+  dead_times_note: '',
   local_warning: '',
   local_one_liner: '',
   // Type-specific defaults
