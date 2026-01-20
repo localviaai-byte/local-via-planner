@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   ArrowLeft, 
@@ -26,8 +26,64 @@ interface ItineraryViewerProps {
 
 export function ItineraryViewer({ preferences, generatedData, onBack, onRegenerate }: ItineraryViewerProps) {
   const [activeDay, setActiveDay] = useState(0);
+  const [showDayTransition, setShowDayTransition] = useState(false);
+  const daySectionRefs = useRef<(HTMLDivElement | null)[]>([]);
+  const isScrollingRef = useRef(false);
   
   const { itinerary, city, meta } = generatedData;
+
+  // Intersection Observer for automatic day switching on scroll
+  useEffect(() => {
+    if (itinerary.length <= 1) return;
+
+    const observerOptions = {
+      root: null,
+      rootMargin: '-40% 0px -40% 0px',
+      threshold: 0.1,
+    };
+
+    const observerCallback = (entries: IntersectionObserverEntry[]) => {
+      if (isScrollingRef.current) return;
+      
+      entries.forEach((entry) => {
+        if (entry.isIntersecting) {
+          const dayIndex = daySectionRefs.current.findIndex(
+            (ref) => ref === entry.target
+          );
+          if (dayIndex !== -1 && dayIndex !== activeDay) {
+            setShowDayTransition(true);
+            setActiveDay(dayIndex);
+            // Hide transition indicator after animation
+            setTimeout(() => setShowDayTransition(false), 1500);
+          }
+        }
+      });
+    };
+
+    const observer = new IntersectionObserver(observerCallback, observerOptions);
+
+    daySectionRefs.current.forEach((ref) => {
+      if (ref) observer.observe(ref);
+    });
+
+    return () => observer.disconnect();
+  }, [itinerary.length, activeDay]);
+
+  // Scroll to day when tab is clicked
+  const handleDayClick = (index: number) => {
+    isScrollingRef.current = true;
+    setActiveDay(index);
+    
+    daySectionRefs.current[index]?.scrollIntoView({
+      behavior: 'smooth',
+      block: 'start',
+    });
+
+    // Reset scroll lock after animation
+    setTimeout(() => {
+      isScrollingRef.current = false;
+    }, 800);
+  };
 
   const quickActions = [
     { icon: RotateCcw, label: 'Rigenera', action: onRegenerate },
@@ -45,6 +101,33 @@ export function ItineraryViewer({ preferences, generatedData, onBack, onRegenera
 
   return (
     <div className="min-h-screen bg-background">
+      {/* Day Transition Indicator */}
+      <AnimatePresence>
+        {showDayTransition && itinerary.length > 1 && (
+          <motion.div
+            initial={{ opacity: 0, y: -20, scale: 0.9 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: -10, scale: 0.95 }}
+            transition={{ type: 'spring', stiffness: 400, damping: 25 }}
+            className="fixed top-1/3 left-1/2 -translate-x-1/2 z-[100] pointer-events-none"
+          >
+            <div className="bg-primary text-primary-foreground px-6 py-3 rounded-full shadow-2xl flex items-center gap-3">
+              <motion.div
+                initial={{ rotate: -180, opacity: 0 }}
+                animate={{ rotate: 0, opacity: 1 }}
+                transition={{ delay: 0.1 }}
+                className="w-8 h-8 bg-white/20 rounded-full flex items-center justify-center font-bold"
+              >
+                {activeDay + 1}
+              </motion.div>
+              <span className="font-display font-semibold text-lg">
+                Giorno {activeDay + 1}
+              </span>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* Header */}
       <header className="sticky top-0 z-50 bg-gradient-hero text-primary-foreground">
         <div className="container max-w-2xl py-4 px-4">
@@ -120,18 +203,27 @@ export function ItineraryViewer({ preferences, generatedData, onBack, onRegenera
               {itinerary.map((day, index) => (
                 <button
                   key={day.dayNumber}
-                  onClick={() => setActiveDay(index)}
-                  className={`flex-1 py-3 text-sm font-medium transition-colors relative ${
+                  onClick={() => handleDayClick(index)}
+                  className={`flex-1 py-3 text-sm font-medium transition-all relative ${
                     activeDay === index 
                       ? 'text-primary' 
                       : 'text-muted-foreground hover:text-foreground'
                   }`}
                 >
-                  Giorno {day.dayNumber}
+                  <motion.span
+                    animate={{
+                      scale: activeDay === index && showDayTransition ? [1, 1.1, 1] : 1,
+                    }}
+                    transition={{ duration: 0.3 }}
+                    className="inline-block"
+                  >
+                    Giorno {day.dayNumber}
+                  </motion.span>
                   {activeDay === index && (
                     <motion.div
                       layoutId="activeDay"
                       className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary"
+                      transition={{ type: 'spring', stiffness: 500, damping: 30 }}
                     />
                   )}
                 </button>
@@ -141,39 +233,65 @@ export function ItineraryViewer({ preferences, generatedData, onBack, onRegenera
         </div>
       )}
 
-      {/* Itinerary Content */}
+      {/* Itinerary Content - All days rendered for scroll */}
       <main className="container max-w-2xl py-6 px-4">
-        <AnimatePresence mode="wait">
-          <motion.div
-            key={activeDay}
-            initial={{ opacity: 0, x: 20 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: -20 }}
+        {itinerary.map((day, dayIndex) => (
+          <div
+            key={day.dayNumber}
+            ref={(el) => (daySectionRefs.current[dayIndex] = el)}
+            className="scroll-mt-[220px]"
           >
+            {/* Day Divider - only for days after the first */}
+            {dayIndex > 0 && (
+              <motion.div 
+                className="my-8 flex items-center gap-4"
+                initial={{ opacity: 0 }}
+                whileInView={{ opacity: 1 }}
+                viewport={{ once: true, margin: '-100px' }}
+              >
+                <div className="flex-1 h-px bg-border" />
+                <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-muted">
+                  <span className="w-6 h-6 rounded-full bg-primary text-primary-foreground text-xs font-bold flex items-center justify-center">
+                    {day.dayNumber}
+                  </span>
+                  <span className="text-sm font-medium text-muted-foreground">
+                    Giorno {day.dayNumber}
+                  </span>
+                </div>
+                <div className="flex-1 h-px bg-border" />
+              </motion.div>
+            )}
+
             {/* Day Header */}
-            <div className="mb-6">
+            <motion.div 
+              className="mb-6"
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, margin: '-50px' }}
+              transition={{ duration: 0.4 }}
+            >
               <h2 className="font-display text-xl font-semibold text-foreground capitalize">
-                {itinerary[activeDay]?.date}
+                {day.date}
               </h2>
               <p className="text-sm text-muted-foreground mt-1">
-                {itinerary[activeDay]?.summary}
+                {day.summary}
               </p>
-            </div>
+            </motion.div>
 
             {/* Timeline */}
             <div className="relative">
-              {itinerary[activeDay]?.slots.map((slot) => (
+              {day.slots.map((slot) => (
                 <TimelineSlotReal
                   key={slot.id}
                   slot={slot}
-                  dayIndex={activeDay}
+                  dayIndex={dayIndex}
                   onReplace={() => {}}
                   onMove={() => {}}
                 />
               ))}
             </div>
-          </motion.div>
-        </AnimatePresence>
+          </div>
+        ))}
       </main>
 
       {/* Bottom CTA */}
