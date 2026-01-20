@@ -83,6 +83,153 @@ export type Database = {
         }
         Relationships: []
       }
+      city_cluster_members: {
+        Row: {
+          city_id: string
+          cluster_id: string
+          created_at: string | null
+          role: string | null
+        }
+        Insert: {
+          city_id: string
+          cluster_id: string
+          created_at?: string | null
+          role?: string | null
+        }
+        Update: {
+          city_id?: string
+          cluster_id?: string
+          created_at?: string | null
+          role?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "city_cluster_members_city_id_fkey"
+            columns: ["city_id"]
+            isOneToOne: false
+            referencedRelation: "cities"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "city_cluster_members_cluster_id_fkey"
+            columns: ["cluster_id"]
+            isOneToOne: false
+            referencedRelation: "city_clusters"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      city_clusters: {
+        Row: {
+          country: string
+          created_at: string | null
+          created_by: string | null
+          description: string | null
+          id: string
+          name: string
+        }
+        Insert: {
+          country?: string
+          created_at?: string | null
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          name: string
+        }
+        Update: {
+          country?: string
+          created_at?: string | null
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          name?: string
+        }
+        Relationships: []
+      }
+      city_connections: {
+        Row: {
+          best_departure_time:
+            | Database["public"]["Enums"]["time_bucket"][]
+            | null
+          best_return_time: Database["public"]["Enums"]["time_bucket"][] | null
+          city_id_from: string
+          city_id_to: string
+          connection_type: Database["public"]["Enums"]["connection_type"]
+          cost_note: string | null
+          created_at: string
+          created_by: string | null
+          friction_score: number | null
+          id: string
+          is_active: boolean
+          local_tip: string | null
+          primary_mode: Database["public"]["Enums"]["transport_mode"]
+          reliability_score: number | null
+          seasonality_note: string | null
+          typical_max_minutes: number | null
+          typical_min_minutes: number | null
+          warning: string | null
+        }
+        Insert: {
+          best_departure_time?:
+            | Database["public"]["Enums"]["time_bucket"][]
+            | null
+          best_return_time?: Database["public"]["Enums"]["time_bucket"][] | null
+          city_id_from: string
+          city_id_to: string
+          connection_type: Database["public"]["Enums"]["connection_type"]
+          cost_note?: string | null
+          created_at?: string
+          created_by?: string | null
+          friction_score?: number | null
+          id?: string
+          is_active?: boolean
+          local_tip?: string | null
+          primary_mode?: Database["public"]["Enums"]["transport_mode"]
+          reliability_score?: number | null
+          seasonality_note?: string | null
+          typical_max_minutes?: number | null
+          typical_min_minutes?: number | null
+          warning?: string | null
+        }
+        Update: {
+          best_departure_time?:
+            | Database["public"]["Enums"]["time_bucket"][]
+            | null
+          best_return_time?: Database["public"]["Enums"]["time_bucket"][] | null
+          city_id_from?: string
+          city_id_to?: string
+          connection_type?: Database["public"]["Enums"]["connection_type"]
+          cost_note?: string | null
+          created_at?: string
+          created_by?: string | null
+          friction_score?: number | null
+          id?: string
+          is_active?: boolean
+          local_tip?: string | null
+          primary_mode?: Database["public"]["Enums"]["transport_mode"]
+          reliability_score?: number | null
+          seasonality_note?: string | null
+          typical_max_minutes?: number | null
+          typical_min_minutes?: number | null
+          warning?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "city_connections_city_id_from_fkey"
+            columns: ["city_id_from"]
+            isOneToOne: false
+            referencedRelation: "cities"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "city_connections_city_id_to_fkey"
+            columns: ["city_id_to"]
+            isOneToOne: false
+            referencedRelation: "cities"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       city_zones: {
         Row: {
           best_time: Database["public"]["Enums"]["time_bucket"] | null
@@ -147,6 +294,48 @@ export type Database = {
             columns: ["city_id"]
             isOneToOne: false
             referencedRelation: "cities"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      place_coverage: {
+        Row: {
+          base_city_id: string
+          created_at: string
+          created_by: string | null
+          note: string | null
+          place_id: string
+          relevance: number | null
+        }
+        Insert: {
+          base_city_id: string
+          created_at?: string
+          created_by?: string | null
+          note?: string | null
+          place_id: string
+          relevance?: number | null
+        }
+        Update: {
+          base_city_id?: string
+          created_at?: string
+          created_by?: string | null
+          note?: string | null
+          place_id?: string
+          relevance?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "place_coverage_base_city_id_fkey"
+            columns: ["base_city_id"]
+            isOneToOne: false
+            referencedRelation: "cities"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "place_coverage_place_id_fkey"
+            columns: ["place_id"]
+            isOneToOne: false
+            referencedRelation: "places"
             referencedColumns: ["id"]
           },
         ]
@@ -781,6 +970,7 @@ export type Database = {
         | "nature"
         | "shopping"
       city_walkability: "yes" | "no" | "depends"
+      connection_type: "day_trip" | "metro" | "nearby_city" | "multi_city"
       crowd_type: "low" | "medium" | "high" | "variable"
       gender_balance: "balanced" | "more_men" | "more_women" | "unknown"
       ideal_for:
@@ -819,6 +1009,7 @@ export type Database = {
         | "dinner"
         | "evening"
         | "night"
+      transport_mode: "car" | "train" | "bus" | "ferry" | "walk" | "mixed"
       vibe_label:
         | "easy"
         | "energetic"
@@ -981,6 +1172,7 @@ export const Constants = {
         "shopping",
       ],
       city_walkability: ["yes", "no", "depends"],
+      connection_type: ["day_trip", "metro", "nearby_city", "multi_city"],
       crowd_type: ["low", "medium", "high", "variable"],
       gender_balance: ["balanced", "more_men", "more_women", "unknown"],
       ideal_for: [
@@ -1023,6 +1215,7 @@ export const Constants = {
         "evening",
         "night",
       ],
+      transport_mode: ["car", "train", "bus", "ferry", "walk", "mixed"],
       vibe_label: [
         "easy",
         "energetic",

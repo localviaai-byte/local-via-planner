@@ -72,6 +72,7 @@ export interface ItineraryDay {
 export interface TripPreferences {
   city: string;
   nearbyAreas: boolean;
+  maxTravelMinutes: 0 | 30 | 60 | 90; // 0 = no travel, 30/60/90 = max travel time
   dates: { start: Date; end: Date } | null;
   numDays: number;
   travelers: {
@@ -435,9 +436,17 @@ export const avoidOptions = [
   { id: 'turisti', label: 'Zone troppo turistiche' },
 ];
 
+export const maxTravelOptions = [
+  { id: 0 as const, label: 'Solo in città', description: 'Rimani nella destinazione scelta' },
+  { id: 30 as const, label: 'Max 30 min', description: 'Dintorni veloci da raggiungere' },
+  { id: 60 as const, label: 'Max 60 min', description: 'Day-trip brevi possibili' },
+  { id: 90 as const, label: 'Anche 90+ min', description: 'Gite in giornata complete' },
+];
+
 export const defaultPreferences: TripPreferences = {
   city: '',
   nearbyAreas: false,
+  maxTravelMinutes: 0,
   dates: null,
   numDays: 2,
   travelers: { adults: 2, children: 0, seniors: 0 },

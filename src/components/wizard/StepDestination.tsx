@@ -1,8 +1,7 @@
 import { motion } from 'framer-motion';
-import { MapPin, Calendar, Users } from 'lucide-react';
-import { cities, type TripPreferences } from '@/lib/mockData';
+import { MapPin, Calendar, Users, Train } from 'lucide-react';
+import { cities, maxTravelOptions, type TripPreferences } from '@/lib/mockData';
 import { Button } from '@/components/ui/button';
-import { Switch } from '@/components/ui/switch';
 import {
   Select,
   SelectContent,
@@ -85,21 +84,34 @@ export function StepDestination({ preferences, onUpdate }: StepDestinationProps)
           ))}
         </div>
 
-        {/* Nearby toggle */}
+        {/* Travel distance preference - replaces old nearbyAreas toggle */}
         {preferences.city && (
           <motion.div
             initial={{ opacity: 0, height: 0 }}
             animate={{ opacity: 1, height: 'auto' }}
-            className="flex items-center justify-between p-4 bg-olive-light rounded-2xl"
+            className="space-y-3"
           >
-            <div>
-              <p className="text-sm font-medium text-foreground">Includi dintorni</p>
-              <p className="text-xs text-muted-foreground">Aggiungi attrazioni vicine</p>
+            <label className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
+              <Train className="w-4 h-4" />
+              Ti va di spostarti fuori città?
+            </label>
+            <div className="grid grid-cols-2 gap-2">
+              {maxTravelOptions.map((option) => (
+                <Button
+                  key={option.id}
+                  type="button"
+                  variant={preferences.maxTravelMinutes === option.id ? 'default' : 'outline'}
+                  onClick={() => onUpdate({ 
+                    maxTravelMinutes: option.id,
+                    nearbyAreas: option.id > 0 
+                  })}
+                  className="h-auto py-3 flex flex-col items-start text-left"
+                >
+                  <span className="font-medium">{option.label}</span>
+                  <span className="text-xs opacity-70 font-normal">{option.description}</span>
+                </Button>
+              ))}
             </div>
-            <Switch
-              checked={preferences.nearbyAreas}
-              onCheckedChange={(checked) => onUpdate({ nearbyAreas: checked })}
-            />
           </motion.div>
         )}
       </div>

@@ -35,6 +35,117 @@ export type SuggestedStay = 'short' | 'medium' | 'long';
 export type ReviewDecision = 'approve' | 'reject' | 'request_changes';
 
 // =====================================================
+// CITY CONNECTIONS TYPES
+// =====================================================
+
+export type ConnectionType = 'day_trip' | 'metro' | 'nearby_city' | 'multi_city';
+
+export type TransportMode = 'car' | 'train' | 'bus' | 'ferry' | 'walk' | 'mixed';
+
+export const CONNECTION_TYPE_OPTIONS = [
+  { id: 'day_trip', label: 'Gita in giornata', icon: '🚃', description: 'Visita completa e rientro in giornata' },
+  { id: 'metro', label: 'Area metropolitana', icon: '🏙️', description: 'Quasi stessa base, spostamento veloce' },
+  { id: 'nearby_city', label: 'Città vicina', icon: '🗺️', description: 'Raggiungibile ma non per tutti i ritmi' },
+  { id: 'multi_city', label: 'Multi-città', icon: '✈️', description: 'Tappa di un viaggio più lungo' },
+] as const;
+
+export const TRANSPORT_MODE_OPTIONS = [
+  { id: 'car', label: 'Auto', icon: '🚗' },
+  { id: 'train', label: 'Treno', icon: '🚃' },
+  { id: 'bus', label: 'Bus', icon: '🚌' },
+  { id: 'ferry', label: 'Traghetto', icon: '⛴️' },
+  { id: 'walk', label: 'A piedi', icon: '🚶' },
+  { id: 'mixed', label: 'Misto', icon: '🔄' },
+] as const;
+
+export interface CityConnection {
+  id: string;
+  city_id_from: string;
+  city_id_to: string;
+  connection_type: ConnectionType;
+  primary_mode: TransportMode;
+  typical_min_minutes: number | null;
+  typical_max_minutes: number | null;
+  cost_note: string | null;
+  reliability_score: number;
+  friction_score: number;
+  best_departure_time: TimeBucket[] | null;
+  best_return_time: TimeBucket[] | null;
+  local_tip: string | null;
+  warning: string | null;
+  seasonality_note: string | null;
+  is_active: boolean;
+  created_at: string;
+  created_by: string | null;
+  // Joined data
+  to_city?: City;
+  from_city?: City;
+}
+
+export interface PlaceCoverage {
+  place_id: string;
+  base_city_id: string;
+  relevance: number;
+  note: string | null;
+  created_at: string;
+  created_by: string | null;
+  // Joined data
+  place?: Place;
+  base_city?: City;
+}
+
+export interface CityCluster {
+  id: string;
+  name: string;
+  country: string;
+  description: string | null;
+  created_at: string;
+  created_by: string | null;
+}
+
+export interface CityClusterMember {
+  cluster_id: string;
+  city_id: string;
+  role: 'core' | 'satellite';
+  created_at: string;
+  // Joined data
+  city?: City;
+  cluster?: CityCluster;
+}
+
+export interface CityConnectionFormData {
+  city_id_to: string;
+  connection_type: ConnectionType;
+  primary_mode: TransportMode;
+  typical_min_minutes: number | null;
+  typical_max_minutes: number | null;
+  cost_note: string;
+  reliability_score: number;
+  friction_score: number;
+  best_departure_time: TimeBucket[];
+  best_return_time: TimeBucket[];
+  local_tip: string;
+  warning: string;
+  seasonality_note: string;
+}
+
+export const DEFAULT_CONNECTION_FORM_DATA: CityConnectionFormData = {
+  city_id_to: '',
+  connection_type: 'day_trip',
+  primary_mode: 'train',
+  typical_min_minutes: null,
+  typical_max_minutes: null,
+  cost_note: '',
+  reliability_score: 3,
+  friction_score: 3,
+  best_departure_time: [],
+  best_return_time: [],
+  local_tip: '',
+  warning: '',
+  seasonality_note: '',
+};
+
+// =====================================================
 // VIBE LABEL OPTIONS
 // =====================================================
 

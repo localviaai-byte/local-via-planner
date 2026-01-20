@@ -11,6 +11,7 @@ import { supabase } from '@/integrations/supabase/client';
 import type { PlaceType, PlaceStatus } from '@/types/database';
 import { PLACE_TYPE_OPTIONS } from '@/types/database';
 import { DiscoveryPanel } from '@/components/admin/DiscoveryPanel';
+import { CityConnectionsPanel } from '@/components/admin/CityConnectionsPanel';
 
 const STATUS_CONFIG: Record<PlaceStatus, { label: string; color: string }> = {
   draft: { label: 'Bozza', color: 'bg-muted text-muted-foreground' },
@@ -126,6 +127,14 @@ export default function CityDetail() {
             </div>
           </CardContent>
         </Card>
+      </div>
+      
+      {/* City Connections Panel */}
+      <div className="px-4 pt-2">
+        <CityConnectionsPanel 
+          cityId={cityId!}
+          cityName={city.name}
+        />
       </div>
       
       {/* Discovery Panel */}
