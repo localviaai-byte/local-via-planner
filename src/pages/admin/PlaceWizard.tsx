@@ -14,6 +14,8 @@ import StepIdentity from '@/components/admin/wizard/StepIdentity';
 import StepWhy from '@/components/admin/wizard/StepWhy';
 import StepSocial from '@/components/admin/wizard/StepSocial';
 import StepVibe from '@/components/admin/wizard/StepVibe';
+import StepInsider from '@/components/admin/wizard/StepInsider';
+import StepEffort from '@/components/admin/wizard/StepEffort';
 import StepTiming from '@/components/admin/wizard/StepTiming';
 import StepWarning from '@/components/admin/wizard/StepWarning';
 import StepOneLiner from '@/components/admin/wizard/StepOneLiner';
@@ -27,6 +29,8 @@ const STEPS = [
   { id: 'why', label: 'Perché ci vai' },
   { id: 'social', label: 'Social & Vibe' },
   { id: 'vibe', label: 'Atmosfera' },
+  { id: 'insider', label: 'Insider' },
+  { id: 'effort', label: 'Effort' },
   { id: 'timing', label: 'Quando funziona' },
   { id: 'warning', label: 'Segreti local' },
   { id: 'oneliner', label: 'La frase' },
@@ -68,12 +72,16 @@ export default function PlaceWizard() {
       case 3: // Social
         return formData.social_level >= 1 && formData.social_level <= 5;
       case 4: // Vibe
-        return true; // All have defaults
-      case 5: // Timing
+        return !!formData.mood_primary; // Require at least primary mood
+      case 5: // Insider
+        return true; // All optional
+      case 6: // Effort
+        return true; // All optional
+      case 7: // Timing
         return formData.best_times.length >= 1;
-      case 6: // Warning
+      case 8: // Warning
         return true; // Optional
-      case 7: // One-liner
+      case 9: // One-liner
         return formData.local_one_liner.trim().length >= 10 && formData.local_one_liner.length <= 140;
       default:
         return false;
@@ -133,10 +141,14 @@ export default function PlaceWizard() {
       case 4:
         return <StepVibe {...commonProps} />;
       case 5:
-        return <StepTiming {...commonProps} />;
+        return <StepInsider {...commonProps} />;
       case 6:
-        return <StepWarning {...commonProps} />;
+        return <StepEffort {...commonProps} />;
       case 7:
+        return <StepTiming {...commonProps} />;
+      case 8:
+        return <StepWarning {...commonProps} />;
+      case 9:
         return <StepOneLiner {...commonProps} cityName={cities?.find(c => c.id === formData.city_id)?.name || ''} />;
       default:
         return null;

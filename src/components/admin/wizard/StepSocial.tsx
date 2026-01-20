@@ -3,8 +3,8 @@ import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { Slider } from '@/components/ui/slider';
-import type { PlaceFormData, TargetAudience } from '@/types/database';
-import { TARGET_AUDIENCE_OPTIONS } from '@/types/database';
+import type { PlaceFormData, TargetAudience, GenderBalance } from '@/types/database';
+import { TARGET_AUDIENCE_OPTIONS, GENDER_BALANCE_OPTIONS } from '@/types/database';
 
 interface StepSocialProps {
   formData: PlaceFormData;
@@ -132,6 +132,27 @@ export default function StepSocial({ formData, onUpdate }: StepSocialProps) {
                 onClick={() => onUpdate({ target_audience: option.id as TargetAudience })}
               >
                 <span className="mr-2">{option.icon}</span>
+                {option.label}
+              </Button>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Gender balance */}
+      <div className="space-y-3">
+        <Label className="text-base">Bilanciamento di genere</Label>
+        <div className="grid grid-cols-2 gap-2">
+          {GENDER_BALANCE_OPTIONS.map((option) => {
+            const isSelected = formData.gender_balance === option.id;
+            return (
+              <Button
+                key={option.id}
+                variant={isSelected ? 'default' : 'outline'}
+                size="sm"
+                className={`${isSelected ? '' : 'bg-card'}`}
+                onClick={() => onUpdate({ gender_balance: option.id as GenderBalance })}
+              >
                 {option.label}
               </Button>
             );
