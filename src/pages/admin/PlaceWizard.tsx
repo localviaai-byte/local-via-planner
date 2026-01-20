@@ -3,10 +3,10 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/hooks/useAuth';
-import { useCities, useCreatePlace } from '@/hooks/usePlaces';
+import { useCities, useCreatePlace, usePlace, useUpdatePlace } from '@/hooks/usePlaces';
 import { useCity } from '@/hooks/useCities';
 import { WizardProgress } from '@/components/ui/WizardProgress';
-import { ChevronLeft, X } from 'lucide-react';
+import { ChevronLeft, X, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 
 import StepContext from '@/components/admin/wizard/StepContext';
@@ -20,7 +20,7 @@ import StepTiming from '@/components/admin/wizard/StepTiming';
 import StepWarning from '@/components/admin/wizard/StepWarning';
 import StepOneLiner from '@/components/admin/wizard/StepOneLiner';
 
-import type { PlaceFormData } from '@/types/database';
+import type { PlaceFormData, Place } from '@/types/database';
 import { DEFAULT_PLACE_FORM_DATA } from '@/types/database';
 
 const STEPS = [
@@ -36,26 +36,103 @@ const STEPS = [
   { id: 'oneliner', label: 'La frase' },
 ];
 
+// Helper to map Place (DB) to PlaceFormData
+function placeToFormData(place: Place): PlaceFormData {
+  return {
+    city_id: place.city_id,
+    place_type: place.place_type,
+    zone_id: place.zone_id,
+    name: place.name,
+    address: place.address || '',
+    zone: place.zone || '',
+    photo_url: place.photo_url || '',
+    why_people_go: place.why_people_go || [],
+    why_other: place.why_other || '',
+    social_level: place.social_level ?? 3,
+    solo_friendly: place.solo_friendly ?? false,
+    flirt_friendly: place.flirt_friendly ?? false,
+    group_friendly: place.group_friendly ?? false,
+    target_audience: place.target_audience,
+    gender_balance: place.gender_balance,
+    mood_primary: place.mood_primary,
+    mood_secondary: place.mood_secondary,
+    vibe_calm_to_energetic: place.vibe_calm_to_energetic ?? 3,
+    vibe_quiet_to_loud: place.vibe_quiet_to_loud ?? 3,
+    vibe_empty_to_crowded: place.vibe_empty_to_crowded ?? 3,
+    vibe_touristy_to_local: place.vibe_touristy_to_local ?? 3,
+    tourist_trap: place.tourist_trap ?? false,
+    overrated: place.overrated ?? false,
+    local_secret: place.local_secret ?? false,
+    ideal_for: place.ideal_for || [],
+    physical_effort: place.physical_effort,
+    mental_effort: place.mental_effort,
+    suggested_stay: place.suggested_stay,
+    best_days: place.best_days || [],
+    best_times: place.best_times || [],
+    periods_to_avoid: place.periods_to_avoid || '',
+    dead_times_note: place.dead_times_note || '',
+    local_warning: place.local_warning || '',
+    local_one_liner: place.local_one_liner || '',
+    // Type-specific
+    duration_minutes: place.duration_minutes,
+    indoor_outdoor: place.indoor_outdoor,
+    crowd_level: place.crowd_level,
+    pace: place.pace,
+    cuisine_type: place.cuisine_type || '',
+    price_range: place.price_range,
+    meal_time: place.meal_time,
+    shared_tables: place.shared_tables ?? false,
+    bar_time: place.bar_time,
+    standing_ok: place.standing_ok ?? true,
+    drink_focus: place.drink_focus,
+    real_start_time: place.real_start_time || '',
+    dress_code: place.dress_code || '',
+    pre_or_post: place.pre_or_post,
+    needs_booking: place.needs_booking ?? false,
+    is_repeatable: place.is_repeatable ?? false,
+    works_solo: place.works_solo ?? false,
+    best_light_time: place.best_light_time || '',
+    worth_detour: place.worth_detour ?? false,
+    time_to_spend: place.time_to_spend || '',
+    best_period: place.best_period,
+  };
+}
+
 export default function PlaceWizard() {
   const navigate = useNavigate();
-  const { cityId } = useParams<{ cityId: string }>();
+  const { cityId, id: placeId } = useParams<{ cityId?: string; id?: string }>();
   const { user } = useAuth();
   const { data: cities } = useCities();
   const { data: currentCity } = useCity(cityId);
   const createPlace = useCreatePlace();
+  const updatePlace = useUpdatePlace();
+  
+  // Fetch existing place if editing
+  const { data: existingPlace, isLoading: isLoadingPlace } = usePlace(placeId);
+  
+  const isEditMode = !!placeId;
   
   const [currentStep, setCurrentStep] = useState(0);
   const [formData, setFormData] = useState<PlaceFormData>({
     ...DEFAULT_PLACE_FORM_DATA,
     city_id: cityId || '',
   });
+  const [isFormInitialized, setIsFormInitialized] = useState(false);
 
-  // Set city_id when cityId param changes
+  // Initialize form with existing place data when editing
   useEffect(() => {
-    if (cityId) {
+    if (isEditMode && existingPlace && !isFormInitialized) {
+      setFormData(placeToFormData(existingPlace));
+      setIsFormInitialized(true);
+    }
+  }, [isEditMode, existingPlace, isFormInitialized]);
+
+  // Set city_id when cityId param changes (for new places)
+  useEffect(() => {
+    if (cityId && !isEditMode) {
       setFormData(prev => ({ ...prev, city_id: cityId }));
     }
-  }, [cityId]);
+  }, [cityId, isEditMode]);
 
   const updateFormData = (updates: Partial<PlaceFormData>) => {
     setFormData(prev => ({ ...prev, ...updates }));
@@ -99,14 +176,26 @@ export default function PlaceWizard() {
       }
       
       try {
-        await createPlace.mutateAsync({
-          ...formData,
-          created_by: user.id,
-        });
-        toast.success('Luogo salvato con successo!');
-        navigate(cityId ? `/admin/cities/${cityId}` : '/admin');
+        if (isEditMode && placeId) {
+          // Update existing place
+          await updatePlace.mutateAsync({
+            id: placeId,
+            ...formData,
+          });
+          toast.success('Luogo aggiornato con successo!');
+        } else {
+          // Create new place
+          await createPlace.mutateAsync({
+            ...formData,
+            created_by: user.id,
+          });
+          toast.success('Luogo salvato con successo!');
+        }
+        // Navigate back
+        const targetCityId = formData.city_id || cityId;
+        navigate(targetCityId ? `/admin/cities/${targetCityId}` : '/admin');
       } catch (error) {
-        console.error('Error creating place:', error);
+        console.error('Error saving place:', error);
         toast.error('Errore nel salvataggio');
       }
     }
@@ -119,9 +208,34 @@ export default function PlaceWizard() {
   };
 
   const handleClose = () => {
-    navigate(cityId ? `/admin/cities/${cityId}` : '/admin');
+    const targetCityId = formData.city_id || cityId || existingPlace?.city_id;
+    navigate(targetCityId ? `/admin/cities/${targetCityId}` : '/admin');
   };
 
+  // Show loading state when fetching existing place
+  if (isEditMode && isLoadingPlace) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="flex flex-col items-center gap-3">
+          <Loader2 className="w-8 h-8 animate-spin text-primary" />
+          <span className="text-muted-foreground">Caricamento luogo...</span>
+        </div>
+      </div>
+    );
+  }
+
+  // Show error if place not found
+  if (isEditMode && !isLoadingPlace && !existingPlace) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="flex flex-col items-center gap-3 text-center p-6">
+          <span className="text-xl font-semibold">Luogo non trovato</span>
+          <span className="text-muted-foreground">Il luogo richiesto non esiste.</span>
+          <Button onClick={() => navigate('/admin')}>Torna alla dashboard</Button>
+        </div>
+      </div>
+    );
+  }
 
   const renderStep = () => {
     const commonProps = {
@@ -155,6 +269,8 @@ export default function PlaceWizard() {
     }
   };
 
+  const isSaving = createPlace.isPending || updatePlace.isPending;
+
   return (
     <div className="min-h-screen bg-background flex flex-col">
       {/* Header */}
@@ -172,7 +288,7 @@ export default function PlaceWizard() {
             )}
           </Button>
           <span className="text-sm text-muted-foreground">
-            Nuovo luogo
+            {isEditMode ? `Modifica: ${existingPlace?.name || 'luogo'}` : 'Nuovo luogo'}
           </span>
           <div className="w-10" /> {/* Spacer */}
         </div>
@@ -202,13 +318,13 @@ export default function PlaceWizard() {
       <div className="fixed bottom-0 left-0 right-0 bg-card border-t border-border p-4 pb-safe-bottom">
         <Button
           onClick={handleNext}
-          disabled={!canProceed() || createPlace.isPending}
+          disabled={!canProceed() || isSaving}
           className="w-full"
         >
-          {createPlace.isPending
+          {isSaving
             ? 'Salvataggio...'
             : currentStep === STEPS.length - 1
-              ? 'Salva luogo'
+              ? (isEditMode ? 'Salva modifiche' : 'Salva luogo')
               : 'Continua'
           }
         </Button>
