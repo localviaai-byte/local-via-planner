@@ -14,16 +14,328 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      cities: {
+        Row: {
+          country: string
+          cover_image_url: string | null
+          created_at: string
+          created_by: string | null
+          description: string | null
+          id: string
+          is_active: boolean
+          latitude: number | null
+          longitude: number | null
+          name: string
+          region: string | null
+          slug: string
+          updated_at: string
+        }
+        Insert: {
+          country?: string
+          cover_image_url?: string | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          latitude?: number | null
+          longitude?: number | null
+          name: string
+          region?: string | null
+          slug: string
+          updated_at?: string
+        }
+        Update: {
+          country?: string
+          cover_image_url?: string | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          latitude?: number | null
+          longitude?: number | null
+          name?: string
+          region?: string | null
+          slug?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      place_flags: {
+        Row: {
+          created_at: string
+          created_by: string
+          flag_type: string
+          id: string
+          notes: string | null
+          place_id: string
+          resolved_at: string | null
+          resolved_by: string | null
+        }
+        Insert: {
+          created_at?: string
+          created_by: string
+          flag_type: string
+          id?: string
+          notes?: string | null
+          place_id: string
+          resolved_at?: string | null
+          resolved_by?: string | null
+        }
+        Update: {
+          created_at?: string
+          created_by?: string
+          flag_type?: string
+          id?: string
+          notes?: string | null
+          place_id?: string
+          resolved_at?: string | null
+          resolved_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "place_flags_place_id_fkey"
+            columns: ["place_id"]
+            isOneToOne: false
+            referencedRelation: "places"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      place_versions: {
+        Row: {
+          change_summary: string | null
+          created_at: string
+          created_by: string
+          data: Json
+          id: string
+          place_id: string
+          version_number: number
+        }
+        Insert: {
+          change_summary?: string | null
+          created_at?: string
+          created_by: string
+          data: Json
+          id?: string
+          place_id: string
+          version_number?: number
+        }
+        Update: {
+          change_summary?: string | null
+          created_at?: string
+          created_by?: string
+          data?: Json
+          id?: string
+          place_id?: string
+          version_number?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "place_versions_place_id_fkey"
+            columns: ["place_id"]
+            isOneToOne: false
+            referencedRelation: "places"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      places: {
+        Row: {
+          address: string | null
+          best_days: string[] | null
+          best_times: string[] | null
+          city_id: string
+          created_at: string
+          created_by: string
+          flirt_friendly: boolean | null
+          google_place_id: string | null
+          group_friendly: boolean | null
+          id: string
+          latitude: number | null
+          local_one_liner: string | null
+          local_warning: string | null
+          longitude: number | null
+          name: string
+          periods_to_avoid: string | null
+          photo_url: string | null
+          place_type: Database["public"]["Enums"]["place_type"]
+          quality_score: number | null
+          review_notes: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
+          social_level: number | null
+          solo_friendly: boolean | null
+          status: Database["public"]["Enums"]["place_status"]
+          target_audience: Database["public"]["Enums"]["target_audience"] | null
+          updated_at: string
+          vibe_calm_to_energetic: number | null
+          vibe_empty_to_crowded: number | null
+          vibe_quiet_to_loud: number | null
+          vibe_touristy_to_local: number | null
+          why_other: string | null
+          why_people_go: string[] | null
+          zone: string | null
+        }
+        Insert: {
+          address?: string | null
+          best_days?: string[] | null
+          best_times?: string[] | null
+          city_id: string
+          created_at?: string
+          created_by: string
+          flirt_friendly?: boolean | null
+          google_place_id?: string | null
+          group_friendly?: boolean | null
+          id?: string
+          latitude?: number | null
+          local_one_liner?: string | null
+          local_warning?: string | null
+          longitude?: number | null
+          name: string
+          periods_to_avoid?: string | null
+          photo_url?: string | null
+          place_type: Database["public"]["Enums"]["place_type"]
+          quality_score?: number | null
+          review_notes?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          social_level?: number | null
+          solo_friendly?: boolean | null
+          status?: Database["public"]["Enums"]["place_status"]
+          target_audience?:
+            | Database["public"]["Enums"]["target_audience"]
+            | null
+          updated_at?: string
+          vibe_calm_to_energetic?: number | null
+          vibe_empty_to_crowded?: number | null
+          vibe_quiet_to_loud?: number | null
+          vibe_touristy_to_local?: number | null
+          why_other?: string | null
+          why_people_go?: string[] | null
+          zone?: string | null
+        }
+        Update: {
+          address?: string | null
+          best_days?: string[] | null
+          best_times?: string[] | null
+          city_id?: string
+          created_at?: string
+          created_by?: string
+          flirt_friendly?: boolean | null
+          google_place_id?: string | null
+          group_friendly?: boolean | null
+          id?: string
+          latitude?: number | null
+          local_one_liner?: string | null
+          local_warning?: string | null
+          longitude?: number | null
+          name?: string
+          periods_to_avoid?: string | null
+          photo_url?: string | null
+          place_type?: Database["public"]["Enums"]["place_type"]
+          quality_score?: number | null
+          review_notes?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          social_level?: number | null
+          solo_friendly?: boolean | null
+          status?: Database["public"]["Enums"]["place_status"]
+          target_audience?:
+            | Database["public"]["Enums"]["target_audience"]
+            | null
+          updated_at?: string
+          vibe_calm_to_energetic?: number | null
+          vibe_empty_to_crowded?: number | null
+          vibe_quiet_to_loud?: number | null
+          vibe_touristy_to_local?: number | null
+          why_other?: string | null
+          why_people_go?: string[] | null
+          zone?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "places_city_id_fkey"
+            columns: ["city_id"]
+            isOneToOne: false
+            referencedRelation: "cities"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_roles: {
+        Row: {
+          assigned_city_id: string | null
+          created_at: string
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          assigned_city_id?: string | null
+          created_at?: string
+          id?: string
+          role: Database["public"]["Enums"]["app_role"]
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          assigned_city_id?: string | null
+          created_at?: string
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fk_assigned_city"
+            columns: ["assigned_city_id"]
+            isOneToOne: false
+            referencedRelation: "cities"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      calculate_quality_score: {
+        Args: { place_row: Database["public"]["Tables"]["places"]["Row"] }
+        Returns: number
+      }
+      get_user_role: {
+        Args: { _user_id: string }
+        Returns: Database["public"]["Enums"]["app_role"]
+      }
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
     }
     Enums: {
-      [_ in never]: never
+      app_role: "admin" | "local_contributor" | "editor"
+      place_status:
+        | "draft"
+        | "pending_review"
+        | "approved"
+        | "rejected"
+        | "archived"
+      place_type:
+        | "attraction"
+        | "bar"
+        | "restaurant"
+        | "club"
+        | "zone"
+        | "experience"
+      target_audience: "locals" | "tourists" | "mixed" | "students" | "couples"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +462,24 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      app_role: ["admin", "local_contributor", "editor"],
+      place_status: [
+        "draft",
+        "pending_review",
+        "approved",
+        "rejected",
+        "archived",
+      ],
+      place_type: [
+        "attraction",
+        "bar",
+        "restaurant",
+        "club",
+        "zone",
+        "experience",
+      ],
+      target_audience: ["locals", "tourists", "mixed", "students", "couples"],
+    },
   },
 } as const
