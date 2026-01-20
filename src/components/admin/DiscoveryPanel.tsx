@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -8,7 +8,13 @@ import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useQueryClient } from '@tanstack/react-query';
-import { discoverPlaces, type SuggestedPlace } from '@/lib/api/discovery';
+import { 
+  discoverPlaces, 
+  getPendingSuggestions, 
+  updateSuggestionStatus,
+  getSuggestionStats,
+  type SuggestedPlace 
+} from '@/lib/api/discovery';
 import { SuggestedPlaceCard } from './SuggestedPlaceCard';
 
 interface DiscoveryPanelProps {
@@ -18,24 +24,48 @@ interface DiscoveryPanelProps {
   country?: string;
 }
 
-type DiscoveryStatus = 'idle' | 'searching' | 'processing' | 'done' | 'error';
+type DiscoveryStatus = 'idle' | 'loading' | 'searching' | 'processing' | 'done' | 'error';
 
 export function DiscoveryPanel({ cityId, cityName, region, country }: DiscoveryPanelProps) {
   const { user } = useAuth();
   const queryClient = useQueryClient();
   
-  const [status, setStatus] = useState<DiscoveryStatus>('idle');
+  const [status, setStatus] = useState<DiscoveryStatus>('loading');
   const [suggestions, setSuggestions] = useState<SuggestedPlace[]>([]);
-  const [accepted, setAccepted] = useState<string[]>([]);
-  const [rejected, setRejected] = useState<string[]>([]);
+  const [stats, setStats] = useState({ accepted: 0, rejected: 0 });
   const [savingPlace, setSavingPlace] = useState<string | null>(null);
   const [isExpanded, setIsExpanded] = useState(false);
 
+  // Load existing pending suggestions on mount
+  useEffect(() => {
+    async function loadExisting() {
+      setStatus('loading');
+      try {
+        const [pending, existingStats] = await Promise.all([
+          getPendingSuggestions(cityId),
+          getSuggestionStats(cityId),
+        ]);
+        
+        setSuggestions(pending);
+        setStats(existingStats);
+        
+        // Auto-expand if there are pending suggestions
+        if (pending.length > 0) {
+          setIsExpanded(true);
+        }
+        
+        setStatus('done');
+      } catch (error) {
+        console.error('Error loading suggestions:', error);
+        setStatus('idle');
+      }
+    }
+    
+    loadExisting();
+  }, [cityId]);
+
   const startDiscovery = async () => {
     setStatus('searching');
-    setSuggestions([]);
-    setAccepted([]);
-    setRejected([]);
     setIsExpanded(true);
 
     try {
@@ -47,7 +77,9 @@ export function DiscoveryPanel({ cityId, cityName, region, country }: DiscoveryP
       }
 
       if (result.suggestions && result.suggestions.length > 0) {
-        setSuggestions(result.suggestions);
+        // Reload from DB to get IDs
+        const pending = await getPendingSuggestions(cityId);
+        setSuggestions(pending);
         setStatus('done');
         toast.success(`Trovati ${result.suggestions.length} luoghi da ${result.sourcesCount || 0} fonti!`);
       } else {
@@ -67,11 +99,16 @@ export function DiscoveryPanel({ cityId, cityName, region, country }: DiscoveryP
       return;
     }
 
+    if (!place.id) {
+      toast.error('Suggerimento non valido');
+      return;
+    }
+
     setSavingPlace(place.name);
 
     try {
       // Create a draft place from the suggestion
-      const { error } = await supabase.from('places').insert({
+      const { data: newPlace, error } = await supabase.from('places').insert({
         city_id: cityId,
         name: place.name,
         place_type: place.place_type,
@@ -81,15 +118,17 @@ export function DiscoveryPanel({ cityId, cityName, region, country }: DiscoveryP
         best_times: place.best_times || [],
         status: 'draft',
         created_by: user.id,
-        // Mark as needing completion
         local_one_liner: place.description || null,
         notes_internal: `Auto-discovered with ${Math.round(place.confidence * 100)}% confidence`,
-      });
+      }).select('id').single();
 
       if (error) throw error;
 
-      setAccepted(prev => [...prev, place.name]);
-      setSuggestions(prev => prev.filter(p => p.name !== place.name));
+      // Update suggestion status in DB
+      await updateSuggestionStatus(place.id, 'accepted', newPlace?.id);
+
+      setSuggestions(prev => prev.filter(p => p.id !== place.id));
+      setStats(prev => ({ ...prev, accepted: prev.accepted + 1 }));
       queryClient.invalidateQueries({ queryKey: ['city-places', cityId] });
       toast.success(`"${place.name}" aggiunto come bozza`);
     } catch (error) {
@@ -100,9 +139,17 @@ export function DiscoveryPanel({ cityId, cityName, region, country }: DiscoveryP
     }
   };
 
-  const handleReject = (place: SuggestedPlace) => {
-    setRejected(prev => [...prev, place.name]);
-    setSuggestions(prev => prev.filter(p => p.name !== place.name));
+  const handleReject = async (place: SuggestedPlace) => {
+    if (!place.id) return;
+
+    try {
+      await updateSuggestionStatus(place.id, 'rejected');
+      setSuggestions(prev => prev.filter(p => p.id !== place.id));
+      setStats(prev => ({ ...prev, rejected: prev.rejected + 1 }));
+    } catch (error) {
+      console.error('Error rejecting:', error);
+      toast.error('Errore');
+    }
   };
 
   const acceptAll = async () => {
@@ -112,8 +159,16 @@ export function DiscoveryPanel({ cityId, cityName, region, country }: DiscoveryP
   };
 
   const remainingCount = suggestions.length;
-  const totalProcessed = accepted.length + rejected.length;
-  const totalFound = totalProcessed + remainingCount;
+
+  // Loading state
+  if (status === 'loading') {
+    return (
+      <div className="mb-4 flex items-center gap-2 text-sm text-muted-foreground">
+        <Loader2 className="w-4 h-4 animate-spin" />
+        Caricamento...
+      </div>
+    );
+  }
 
   if (!isExpanded) {
     return (
@@ -137,6 +192,11 @@ export function DiscoveryPanel({ cityId, cityName, region, country }: DiscoveryP
             <>
               <Wand2 className="w-4 h-4 mr-2" />
               🔮 Auto-scopri luoghi per {cityName}
+              {stats.accepted > 0 && (
+                <span className="ml-2 text-xs text-muted-foreground">
+                  ({stats.accepted} già aggiunti)
+                </span>
+              )}
             </>
           )}
         </Button>
@@ -177,15 +237,15 @@ export function DiscoveryPanel({ cityId, cityName, region, country }: DiscoveryP
               </div>
               <Progress value={status === 'searching' ? 30 : 70} className="h-2" />
             </div>
-          ) : status === 'done' && totalFound > 0 ? (
+          ) : status === 'done' ? (
             <div className="flex items-center justify-between text-sm">
               <div className="flex items-center gap-4">
                 <span className="text-muted-foreground">
                   <CheckCircle2 className="w-4 h-4 inline mr-1 text-olive" />
-                  {accepted.length} accettati
+                  {stats.accepted} accettati
                 </span>
                 <span className="text-muted-foreground">
-                  {rejected.length} scartati
+                  {stats.rejected} scartati
                 </span>
                 <span className="font-medium">
                   {remainingCount} da valutare
@@ -203,7 +263,7 @@ export function DiscoveryPanel({ cityId, cityName, region, country }: DiscoveryP
           <AnimatePresence mode="popLayout">
             {suggestions.map((place) => (
               <SuggestedPlaceCard
-                key={place.name}
+                key={place.id || place.name}
                 place={place}
                 onAccept={() => handleAccept(place)}
                 onReject={() => handleReject(place)}
@@ -215,12 +275,12 @@ export function DiscoveryPanel({ cityId, cityName, region, country }: DiscoveryP
           {/* Empty state */}
           {status === 'done' && remainingCount === 0 && (
             <div className="text-center py-8">
-              {accepted.length > 0 ? (
+              {stats.accepted > 0 ? (
                 <>
                   <CheckCircle2 className="w-12 h-12 mx-auto text-olive mb-3" />
                   <p className="text-lg font-medium">Tutto fatto!</p>
                   <p className="text-sm text-muted-foreground">
-                    {accepted.length} luoghi aggiunti come bozze da completare
+                    {stats.accepted} luoghi aggiunti come bozze da completare
                   </p>
                 </>
               ) : (
