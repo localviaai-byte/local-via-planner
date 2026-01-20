@@ -2,3 +2,6 @@ project_id = "uocxfumnfmjauhtgvwly"
 
 [functions.ai-prefill-place]
 verify_jwt = false
+
+[functions.discover-places]
+verify_jwt = false

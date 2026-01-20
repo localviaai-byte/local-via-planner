@@ -10,6 +10,7 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import type { PlaceType, PlaceStatus } from '@/types/database';
 import { PLACE_TYPE_OPTIONS } from '@/types/database';
+import { DiscoveryPanel } from '@/components/admin/DiscoveryPanel';
 
 const STATUS_CONFIG: Record<PlaceStatus, { label: string; color: string }> = {
   draft: { label: 'Bozza', color: 'bg-muted text-muted-foreground' },
@@ -125,6 +126,16 @@ export default function CityDetail() {
             </div>
           </CardContent>
         </Card>
+      </div>
+      
+      {/* Discovery Panel */}
+      <div className="px-4 pt-2">
+        <DiscoveryPanel 
+          cityId={cityId!}
+          cityName={city.name}
+          region={city.region || undefined}
+          country={city.country}
+        />
       </div>
       
       {/* Content tabs */}
