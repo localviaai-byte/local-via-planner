@@ -1,5 +1,5 @@
-import { useState, useMemo } from 'react';
-import { Plus, Train, Car, Bus, Ship, Footprints, Shuffle, Clock, AlertTriangle, Lightbulb, MapPin, ChevronDown, ChevronUp, Trash2, Info } from 'lucide-react';
+import { useState, useMemo, useEffect } from 'react';
+import { Plus, Train, Car, Bus, Ship, Footprints, Shuffle, Clock, AlertTriangle, Lightbulb, MapPin, ChevronDown, ChevronUp, Trash2, Info, Navigation } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -11,8 +11,8 @@ import { Textarea } from '@/components/ui/textarea';
 import { Slider } from '@/components/ui/slider';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { useCityConnections, useCreateConnection, useDeleteConnection } from '@/hooks/useCityConnections';
-import { useCitiesWithStats } from '@/hooks/useCities';
+import { useCityConnections, useCreateConnection, useDeleteConnection, calculateDistanceKm } from '@/hooks/useCityConnections';
+import { useCitiesWithStats, useCity } from '@/hooks/useCities';
 import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'sonner';
 import { 
@@ -60,11 +60,33 @@ export function CityConnectionsPanel({ cityId, cityName }: CityConnectionsPanelP
   
   const { data: connections = [], isLoading } = useCityConnections(cityId);
   const { data: allCities = [] } = useCitiesWithStats();
+  const { data: currentCity } = useCity(cityId);
   const createConnection = useCreateConnection();
   const deleteConnection = useDeleteConnection();
   
   // Filter out the current city from the list
   const availableCities = allCities.filter(c => c.id !== cityId);
+  
+  // Get selected destination city for distance calculation
+  const selectedDestCity = useMemo(() => 
+    allCities.find(c => c.id === formData.city_id_to),
+    [allCities, formData.city_id_to]
+  );
+  
+  // Auto-calculate distance when destination changes
+  useEffect(() => {
+    if (currentCity && selectedDestCity) {
+      const distance = calculateDistanceKm(
+        currentCity.latitude,
+        currentCity.longitude,
+        selectedDestCity.latitude,
+        selectedDestCity.longitude
+      );
+      setFormData(prev => ({ ...prev, distance_km: distance }));
+    } else {
+      setFormData(prev => ({ ...prev, distance_km: null }));
+    }
+  }, [currentCity, selectedDestCity]);
   
   // Validation warnings
   const validationWarnings = useMemo(() => {
@@ -176,9 +198,17 @@ export function CityConnectionsPanel({ cityId, cityName }: CityConnectionsPanelP
                             {CONNECTION_TYPE_OPTIONS.find(o => o.id === conn.connection_type)?.label}
                           </Badge>
                         </div>
-                        <div className="text-sm text-muted-foreground flex items-center gap-2">
-                          <Clock className="w-3 h-3" />
-                          {formatTime(conn.typical_min_minutes, conn.typical_max_minutes)}
+                        <div className="text-sm text-muted-foreground flex items-center gap-3">
+                          <span className="flex items-center gap-1">
+                            <Clock className="w-3 h-3" />
+                            {formatTime(conn.typical_min_minutes, conn.typical_max_minutes)}
+                          </span>
+                          {conn.distance_km && (
+                            <span className="flex items-center gap-1 text-blue-600">
+                              <Navigation className="w-3 h-3" />
+                              {conn.distance_km} km
+                            </span>
+                          )}
                           {conn.local_tip && (
                             <span className="flex items-center gap-1 text-amber-600">
                               <Lightbulb className="w-3 h-3" />
@@ -238,6 +268,19 @@ export function CityConnectionsPanel({ cityId, cityName }: CityConnectionsPanelP
                         ))}
                       </SelectContent>
                     </Select>
+                    
+                    {/* Auto-calculated distance */}
+                    {formData.distance_km !== null && (
+                      <div className="flex items-center gap-2 text-sm text-blue-600 bg-blue-50 dark:bg-blue-950 px-3 py-2 rounded-md">
+                        <Navigation className="w-4 h-4" />
+                        <span>Distanza: <strong>{formData.distance_km} km</strong> in linea d'aria</span>
+                      </div>
+                    )}
+                    {formData.city_id_to && formData.distance_km === null && (
+                      <div className="text-xs text-muted-foreground">
+                        ⚠️ Coordinate mancanti per calcolare la distanza
+                      </div>
+                    )}
                   </div>
                   
                   {/* Connection Type & Transport */}

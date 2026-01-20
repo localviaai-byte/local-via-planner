@@ -75,6 +75,7 @@ export interface CityConnection {
   warning: string | null;
   seasonality_note: string | null;
   day_worth: DayWorthType | null;
+  distance_km: number | null;
   is_active: boolean;
   created_at: string;
   created_by: string | null;
@@ -153,6 +154,7 @@ export interface CityConnectionFormData {
   warning: string;
   seasonality_note: string;
   day_worth: DayWorthType | null;
+  distance_km: number | null;
 }
 
 export const DEFAULT_CONNECTION_FORM_DATA: CityConnectionFormData = {
@@ -170,6 +172,7 @@ export const DEFAULT_CONNECTION_FORM_DATA: CityConnectionFormData = {
   warning: '',
   seasonality_note: '',
   day_worth: null,
+  distance_km: null,
 };
 
 // =====================================================

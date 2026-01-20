@@ -159,6 +159,7 @@ export type Database = {
           created_at: string
           created_by: string | null
           day_worth: Database["public"]["Enums"]["day_worth_type"] | null
+          distance_km: number | null
           friction_score: number | null
           id: string
           is_active: boolean
@@ -182,6 +183,7 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           day_worth?: Database["public"]["Enums"]["day_worth_type"] | null
+          distance_km?: number | null
           friction_score?: number | null
           id?: string
           is_active?: boolean
@@ -205,6 +207,7 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           day_worth?: Database["public"]["Enums"]["day_worth_type"] | null
+          distance_km?: number | null
           friction_score?: number | null
           id?: string
           is_active?: boolean
