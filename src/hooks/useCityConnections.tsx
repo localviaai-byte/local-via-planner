@@ -2,6 +2,28 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import type { CityConnection, CityConnectionFormData, PlaceCoverage, TimeBucket, ConnectionType, TransportMode } from '@/types/database';
 
+// Haversine formula to calculate distance between two coordinates
+export function calculateDistanceKm(
+  lat1: number | null, 
+  lon1: number | null, 
+  lat2: number | null, 
+  lon2: number | null
+): number | null {
+  if (lat1 == null || lon1 == null || lat2 == null || lon2 == null) {
+    return null;
+  }
+  
+  const R = 6371; // Earth's radius in km
+  const dLat = (lat2 - lat1) * Math.PI / 180;
+  const dLon = (lon2 - lon1) * Math.PI / 180;
+  const a = 
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+    Math.sin(dLon / 2) * Math.sin(dLon / 2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  return Math.round(R * c * 10) / 10; // Round to 1 decimal
+}
+
 // Fetch connections FROM a city (outbound)
 export function useCityConnections(cityId: string | undefined) {
   return useQuery({
@@ -13,7 +35,7 @@ export function useCityConnections(cityId: string | undefined) {
         .from('city_connections')
         .select(`
           *,
-          to_city:cities!city_connections_city_id_to_fkey(id, name, slug, region, country, cover_image_url)
+          to_city:cities!city_connections_city_id_to_fkey(id, name, slug, region, country, cover_image_url, latitude, longitude)
         `)
         .eq('city_id_from', cityId)
         .eq('is_active', true)
@@ -113,6 +135,7 @@ export function useCreateConnection() {
           warning: formData.warning || null,
           seasonality_note: formData.seasonality_note || null,
           day_worth: formData.day_worth || null,
+          distance_km: formData.distance_km,
           created_by: userId,
         })
         .select()
