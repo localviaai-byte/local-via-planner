@@ -121,7 +121,7 @@ export function useUpdateProduct() {
   const queryClient = useQueryClient();
   
   return useMutation({
-    mutationFn: async ({ productId, formData }: { productId: string; formData: Partial<ProductFormData> }) => {
+    mutationFn: async ({ productId, formData }: { productId: string; formData: Partial<ProductFormData> & { status?: PlaceStatus } }) => {
       const { data, error } = await supabase
         .from('products')
         .update({
@@ -131,7 +131,6 @@ export function useUpdateProduct() {
         .eq('id', productId)
         .select()
         .single();
-      
       if (error) throw error;
       return data;
     },

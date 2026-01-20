@@ -406,10 +406,10 @@ function ProductForm({ cityId, zones, product, onCancel, onSaved }: ProductFormP
     if (isEditing) {
       await updateMutation.mutateAsync({
         productId: product.id,
-        formData: { ...formData },
+        formData: { ...formData, status },
       });
     } else {
-      await createMutation.mutateAsync(formData);
+      await createMutation.mutateAsync({ ...formData, status } as ProductFormData & { status: PlaceStatus });
     }
     onSaved();
   };
