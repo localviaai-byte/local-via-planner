@@ -53,21 +53,20 @@ export function StepFood({ preferences, onUpdate }: StepFoodProps) {
         </label>
         <div className="grid grid-cols-2 gap-3">
           {cuisineTypes.map((cuisine) => (
-            <motion.button
+            <button
               key={cuisine.id}
               type="button"
               onClick={() => toggleCuisine(cuisine.id)}
               className={`
-                p-4 rounded-2xl text-left transition-all duration-200
+                p-4 rounded-2xl text-left transition-all duration-200 cursor-pointer relative z-10
                 ${preferences.cuisinePreferences.includes(cuisine.id)
                   ? 'bg-card ring-2 ring-primary shadow-card'
                   : 'bg-card hover:shadow-soft'
                 }
               `}
-              whileTap={{ scale: 0.98 }}
             >
               <span className="font-medium text-foreground">{cuisine.label}</span>
-            </motion.button>
+            </button>
           ))}
         </div>
       </div>

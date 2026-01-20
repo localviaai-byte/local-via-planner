@@ -1044,3 +1044,80 @@ export const DEFAULT_PRODUCT_RULE_FORM_DATA: ProductRuleFormData = {
   priority: 3,
   note_internal: '',
 };
+
+// =====================================================
+// TRIP PREFERENCES TYPES
+// =====================================================
+
+export type TravelWith = 'couple' | 'family' | 'friends' | 'solo';
+export type StartTimePreference = 'early' | 'normal' | 'late';
+export type LunchStyle = 'long' | 'quick';
+export type ActivityStyle = 'highlights' | 'maximize';
+export type WalkingTolerance = 'low' | 'medium' | 'high';
+export type TransportPreference = 'walking' | 'car' | 'public' | 'taxi';
+export type BudgetLevel = 1 | 2 | 3;
+export type MaxTravelMinutes = 0 | 30 | 60 | 90;
+
+export const CUISINE_TYPE_OPTIONS = [
+  { id: 'tradizionale', label: 'Cucina tradizionale' },
+  { id: 'street-food', label: 'Street food' },
+  { id: 'fine-dining', label: 'Fine dining' },
+  { id: 'pizza', label: 'Pizzerie' },
+  { id: 'pesce', label: 'Ristoranti di pesce' },
+  { id: 'vegetariano', label: 'Vegetariano' },
+] as const;
+
+export const DIETARY_RESTRICTION_OPTIONS = [
+  { id: 'vegetariano', label: 'Vegetariano' },
+  { id: 'vegano', label: 'Vegano' },
+  { id: 'gluten-free', label: 'Senza glutine' },
+  { id: 'halal', label: 'Halal' },
+  { id: 'kosher', label: 'Kosher' },
+  { id: 'allergie', label: 'Allergie alimentari' },
+] as const;
+
+export const BUDGET_OPTIONS = [
+  { value: 1, label: '€', description: 'Economico' },
+  { value: 2, label: '€€', description: 'Medio' },
+  { value: 3, label: '€€€', description: 'Alto' },
+] as const;
+
+export type CuisineType = typeof CUISINE_TYPE_OPTIONS[number]['id'];
+export type DietaryRestriction = typeof DIETARY_RESTRICTION_OPTIONS[number]['id'];
+
+/**
+ * TripPreferences - Preferenze complete del viaggiatore
+ * Salvate nel campo JSONB `preferences` della tabella `trip_plans`
+ */
+export interface TripPreferencesDB {
+  city?: string;
+  nearbyAreas?: boolean;
+  maxTravelMinutes?: MaxTravelMinutes;
+  dates?: { start: string; end: string } | null;
+  numDays?: number;
+  travelers?: {
+    adults: number;
+    children: number;
+    seniors: number;
+  };
+  travelWith?: TravelWith;
+  interests?: string[];
+  topInterests?: string[];
+  rhythm?: number; // 1-5 (calm to intense)
+  startTime?: StartTimePreference;
+  lunchStyle?: LunchStyle;
+  
+  // Food preferences - CRITICAL for recommendations
+  cuisinePreferences?: CuisineType[];
+  budget?: BudgetLevel;
+  dietaryRestrictions?: DietaryRestriction[];
+  
+  activityStyle?: ActivityStyle;
+  guidedTours?: boolean;
+  walkingTolerance?: WalkingTolerance;
+  accommodation?: { zone: string } | null;
+  transport?: TransportPreference;
+  constraints?: string[];
+  wishes?: string;
+  avoid?: string[];
+}
