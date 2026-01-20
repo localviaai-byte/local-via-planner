@@ -166,6 +166,7 @@ export function ItineraryViewer({ preferences, generatedData, onBack, onRegenera
                 <TimelineSlotReal
                   key={slot.id}
                   slot={slot}
+                  dayIndex={activeDay}
                   onReplace={() => {}}
                   onMove={() => {}}
                 />

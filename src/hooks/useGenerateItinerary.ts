@@ -25,6 +25,9 @@ export interface ProductSuggestion {
   short_pitch: string;
   price_cents: number;
   duration_minutes: number | null;
+  product_type?: string;
+  meeting_point?: string | null;
+  description?: string | null;
 }
 
 export interface GeneratedSlot {
