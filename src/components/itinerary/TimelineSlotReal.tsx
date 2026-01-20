@@ -175,40 +175,65 @@ export function TimelineSlotReal({ slot, onReplace, onMove }: TimelineSlotRealPr
               </p>
             </div>
 
-            {/* Product Suggestions */}
+            {/* Product Suggestions - Inline for single, expandable for multiple */}
             {hasProducts && (
               <div className="border-t border-border">
-                <button
-                  onClick={() => setShowProducts(!showProducts)}
-                  className="w-full px-4 py-3 text-sm font-medium text-primary hover:bg-secondary/50 transition-colors flex items-center justify-between"
-                >
-                  <span className="flex items-center gap-2">
-                    <Package className="w-4 h-4" />
-                    {slot.productSuggestions!.length} esperienza da aggiungere
-                  </span>
-                  {showProducts ? (
-                    <ChevronDown className="w-4 h-4" />
-                  ) : (
-                    <ChevronRight className="w-4 h-4" />
-                  )}
-                </button>
-                
-                <AnimatePresence>
-                  {showProducts && (
-                    <motion.div
-                      initial={{ height: 0, opacity: 0 }}
-                      animate={{ height: 'auto', opacity: 1 }}
-                      exit={{ height: 0, opacity: 0 }}
-                      className="overflow-hidden"
+                {slot.productSuggestions!.length === 1 ? (
+                  // Single product: Always visible inline card
+                  <div className="p-4">
+                    <p className="text-sm text-muted-foreground mb-3 flex items-center gap-2">
+                      <span className="text-base">✨</span>
+                      Rendi questa visita più immersiva
+                    </p>
+                    <ProductCard product={slot.productSuggestions![0]} />
+                  </div>
+                ) : (
+                  // Multiple products: Show first inline + expandable alternatives
+                  <>
+                    <div className="p-4">
+                      <p className="text-sm text-muted-foreground mb-3 flex items-center gap-2">
+                        <span className="text-base">✨</span>
+                        Vuoi approfondire questa esperienza?
+                      </p>
+                      <ProductCard product={slot.productSuggestions![0]} />
+                    </div>
+                    
+                    {/* Alternatives toggle */}
+                    <button
+                      onClick={() => setShowProducts(!showProducts)}
+                      className="w-full px-4 py-2 text-xs font-medium text-muted-foreground hover:text-primary hover:bg-secondary/30 transition-colors flex items-center justify-center gap-1 border-t border-border/50"
                     >
-                      <div className="px-4 pb-4 space-y-2">
-                        {slot.productSuggestions!.map((product) => (
-                          <ProductCard key={product.id} product={product} />
-                        ))}
-                      </div>
-                    </motion.div>
-                  )}
-                </AnimatePresence>
+                      {showProducts ? (
+                        <>
+                          <ChevronDown className="w-3 h-3" />
+                          Nascondi alternative
+                        </>
+                      ) : (
+                        <>
+                          <ChevronRight className="w-3 h-3" />
+                          Vedi {slot.productSuggestions!.length - 1} {slot.productSuggestions!.length === 2 ? 'alternativa' : 'alternative'}
+                        </>
+                      )}
+                    </button>
+                    
+                    <AnimatePresence>
+                      {showProducts && (
+                        <motion.div
+                          initial={{ height: 0, opacity: 0 }}
+                          animate={{ height: 'auto', opacity: 1 }}
+                          exit={{ height: 0, opacity: 0 }}
+                          className="overflow-hidden"
+                        >
+                          <div className="px-4 pb-4 space-y-2">
+                            {slot.productSuggestions!.slice(1).map((product) => (
+                              <ProductCard key={product.id} product={product} variant="minimal" />
+                            ))}
+                          </div>
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+                  </>
+                )}
               </div>
             )}
 
@@ -274,19 +299,52 @@ export function TimelineSlotReal({ slot, onReplace, onMove }: TimelineSlotRealPr
   );
 }
 
-function ProductCard({ product }: { product: ProductSuggestion }) {
-  return (
-    <div className="p-3 bg-gradient-to-r from-primary/5 to-primary/10 rounded-lg border border-primary/20">
-      <div className="flex items-start justify-between gap-2">
-        <div className="flex-1">
-          <h5 className="font-medium text-sm text-foreground">
+interface ProductCardProps {
+  product: ProductSuggestion;
+  variant?: 'default' | 'minimal';
+}
+
+function ProductCard({ product, variant = 'default' }: ProductCardProps) {
+  if (variant === 'minimal') {
+    // Compact alternative card
+    return (
+      <div className="p-2.5 bg-secondary/50 rounded-lg flex items-center justify-between gap-2">
+        <div className="flex-1 min-w-0">
+          <h5 className="font-medium text-sm text-foreground truncate">
             {product.title}
           </h5>
-          <p className="text-xs text-muted-foreground mt-1">
+          <div className="flex items-center gap-2 mt-0.5 text-xs text-muted-foreground">
+            <span className="font-semibold text-primary">
+              €{(product.price_cents / 100).toFixed(0)}
+            </span>
+            {product.duration_minutes && (
+              <span className="flex items-center gap-1">
+                <Clock className="w-3 h-3" />
+                {product.duration_minutes} min
+              </span>
+            )}
+          </div>
+        </div>
+        <Button size="sm" variant="outline" className="shrink-0 h-8 text-xs">
+          Aggiungi
+        </Button>
+      </div>
+    );
+  }
+  
+  // Default: Featured inline card
+  return (
+    <div className="p-3 bg-gradient-to-r from-primary/5 to-primary/10 rounded-xl border border-primary/20">
+      <div className="flex items-start justify-between gap-3">
+        <div className="flex-1 min-w-0">
+          <h5 className="font-semibold text-sm text-foreground">
+            {product.title}
+          </h5>
+          <p className="text-xs text-muted-foreground mt-1 line-clamp-2">
             {product.short_pitch}
           </p>
           <div className="flex items-center gap-3 mt-2 text-xs text-muted-foreground">
-            <span className="font-semibold text-primary">
+            <span className="font-bold text-primary text-sm">
               €{(product.price_cents / 100).toFixed(0)}
             </span>
             {product.duration_minutes && (
