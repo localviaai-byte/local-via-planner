@@ -77,34 +77,49 @@ export function useCreatePlace() {
   
   return useMutation({
     mutationFn: async (formData: PlaceFormData & { created_by: string }) => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const insertData: any = {
+        city_id: formData.city_id,
+        place_type: formData.place_type,
+        name: formData.name,
+        address: formData.address || null,
+        zone: formData.zone || null,
+        photo_url: formData.photo_url || null,
+        why_people_go: formData.why_people_go,
+        why_other: formData.why_other || null,
+        social_level: formData.social_level,
+        solo_friendly: formData.solo_friendly,
+        flirt_friendly: formData.flirt_friendly,
+        group_friendly: formData.group_friendly,
+        target_audience: formData.target_audience,
+        vibe_calm_to_energetic: formData.vibe_calm_to_energetic,
+        vibe_quiet_to_loud: formData.vibe_quiet_to_loud,
+        vibe_empty_to_crowded: formData.vibe_empty_to_crowded,
+        vibe_touristy_to_local: formData.vibe_touristy_to_local,
+        best_days: formData.best_days,
+        best_times: formData.best_times,
+        periods_to_avoid: formData.periods_to_avoid || null,
+        local_warning: formData.local_warning || null,
+        local_one_liner: formData.local_one_liner,
+        created_by: formData.created_by,
+        status: 'draft',
+        // New fields from schema upgrade
+        mood_primary: formData.mood_primary || null,
+        mood_secondary: formData.mood_secondary || null,
+        gender_balance: formData.gender_balance || 'unknown',
+        tourist_trap: formData.tourist_trap || false,
+        overrated: formData.overrated || false,
+        local_secret: formData.local_secret || false,
+        ideal_for: formData.ideal_for || [],
+        physical_effort: formData.physical_effort || null,
+        mental_effort: formData.mental_effort || null,
+        suggested_stay: formData.suggested_stay || null,
+        dead_times_note: formData.dead_times_note || null,
+      };
+      
       const { data, error } = await supabase
         .from('places')
-        .insert({
-          city_id: formData.city_id,
-          place_type: formData.place_type,
-          name: formData.name,
-          address: formData.address || null,
-          zone: formData.zone || null,
-          photo_url: formData.photo_url || null,
-          why_people_go: formData.why_people_go,
-          why_other: formData.why_other || null,
-          social_level: formData.social_level,
-          solo_friendly: formData.solo_friendly,
-          flirt_friendly: formData.flirt_friendly,
-          group_friendly: formData.group_friendly,
-          target_audience: formData.target_audience,
-          vibe_calm_to_energetic: formData.vibe_calm_to_energetic,
-          vibe_quiet_to_loud: formData.vibe_quiet_to_loud,
-          vibe_empty_to_crowded: formData.vibe_empty_to_crowded,
-          vibe_touristy_to_local: formData.vibe_touristy_to_local,
-          best_days: formData.best_days,
-          best_times: formData.best_times,
-          periods_to_avoid: formData.periods_to_avoid || null,
-          local_warning: formData.local_warning || null,
-          local_one_liner: formData.local_one_liner,
-          created_by: formData.created_by,
-          status: 'draft',
-        })
+        .insert(insertData)
         .select()
         .single();
       
