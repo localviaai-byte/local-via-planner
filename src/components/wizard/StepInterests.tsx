@@ -10,28 +10,29 @@ interface StepInterestsProps {
 export function StepInterests({ preferences, onUpdate }: StepInterestsProps) {
   const toggleInterest = (id: string) => {
     const currentInterests = [...preferences.interests];
-    const currentTop = [...preferences.topInterests];
     
     if (currentInterests.includes(id)) {
-      // Remove from both lists
+      // Remove from interests
+      const newInterests = currentInterests.filter(i => i !== id);
+      // Top interests are always the first 3 selected
       onUpdate({
-        interests: currentInterests.filter(i => i !== id),
-        topInterests: currentTop.filter(i => i !== id),
+        interests: newInterests,
+        topInterests: newInterests.slice(0, 3),
       });
     } else {
       // Add to interests
       const newInterests = [...currentInterests, id];
-      // Auto-add to top 3 if less than 3 selected
-      const newTop = currentTop.length < 3 ? [...currentTop, id] : currentTop;
+      // Top interests are always the first 3 selected
       onUpdate({
         interests: newInterests,
-        topInterests: newTop,
+        topInterests: newInterests.slice(0, 3),
       });
     }
   };
 
+  // Show badge number for ALL selected interests (order of selection)
   const getPriority = (id: string) => {
-    const index = preferences.topInterests.indexOf(id);
+    const index = preferences.interests.indexOf(id);
     return index === -1 ? 0 : index + 1;
   };
 
