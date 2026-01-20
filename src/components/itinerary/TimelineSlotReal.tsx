@@ -8,22 +8,38 @@ import {
   ArrowUpDown,
   ChevronRight,
   ChevronDown,
-  Euro,
   Users,
-  Package,
-  ExternalLink
+  ExternalLink,
+  Check
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { ProductDetailSheet } from './ProductDetailSheet';
 import { type GeneratedSlot, type ProductSuggestion } from '@/hooks/useGenerateItinerary';
+import { toast } from 'sonner';
 
 interface TimelineSlotRealProps {
   slot: GeneratedSlot;
+  dayIndex: number;
   onReplace: () => void;
   onMove: () => void;
+  onAddProduct?: (product: ProductSuggestion, placeName?: string) => void;
+  userRhythm?: string;
+  showSuggestions?: boolean;
 }
 
-export function TimelineSlotReal({ slot, onReplace, onMove }: TimelineSlotRealProps) {
+export function TimelineSlotReal({ 
+  slot, 
+  dayIndex,
+  onReplace, 
+  onMove,
+  onAddProduct,
+  userRhythm,
+  showSuggestions = true,
+}: TimelineSlotRealProps) {
   const [showProducts, setShowProducts] = useState(false);
+  const [selectedProduct, setSelectedProduct] = useState<ProductSuggestion | null>(null);
+  const [isAddingProduct, setIsAddingProduct] = useState(false);
+  const [addedProducts, setAddedProducts] = useState<Set<string>>(new Set());
 
   const getSlotIcon = () => {
     if (slot.type === 'meal') return '🍽️';
@@ -70,7 +86,45 @@ export function TimelineSlotReal({ slot, onReplace, onMove }: TimelineSlotRealPr
   };
 
   const place = slot.place;
-  const hasProducts = slot.productSuggestions && slot.productSuggestions.length > 0;
+  const hasProducts = showSuggestions && slot.productSuggestions && slot.productSuggestions.length > 0;
+  
+  // Filter out already-added products
+  const availableProducts = slot.productSuggestions?.filter(p => !addedProducts.has(p.id)) || [];
+  const hasAvailableProducts = availableProducts.length > 0;
+
+  const handleOpenProductDetail = (product: ProductSuggestion) => {
+    setSelectedProduct(product);
+  };
+
+  const handleAddProduct = async () => {
+    if (!selectedProduct) return;
+    
+    setIsAddingProduct(true);
+    try {
+      // Call parent handler if provided
+      onAddProduct?.(selectedProduct, place?.name);
+      
+      // Mark as added locally
+      setAddedProducts(prev => new Set(prev).add(selectedProduct.id));
+      
+      // Show success toast
+      toast.success('Esperienza aggiunta al piano! 🎉');
+      
+      // Close sheet
+      setSelectedProduct(null);
+    } catch (error) {
+      toast.error('Errore nell\'aggiunta dell\'esperienza');
+    } finally {
+      setIsAddingProduct(false);
+    }
+  };
+
+  const handleQuickAdd = (product: ProductSuggestion, e: React.MouseEvent) => {
+    e.stopPropagation();
+    onAddProduct?.(product, place?.name);
+    setAddedProducts(prev => new Set(prev).add(product.id));
+    toast.success('Esperienza aggiunta al piano! 🎉');
+  };
 
   return (
     <motion.div
@@ -185,7 +239,12 @@ export function TimelineSlotReal({ slot, onReplace, onMove }: TimelineSlotRealPr
                       <span className="text-base">✨</span>
                       Rendi questa visita più immersiva
                     </p>
-                    <ProductCard product={slot.productSuggestions![0]} />
+                    <ProductCard 
+                      product={slot.productSuggestions![0]} 
+                      onCardClick={() => handleOpenProductDetail(slot.productSuggestions![0])}
+                      onQuickAdd={(e) => handleQuickAdd(slot.productSuggestions![0], e)}
+                      isAdded={addedProducts.has(slot.productSuggestions![0].id)}
+                    />
                   </div>
                 ) : (
                   // Multiple products: Show first inline + expandable alternatives
@@ -195,7 +254,12 @@ export function TimelineSlotReal({ slot, onReplace, onMove }: TimelineSlotRealPr
                         <span className="text-base">✨</span>
                         Vuoi approfondire questa esperienza?
                       </p>
-                      <ProductCard product={slot.productSuggestions![0]} />
+                      <ProductCard 
+                        product={slot.productSuggestions![0]} 
+                        onCardClick={() => handleOpenProductDetail(slot.productSuggestions![0])}
+                        onQuickAdd={(e) => handleQuickAdd(slot.productSuggestions![0], e)}
+                        isAdded={addedProducts.has(slot.productSuggestions![0].id)}
+                      />
                     </div>
                     
                     {/* Alternatives toggle */}
@@ -226,7 +290,14 @@ export function TimelineSlotReal({ slot, onReplace, onMove }: TimelineSlotRealPr
                         >
                           <div className="px-4 pb-4 space-y-2">
                             {slot.productSuggestions!.slice(1).map((product) => (
-                              <ProductCard key={product.id} product={product} variant="minimal" />
+                              <ProductCard 
+                                key={product.id} 
+                                product={product} 
+                                variant="minimal"
+                                onCardClick={() => handleOpenProductDetail(product)}
+                                onQuickAdd={(e) => handleQuickAdd(product, e)}
+                                isAdded={addedProducts.has(product.id)}
+                              />
                             ))}
                           </div>
                         </motion.div>
@@ -295,6 +366,19 @@ export function TimelineSlotReal({ slot, onReplace, onMove }: TimelineSlotRealPr
           </div>
         )}
       </div>
+
+      {/* Product Detail Bottom Sheet */}
+      <ProductDetailSheet
+        product={selectedProduct}
+        isOpen={!!selectedProduct}
+        onClose={() => setSelectedProduct(null)}
+        onAdd={handleAddProduct}
+        isAdding={isAddingProduct}
+        slotContext={{
+          placeName: place?.name,
+          userRhythm,
+        }}
+      />
     </motion.div>
   );
 }
@@ -302,13 +386,34 @@ export function TimelineSlotReal({ slot, onReplace, onMove }: TimelineSlotRealPr
 interface ProductCardProps {
   product: ProductSuggestion;
   variant?: 'default' | 'minimal';
+  onCardClick?: () => void;
+  onQuickAdd?: (e: React.MouseEvent) => void;
+  isAdded?: boolean;
 }
 
-function ProductCard({ product, variant = 'default' }: ProductCardProps) {
-  if (variant === 'minimal') {
-    // Compact alternative card
+function ProductCard({ 
+  product, 
+  variant = 'default', 
+  onCardClick, 
+  onQuickAdd,
+  isAdded = false,
+}: ProductCardProps) {
+  if (isAdded) {
     return (
-      <div className="p-2.5 bg-secondary/50 rounded-lg flex items-center justify-between gap-2">
+      <div className="p-3 bg-olive/10 rounded-xl border border-olive/30 flex items-center gap-3">
+        <Check className="w-5 h-5 text-olive" />
+        <span className="text-sm font-medium text-foreground">{product.title}</span>
+        <span className="text-xs text-muted-foreground ml-auto">Aggiunto</span>
+      </div>
+    );
+  }
+
+  if (variant === 'minimal') {
+    return (
+      <div 
+        onClick={onCardClick}
+        className="p-2.5 bg-secondary/50 rounded-lg flex items-center justify-between gap-2 cursor-pointer hover:bg-secondary/70 transition-colors"
+      >
         <div className="flex-1 min-w-0">
           <h5 className="font-medium text-sm text-foreground truncate">
             {product.title}
@@ -332,9 +437,12 @@ function ProductCard({ product, variant = 'default' }: ProductCardProps) {
     );
   }
   
-  // Default: Featured inline card
+  // Default: Featured inline card - tappable
   return (
-    <div className="p-3 bg-gradient-to-r from-primary/5 to-primary/10 rounded-xl border border-primary/20">
+    <div 
+      onClick={onCardClick}
+      className="p-3 bg-gradient-to-r from-primary/5 to-primary/10 rounded-xl border border-primary/20 cursor-pointer hover:from-primary/10 hover:to-primary/15 transition-colors"
+    >
       <div className="flex items-start justify-between gap-3">
         <div className="flex-1 min-w-0">
           <h5 className="font-semibold text-sm text-foreground">
@@ -355,7 +463,12 @@ function ProductCard({ product, variant = 'default' }: ProductCardProps) {
             )}
           </div>
         </div>
-        <Button size="sm" variant="default" className="shrink-0">
+        <Button 
+          size="sm" 
+          variant="default" 
+          className="shrink-0"
+          onClick={onQuickAdd}
+        >
           Aggiungi
           <ExternalLink className="w-3 h-3 ml-1" />
         </Button>
