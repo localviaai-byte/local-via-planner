@@ -11,7 +11,7 @@ interface StepFoodProps {
 
 export function StepFood({ preferences, onUpdate }: StepFoodProps) {
   const toggleCuisine = (id: string) => {
-    const current = [...preferences.cuisinePreferences];
+    const current = [...(preferences.cuisinePreferences ?? [])];
     if (current.includes(id)) {
       onUpdate({ cuisinePreferences: current.filter(c => c !== id) });
     } else {
@@ -20,7 +20,7 @@ export function StepFood({ preferences, onUpdate }: StepFoodProps) {
   };
 
   const toggleRestriction = (id: string) => {
-    const current = [...preferences.dietaryRestrictions];
+    const current = [...(preferences.dietaryRestrictions ?? [])];
     if (current.includes(id)) {
       onUpdate({ dietaryRestrictions: current.filter(r => r !== id) });
     } else {
@@ -57,8 +57,14 @@ export function StepFood({ preferences, onUpdate }: StepFoodProps) {
               key={cuisine.id}
               type="button"
               onClick={() => toggleCuisine(cuisine.id)}
+              onPointerDown={(e) => {
+                // Mobile Safari reliability: ensure tap registers even during scroll/animation
+                e.preventDefault();
+                toggleCuisine(cuisine.id);
+              }}
               className={`
                 p-4 rounded-2xl text-left transition-all duration-200 cursor-pointer relative z-10
+                pointer-events-auto select-none touch-manipulation
                 ${preferences.cuisinePreferences.includes(cuisine.id)
                   ? 'bg-card ring-2 ring-primary shadow-card'
                   : 'bg-card hover:shadow-soft'
@@ -105,16 +111,19 @@ export function StepFood({ preferences, onUpdate }: StepFoodProps) {
         </label>
         <div className="space-y-2">
           {dietaryRestrictions.map((restriction) => (
-            <label
+            <button
               key={restriction.id}
-              className="flex items-center gap-3 p-4 bg-card rounded-2xl cursor-pointer transition-all hover:shadow-soft"
+              type="button"
+              onClick={() => toggleRestriction(restriction.id)}
+              className="flex w-full items-center gap-3 p-4 bg-card rounded-2xl cursor-pointer transition-all hover:shadow-soft text-left"
             >
               <Checkbox
                 checked={preferences.dietaryRestrictions.includes(restriction.id)}
+                onClick={(e) => e.stopPropagation()}
                 onCheckedChange={() => toggleRestriction(restriction.id)}
               />
               <span className="text-sm font-medium text-foreground">{restriction.label}</span>
-            </label>
+            </button>
           ))}
         </div>
       </div>
