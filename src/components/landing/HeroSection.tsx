@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion';
-import { MapPin, Compass, Sparkles, ChevronRight } from 'lucide-react';
+import { Compass, ChevronRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import heroImage from '@/assets/hero-pompeii.jpg';
 
@@ -11,75 +11,82 @@ export function HeroSection({ onStart }: HeroSectionProps) {
   return (
     <div className="min-h-screen bg-background flex flex-col">
       {/* Hero Image Area */}
-      <div className="relative h-[55vh] overflow-hidden">
+      <div className="relative h-[60vh] overflow-hidden">
         {/* Background Image */}
         <img 
           src={heroImage} 
           alt="Pompei ruins with Mount Vesuvius" 
           className="absolute inset-0 w-full h-full object-cover"
         />
-        {/* Gradient Overlay - stronger for text readability */}
-        <div className="absolute inset-0 bg-gradient-to-b from-black/50 via-black/40 to-black/70" />
+        {/* Gradient Overlay - warm and cinematic */}
+        <div className="absolute inset-0 bg-gradient-overlay" />
 
         {/* Content */}
-        <div className="relative z-10 h-full flex flex-col items-center justify-center text-center px-6">
+        <div className="relative z-10 h-full flex flex-col items-center justify-end text-center px-6 pb-12">
           <motion.div
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8, ease: 'easeOut' }}
           >
-            <div className="inline-flex items-center gap-2 px-4 py-2 bg-black/30 backdrop-blur-md rounded-full text-white text-sm mb-6 border border-white/20">
+            <div className="inline-flex items-center gap-2 px-4 py-2 bg-card/20 backdrop-blur-md rounded-full text-white/90 text-sm mb-5 border border-white/10">
               <Compass className="w-4 h-4" />
-              <span>Travel Planning Intelligente</span>
+              <span>Pianificazione intelligente</span>
             </div>
             
-            <h1 className="font-display text-5xl md:text-6xl font-bold text-white leading-tight drop-shadow-lg">
+            <h1 className="font-display text-5xl md:text-6xl font-semibold text-white leading-tight tracking-tight">
               Local<span className="text-gold">Via</span>
             </h1>
             
-            <p className="mt-4 text-lg text-white/95 max-w-md mx-auto drop-shadow-md">
-              Itinerari curati da esperti locali, 
-              personalizzati con intelligenza artificiale
+            <p className="mt-4 text-lg text-white/85 max-w-sm mx-auto leading-relaxed font-light">
+              Itinerari curati da chi il posto lo vive davvero
             </p>
           </motion.div>
         </div>
 
-        {/* Wave decoration */}
+        {/* Soft curve transition */}
         <div className="absolute bottom-0 left-0 right-0">
-          <svg viewBox="0 0 1440 120" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-full">
+          <svg viewBox="0 0 1440 80" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-full">
             <path 
-              d="M0 120L60 110C120 100 240 80 360 70C480 60 600 60 720 65C840 70 960 80 1080 85C1200 90 1320 90 1380 90L1440 90V120H1380C1320 120 1200 120 1080 120C960 120 840 120 720 120C600 120 480 120 360 120C240 120 120 120 60 120H0Z" 
+              d="M0 80L60 72C120 64 240 48 360 40C480 32 600 32 720 36C840 40 960 48 1080 52C1200 56 1320 56 1380 56L1440 56V80H1380C1320 80 1200 80 1080 80C960 80 840 80 720 80C600 80 480 80 360 80C240 80 120 80 60 80H0Z" 
               fill="hsl(var(--background))"
             />
           </svg>
         </div>
       </div>
 
-      {/* Content Section */}
-      <div className="flex-1 px-6 py-8 -mt-4">
+      {/* Content Section - Editorial feel */}
+      <div className="flex-1 px-6 py-8 -mt-2">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.3, duration: 0.6 }}
           className="max-w-md mx-auto space-y-8"
         >
-          {/* Features */}
-          <div className="grid gap-4">
+          {/* Editorial intro */}
+          <p className="font-display text-xl text-foreground/90 leading-relaxed text-center">
+            Non sembra un'app.<br />
+            <span className="text-muted-foreground">
+              Sembra un consiglio giusto, dato al momento giusto.
+            </span>
+          </p>
+
+          {/* Features - editorial cards */}
+          <div className="space-y-3">
             {[
               {
-                icon: '🏛️',
+                emoji: '🏛️',
                 title: 'Contenuti curati',
-                description: 'POI verificati con orari, prezzi e recensioni reali',
+                description: 'Ogni posto è scelto da chi ci è stato',
               },
               {
-                icon: '🧠',
+                emoji: '🧠',
                 title: 'AI che seleziona',
-                description: 'Non inventa: sceglie tra opzioni validate da esperti',
+                description: 'Non inventa: compone tra opzioni validate',
               },
               {
-                icon: '⏱️',
+                emoji: '⏱️',
                 title: 'Tempi realistici',
-                description: 'Spostamenti, pause e ritmi calibrati su di te',
+                description: 'Spostamenti, pause e ritmi su misura',
               },
             ].map((feature, index) => (
               <motion.div
@@ -87,37 +94,38 @@ export function HeroSection({ onStart }: HeroSectionProps) {
                 initial={{ opacity: 0, x: -20 }}
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ delay: 0.5 + index * 0.1 }}
-                className="flex items-start gap-4 p-4 bg-card rounded-xl border border-border shadow-soft"
+                className="flex items-start gap-4 p-4 bg-card rounded-2xl shadow-soft"
               >
-                <span className="text-2xl">{feature.icon}</span>
+                <span className="text-2xl">{feature.emoji}</span>
                 <div>
-                  <h3 className="font-semibold text-foreground">{feature.title}</h3>
+                  <h3 className="font-medium text-foreground">{feature.title}</h3>
                   <p className="text-sm text-muted-foreground mt-0.5">{feature.description}</p>
                 </div>
               </motion.div>
             ))}
           </div>
 
-          {/* CTA */}
+          {/* CTA - Sticky at bottom on mobile */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.8 }}
+            className="pt-4"
           >
             <Button 
               onClick={onStart}
+              variant="hero"
               size="lg" 
-              className="w-full bg-gradient-hero hover:opacity-90 transition-opacity h-14 text-lg font-semibold shadow-elevated"
+              className="w-full h-14 text-base font-medium"
             >
-              <Sparkles className="w-5 h-5 mr-2" />
               Inizia a pianificare
-              <ChevronRight className="w-5 h-5 ml-2" />
+              <ChevronRight className="w-5 h-5 ml-1" />
             </Button>
             
             <p className="text-center text-sm text-muted-foreground mt-4">
               Disponibile per <span className="font-medium text-foreground">Pompei</span>, 
               {' '}<span className="font-medium text-foreground">Napoli</span> e 
-              {' '}<span className="font-medium text-foreground">Costiera Amalfitana</span>
+              {' '}<span className="font-medium text-foreground">Costiera</span>
             </p>
           </motion.div>
         </motion.div>

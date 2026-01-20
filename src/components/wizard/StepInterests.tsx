@@ -1,5 +1,4 @@
 import { motion } from 'framer-motion';
-import { Sparkles } from 'lucide-react';
 import { interests, type TripPreferences } from '@/lib/mockData';
 import { InterestChip } from '@/components/ui/InterestChip';
 
@@ -43,39 +42,43 @@ export function StepInterests({ preferences, onUpdate }: StepInterestsProps) {
       exit={{ opacity: 0, y: -20 }}
       className="space-y-8"
     >
+      {/* Editorial header */}
       <div className="text-center mb-8">
-        <h2 className="font-display text-3xl font-bold text-foreground mb-2">
+        <h2 className="font-display text-3xl font-semibold text-foreground mb-3 tracking-tight">
           Cosa ti interessa?
         </h2>
         <p className="text-muted-foreground">
-          Seleziona i tuoi interessi. I primi 3 avranno priorità.
+          Rispondi come se stessi parlando a un amico
         </p>
       </div>
 
-      {/* Selected count indicator */}
-      <div className="flex items-center justify-center gap-2 p-3 bg-secondary rounded-xl">
-        <Sparkles className="w-4 h-4 text-primary" />
-        <span className="text-sm">
-          <span className="font-semibold text-primary">{preferences.interests.length}</span>
-          {' '}interessi selezionati
+      {/* Selected count indicator - subtle */}
+      {preferences.interests.length > 0 && (
+        <motion.div 
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="text-center text-sm text-muted-foreground"
+        >
+          <span className="font-medium text-primary">{preferences.interests.length}</span>
+          {' '}selezionati
           {preferences.topInterests.length > 0 && (
-            <span className="text-muted-foreground">
-              {' '}• Top {preferences.topInterests.length}: {preferences.topInterests.map(id => 
+            <span>
+              {' '}• Top: {preferences.topInterests.slice(0, 3).map(id => 
                 interests.find(i => i.id === id)?.label
               ).join(', ')}
             </span>
           )}
-        </span>
-      </div>
+        </motion.div>
+      )}
 
-      {/* Interest chips grid */}
+      {/* Interest chips grid - 2 columns for mobile */}
       <div className="grid grid-cols-2 gap-3">
         {interests.map((interest, index) => (
           <motion.div
             key={interest.id}
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: index * 0.05 }}
+            transition={{ delay: index * 0.03 }}
           >
             <InterestChip
               id={interest.id}
