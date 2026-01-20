@@ -1,0 +1,106 @@
+import { motion } from 'framer-motion';
+import { Label } from '@/components/ui/label';
+import { Slider } from '@/components/ui/slider';
+import type { PlaceFormData } from '@/types/database';
+
+interface StepVibeProps {
+  formData: PlaceFormData;
+  onUpdate: (updates: Partial<PlaceFormData>) => void;
+}
+
+interface VibeSliderProps {
+  label: string;
+  leftLabel: string;
+  rightLabel: string;
+  value: number;
+  onChange: (value: number) => void;
+}
+
+function VibeSlider({ label, leftLabel, rightLabel, value, onChange }: VibeSliderProps) {
+  return (
+    <div className="card-editorial p-4 space-y-3">
+      <Label className="text-sm font-medium">{label}</Label>
+      <Slider
+        value={[value]}
+        onValueChange={([v]) => onChange(v)}
+        min={1}
+        max={5}
+        step={1}
+      />
+      <div className="flex justify-between text-xs text-muted-foreground">
+        <span>{leftLabel}</span>
+        <span>{rightLabel}</span>
+      </div>
+    </div>
+  );
+}
+
+export default function StepVibe({ formData, onUpdate }: StepVibeProps) {
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      className="p-4 space-y-6"
+    >
+      {/* Header */}
+      <div>
+        <h2 className="font-display text-2xl font-semibold text-foreground mb-2">
+          Che atmosfera c'è?
+        </h2>
+        <p className="text-muted-foreground">
+          Sposta i cursori per descrivere il vibe
+        </p>
+      </div>
+
+      {/* Vibe sliders */}
+      <div className="space-y-4">
+        <VibeSlider
+          label="Energia"
+          leftLabel="Calmo ☕"
+          rightLabel="🎉 Carico"
+          value={formData.vibe_calm_to_energetic}
+          onChange={(v) => onUpdate({ vibe_calm_to_energetic: v })}
+        />
+
+        <VibeSlider
+          label="Volume"
+          leftLabel="Silenzioso 🤫"
+          rightLabel="🔊 Rumoroso"
+          value={formData.vibe_quiet_to_loud}
+          onChange={(v) => onUpdate({ vibe_quiet_to_loud: v })}
+        />
+
+        <VibeSlider
+          label="Affollamento"
+          leftLabel="Vuoto 🧘"
+          rightLabel="👥 Pieno"
+          value={formData.vibe_empty_to_crowded}
+          onChange={(v) => onUpdate({ vibe_empty_to_crowded: v })}
+        />
+
+        <VibeSlider
+          label="Pubblico"
+          leftLabel="Turistico 📸"
+          rightLabel="🏠 Super local"
+          value={formData.vibe_touristy_to_local}
+          onChange={(v) => onUpdate({ vibe_touristy_to_local: v })}
+        />
+      </div>
+
+      {/* Visual summary */}
+      <div className="text-center p-4 card-editorial">
+        <p className="text-sm text-muted-foreground mb-2">Il tuo vibe</p>
+        <div className="flex justify-center gap-2 text-2xl">
+          {formData.vibe_calm_to_energetic >= 4 && '🎉'}
+          {formData.vibe_calm_to_energetic <= 2 && '☕'}
+          {formData.vibe_quiet_to_loud >= 4 && '🔊'}
+          {formData.vibe_quiet_to_loud <= 2 && '🤫'}
+          {formData.vibe_empty_to_crowded >= 4 && '👥'}
+          {formData.vibe_empty_to_crowded <= 2 && '🧘'}
+          {formData.vibe_touristy_to_local >= 4 && '🏠'}
+          {formData.vibe_touristy_to_local <= 2 && '📸'}
+        </div>
+      </div>
+    </motion.div>
+  );
+}
