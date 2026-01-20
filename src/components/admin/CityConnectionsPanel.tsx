@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { Plus, Train, Car, Bus, Ship, Footprints, Shuffle, Clock, AlertTriangle, Lightbulb, MapPin, ChevronDown, ChevronUp, Trash2 } from 'lucide-react';
+import { useState, useMemo } from 'react';
+import { Plus, Train, Car, Bus, Ship, Footprints, Shuffle, Clock, AlertTriangle, Lightbulb, MapPin, ChevronDown, ChevronUp, Trash2, Info } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -10,6 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Textarea } from '@/components/ui/textarea';
 import { Slider } from '@/components/ui/slider';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useCityConnections, useCreateConnection, useDeleteConnection } from '@/hooks/useCityConnections';
 import { useCitiesWithStats } from '@/hooks/useCities';
 import { useAuth } from '@/hooks/useAuth';
@@ -19,11 +20,15 @@ import {
   CONNECTION_TYPE_OPTIONS, 
   TRANSPORT_MODE_OPTIONS,
   TIME_BUCKET_OPTIONS,
+  DAY_WORTH_OPTIONS,
+  FRICTION_LABELS,
+  RELIABILITY_LABELS,
   DEFAULT_CONNECTION_FORM_DATA,
   type CityConnectionFormData,
   type TransportMode,
   type ConnectionType,
-  type TimeBucket
+  type TimeBucket,
+  type DayWorthType
 } from '@/types/database';
 
 interface CityConnectionsPanelProps {
@@ -61,9 +66,37 @@ export function CityConnectionsPanel({ cityId, cityName }: CityConnectionsPanelP
   // Filter out the current city from the list
   const availableCities = allCities.filter(c => c.id !== cityId);
   
+  // Validation warnings
+  const validationWarnings = useMemo(() => {
+    const warnings: string[] = [];
+    
+    if (formData.typical_min_minutes && formData.typical_max_minutes) {
+      if (formData.typical_min_minutes > formData.typical_max_minutes) {
+        warnings.push('❌ Il tempo minimo non può essere maggiore del tempo massimo');
+      }
+    }
+    
+    if (formData.friction_score >= 4 && formData.connection_type === 'day_trip') {
+      warnings.push('⚠️ Day-trip con friction alta: assicurati che ne valga la pena');
+    }
+    
+    if (formData.typical_min_minutes && formData.typical_min_minutes >= 90 && formData.connection_type === 'day_trip') {
+      warnings.push('💡 Con 90+ min di viaggio, considera "Multi-città" invece di "Day-trip"');
+    }
+    
+    return warnings;
+  }, [formData]);
+  
+  const hasBlockingError = validationWarnings.some(w => w.startsWith('❌'));
+  
   const handleSubmit = async () => {
     if (!formData.city_id_to || !user) {
       toast.error('Seleziona una città di destinazione');
+      return;
+    }
+    
+    if (hasBlockingError) {
+      toast.error('Correggi gli errori prima di salvare');
       return;
     }
     
@@ -251,7 +284,7 @@ export function CityConnectionsPanel({ cityId, cityName }: CityConnectionsPanelP
                   {/* Travel Time */}
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
-                      <Label>Tempo minimo (min)</Label>
+                      <Label>Tempo minimo (porta-a-porta)</Label>
                       <Input
                         type="number"
                         value={formData.typical_min_minutes || ''}
@@ -261,9 +294,10 @@ export function CityConnectionsPanel({ cityId, cityName }: CityConnectionsPanelP
                         }))}
                         placeholder="es. 30"
                       />
+                      <p className="text-xs text-muted-foreground">Includi attese, cambi, spostamenti</p>
                     </div>
                     <div className="space-y-2">
-                      <Label>Tempo massimo (min)</Label>
+                      <Label>Tempo massimo (porta-a-porta)</Label>
                       <Input
                         type="number"
                         value={formData.typical_max_minutes || ''}
@@ -273,7 +307,31 @@ export function CityConnectionsPanel({ cityId, cityName }: CityConnectionsPanelP
                         }))}
                         placeholder="es. 45"
                       />
+                      <p className="text-xs text-muted-foreground">Nel caso peggiore realistico</p>
                     </div>
+                  </div>
+                  
+                  {/* Day Worth - NEW */}
+                  <div className="space-y-2">
+                    <Label>Questa connessione...</Label>
+                    <div className="grid grid-cols-3 gap-2">
+                      {DAY_WORTH_OPTIONS.map(opt => (
+                        <Button
+                          key={opt.id}
+                          type="button"
+                          variant={formData.day_worth === opt.id ? 'default' : 'outline'}
+                          onClick={() => setFormData(prev => ({ 
+                            ...prev, 
+                            day_worth: prev.day_worth === opt.id ? null : opt.id as DayWorthType 
+                          }))}
+                          className="h-auto py-3 flex flex-col items-center text-center"
+                        >
+                          <span className="text-lg">{opt.icon}</span>
+                          <span className="text-xs font-medium">{opt.label}</span>
+                        </Button>
+                      ))}
+                    </div>
+                    <p className="text-xs text-muted-foreground">Aiuta il planner a capire quanto tempo dedicare</p>
                   </div>
                   
                   {/* Reliability & Friction */}
@@ -287,7 +345,9 @@ export function CityConnectionsPanel({ cityId, cityName }: CityConnectionsPanelP
                         max={5}
                         step={1}
                       />
-                      <p className="text-xs text-muted-foreground">Puntualità e semplicità</p>
+                      <p className="text-xs text-muted-foreground font-medium">
+                        {RELIABILITY_LABELS[formData.reliability_score]}
+                      </p>
                     </div>
                     <div className="space-y-2">
                       <Label>Friction ({formData.friction_score}/5)</Label>
@@ -298,54 +358,64 @@ export function CityConnectionsPanel({ cityId, cityName }: CityConnectionsPanelP
                         max={5}
                         step={1}
                       />
-                      <p className="text-xs text-muted-foreground">Stress: cambi, traffico</p>
+                      <p className="text-xs text-muted-foreground font-medium">
+                        {FRICTION_LABELS[formData.friction_score]}
+                      </p>
                     </div>
                   </div>
                   
                   {/* Best Times */}
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label>Miglior partenza</Label>
-                      <div className="flex flex-wrap gap-1">
-                        {TIME_BUCKET_OPTIONS.slice(0, 4).map(opt => (
-                          <Button
-                            key={opt.id}
-                            type="button"
-                            size="sm"
-                            variant={formData.best_departure_time.includes(opt.id as TimeBucket) ? 'default' : 'outline'}
-                            onClick={() => {
-                              const current = formData.best_departure_time;
-                              const updated = current.includes(opt.id as TimeBucket)
-                                ? current.filter(t => t !== opt.id)
-                                : [...current, opt.id as TimeBucket];
-                              setFormData(prev => ({ ...prev, best_departure_time: updated }));
-                            }}
-                          >
-                            {opt.icon}
-                          </Button>
-                        ))}
-                      </div>
+                  <div className="space-y-3">
+                    <div className="flex items-center gap-2">
+                      <Label className="text-sm">Quando conviene davvero</Label>
+                      <span className="text-xs text-muted-foreground">(opzionale)</span>
                     </div>
-                    <div className="space-y-2">
-                      <Label>Miglior rientro</Label>
-                      <div className="flex flex-wrap gap-1">
-                        {TIME_BUCKET_OPTIONS.slice(3).map(opt => (
-                          <Button
-                            key={opt.id}
-                            type="button"
-                            size="sm"
-                            variant={formData.best_return_time.includes(opt.id as TimeBucket) ? 'default' : 'outline'}
-                            onClick={() => {
-                              const current = formData.best_return_time;
-                              const updated = current.includes(opt.id as TimeBucket)
-                                ? current.filter(t => t !== opt.id)
-                                : [...current, opt.id as TimeBucket];
-                              setFormData(prev => ({ ...prev, best_return_time: updated }));
-                            }}
-                          >
-                            {opt.icon}
-                          </Button>
-                        ))}
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <p className="text-xs text-muted-foreground">Partenza consigliata</p>
+                        <div className="flex flex-wrap gap-1">
+                          {TIME_BUCKET_OPTIONS.slice(0, 4).map(opt => (
+                            <Button
+                              key={opt.id}
+                              type="button"
+                              size="sm"
+                              variant={formData.best_departure_time.includes(opt.id as TimeBucket) ? 'default' : 'outline'}
+                              onClick={() => {
+                                const current = formData.best_departure_time;
+                                const updated = current.includes(opt.id as TimeBucket)
+                                  ? current.filter(t => t !== opt.id)
+                                  : [...current, opt.id as TimeBucket];
+                                setFormData(prev => ({ ...prev, best_departure_time: updated }));
+                              }}
+                              title={opt.label}
+                            >
+                              {opt.icon}
+                            </Button>
+                          ))}
+                        </div>
+                      </div>
+                      <div className="space-y-2">
+                        <p className="text-xs text-muted-foreground">Rientro consigliato</p>
+                        <div className="flex flex-wrap gap-1">
+                          {TIME_BUCKET_OPTIONS.slice(3).map(opt => (
+                            <Button
+                              key={opt.id}
+                              type="button"
+                              size="sm"
+                              variant={formData.best_return_time.includes(opt.id as TimeBucket) ? 'default' : 'outline'}
+                              onClick={() => {
+                                const current = formData.best_return_time;
+                                const updated = current.includes(opt.id as TimeBucket)
+                                  ? current.filter(t => t !== opt.id)
+                                  : [...current, opt.id as TimeBucket];
+                                setFormData(prev => ({ ...prev, best_return_time: updated }));
+                              }}
+                              title={opt.label}
+                            >
+                              {opt.icon}
+                            </Button>
+                          ))}
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -388,13 +458,29 @@ export function CityConnectionsPanel({ cityId, cityName }: CityConnectionsPanelP
                       placeholder="es. Estate: navette sostitutive"
                     />
                   </div>
+                  
+                  {/* Validation Warnings */}
+                  {validationWarnings.length > 0 && (
+                    <div className="space-y-2">
+                      {validationWarnings.map((warning, i) => (
+                        <Alert key={i} variant={warning.startsWith('❌') ? 'destructive' : 'default'} className="py-2">
+                          <Info className="h-4 w-4" />
+                          <AlertDescription className="text-sm">{warning}</AlertDescription>
+                        </Alert>
+                      ))}
+                    </div>
+                  )}
                 </div>
                 
                 <div className="flex gap-2">
                   <Button variant="outline" onClick={() => setShowAddDialog(false)} className="flex-1">
                     Annulla
                   </Button>
-                  <Button onClick={handleSubmit} disabled={createConnection.isPending} className="flex-1">
+                  <Button 
+                    onClick={handleSubmit} 
+                    disabled={createConnection.isPending || hasBlockingError} 
+                    className="flex-1"
+                  >
                     {createConnection.isPending ? 'Salvataggio...' : 'Salva Connessione'}
                   </Button>
                 </div>
