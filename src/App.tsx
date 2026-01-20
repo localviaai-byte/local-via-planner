@@ -7,7 +7,9 @@ import { AuthProvider, useAuth } from "@/hooks/useAuth";
 import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 import AdminLogin from "./pages/admin/Login";
-import AdminDashboard from "./pages/admin/Dashboard";
+import CityDashboard from "./pages/admin/CityDashboard";
+import CityWizard from "./pages/admin/CityWizard";
+import CityDetail from "./pages/admin/CityDetail";
 import PlaceWizard from "./pages/admin/PlaceWizard";
 
 const queryClient = new QueryClient();
@@ -62,12 +64,28 @@ const App = () => (
               path="/admin"
               element={
                 <ProtectedRoute>
-                  <AdminDashboard />
+                  <CityDashboard />
                 </ProtectedRoute>
               }
             />
             <Route
-              path="/admin/places/new"
+              path="/admin/cities/new"
+              element={
+                <ProtectedRoute>
+                  <CityWizard />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/admin/cities/:cityId"
+              element={
+                <ProtectedRoute>
+                  <CityDetail />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/admin/cities/:cityId/places/new"
               element={
                 <ProtectedRoute>
                   <PlaceWizard />

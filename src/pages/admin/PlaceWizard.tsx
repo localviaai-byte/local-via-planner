@@ -1,9 +1,10 @@
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/hooks/useAuth';
 import { useCities, useCreatePlace } from '@/hooks/usePlaces';
+import { useCity } from '@/hooks/useCities';
 import { WizardProgress } from '@/components/ui/WizardProgress';
 import { ChevronLeft, X } from 'lucide-react';
 import { toast } from 'sonner';
@@ -33,12 +34,24 @@ const STEPS = [
 
 export default function PlaceWizard() {
   const navigate = useNavigate();
+  const { cityId } = useParams<{ cityId: string }>();
   const { user } = useAuth();
   const { data: cities } = useCities();
+  const { data: currentCity } = useCity(cityId);
   const createPlace = useCreatePlace();
   
   const [currentStep, setCurrentStep] = useState(0);
-  const [formData, setFormData] = useState<PlaceFormData>(DEFAULT_PLACE_FORM_DATA);
+  const [formData, setFormData] = useState<PlaceFormData>({
+    ...DEFAULT_PLACE_FORM_DATA,
+    city_id: cityId || '',
+  });
+
+  // Set city_id when cityId param changes
+  useEffect(() => {
+    if (cityId) {
+      setFormData(prev => ({ ...prev, city_id: cityId }));
+    }
+  }, [cityId]);
 
   const updateFormData = (updates: Partial<PlaceFormData>) => {
     setFormData(prev => ({ ...prev, ...updates }));
@@ -83,7 +96,7 @@ export default function PlaceWizard() {
           created_by: user.id,
         });
         toast.success('Luogo salvato con successo!');
-        navigate('/admin');
+        navigate(cityId ? `/admin/cities/${cityId}` : '/admin');
       } catch (error) {
         console.error('Error creating place:', error);
         toast.error('Errore nel salvataggio');
@@ -96,6 +109,11 @@ export default function PlaceWizard() {
       setCurrentStep(prev => prev - 1);
     }
   };
+
+  const handleClose = () => {
+    navigate(cityId ? `/admin/cities/${cityId}` : '/admin');
+  };
+
 
   const renderStep = () => {
     const commonProps = {
@@ -133,7 +151,7 @@ export default function PlaceWizard() {
           <Button
             variant="ghost"
             size="icon"
-            onClick={() => currentStep > 0 ? handleBack() : navigate('/admin')}
+            onClick={() => currentStep > 0 ? handleBack() : handleClose()}
           >
             {currentStep > 0 ? (
               <ChevronLeft className="w-5 h-5" />
