@@ -1,1 +1,4 @@
 project_id = "uocxfumnfmjauhtgvwly"
+
+[functions.ai-prefill-place]
+verify_jwt = false
