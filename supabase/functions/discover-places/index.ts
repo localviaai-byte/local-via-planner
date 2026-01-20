@@ -54,15 +54,24 @@ Deno.serve(async (req) => {
     
     console.log(`Starting discovery for: ${fullLocation}`);
 
-    // Step 1: Search for places using Firecrawl
+    // Step 1: Search for places using Firecrawl with more specific queries
     const searchQueries = [
-      `migliori attrazioni ${fullLocation}`,
-      `ristoranti consigliati ${fullLocation}`,
-      `bar aperitivo ${fullLocation}`,
-      `vita notturna club ${fullLocation}`,
-      `punti panoramici ${fullLocation}`,
-      `esperienze uniche ${fullLocation}`,
-      `quartieri zone ${fullLocation}`,
+      // Attractions - be specific to the city
+      `"${cityName}" cosa vedere attrazioni turistiche monumenti`,
+      `"${cityName}" siti archeologici musei da visitare`,
+      // Restaurants - local focus
+      `"${cityName}" ristoranti tipici dove mangiare locale`,
+      `"${cityName}" trattoria osteria cucina tradizionale`,
+      // Bars & Aperitivo
+      `"${cityName}" bar aperitivo cocktail migliori`,
+      `"${cityName}" wine bar enoteca`,
+      // Nightlife
+      `"${cityName}" discoteca club vita notturna locali`,
+      // Views & Experiences
+      `"${cityName}" punti panoramici vista belvedere`,
+      `"${cityName}" esperienze uniche attività`,
+      // Zones/Neighborhoods
+      `"${cityName}" quartieri zone centro storico`,
     ];
 
     const allSearchResults: string[] = [];
@@ -78,7 +87,7 @@ Deno.serve(async (req) => {
           },
           body: JSON.stringify({
             query,
-            limit: 5,
+            limit: 3, // Fewer results per query but more queries
             lang: 'it',
             country: 'IT',
             scrapeOptions: {
@@ -94,7 +103,7 @@ Deno.serve(async (req) => {
             for (const result of searchData.data) {
               if (result.markdown) {
                 // Limit content length to avoid token limits
-                const truncatedContent = result.markdown.substring(0, 2000);
+                const truncatedContent = result.markdown.substring(0, 1500);
                 allSearchResults.push(`
 === Source: ${result.title || result.url} ===
 ${truncatedContent}
@@ -122,26 +131,40 @@ ${truncatedContent}
     }
 
     // Step 2: Use AI to extract structured place suggestions
-    const combinedContent = allSearchResults.slice(0, 10).join('\n\n');
+    const combinedContent = allSearchResults.slice(0, 15).join('\n\n');
     
-    const systemPrompt = `Sei un esperto di viaggi italiano. Analizza i contenuti web forniti ed estrai luoghi specifici per ${fullLocation}.
+    const systemPrompt = `Sei un curatore locale esperto di ${cityName}. Il tuo compito è estrarre luoghi SPECIFICI che si trovano FISICAMENTE dentro ${cityName} (${region || ''}, ${country || 'Italia'}).
 
-Per ogni luogo identificato, fornisci:
-- name: nome esatto del luogo
-- place_type: uno tra "attraction", "restaurant", "bar", "club", "experience", "view", "zone"
-- address: indirizzo se disponibile
-- zone: quartiere/zona della città
-- description: breve descrizione (max 100 caratteri)
-- why_people_go: array di 1-3 motivi (es: ["Divertirti", "Mangiare bene"])
-- best_times: array di momenti ideali (es: ["aperitivo", "dinner"])
-- confidence: 0.0-1.0 quanto sei sicuro che sia un luogo reale e rilevante
+REGOLE CRITICHE DI FILTRAGGIO:
+1. SOLO luoghi che sono DENTRO ${cityName} - NON includere luoghi in città vicine (es: se cerchi Pompei, NON includere Napoli, Ercolano, Sorrento, etc.)
+2. Il nome del luogo deve essere un POSTO SPECIFICO, non una categoria generica
+3. Ignora catene internazionali (McDonald's, Starbucks, etc.)
+4. Se non sei SICURO che il luogo sia a ${cityName}, NON includerlo (confidence = 0)
 
-Regole:
-- Estrai solo luoghi REALI e SPECIFICI (non categorie generiche)
-- Ignora catene internazionali ovvie (McDonald's, Starbucks)
-- Preferisci luoghi autentici e apprezzati dai locali
-- Massimo 15 suggerimenti di qualità
-- Il confidence deve essere alto (>0.7) solo se hai informazioni concrete`;
+DIVERSITÀ RICHIESTA - Devi trovare luoghi per OGNI categoria:
+- 2-3 "attraction" (musei, siti archeologici, monumenti)
+- 2-3 "restaurant" (ristoranti, trattorie, pizzerie)
+- 2-3 "bar" (bar, wine bar, cocktail bar)
+- 1-2 "club" (discoteche, locali notturni) - se esistono
+- 1-2 "experience" (tour, attività, esperienze)
+- 1-2 "view" (punti panoramici, belvedere)
+- 1-2 "zone" (quartieri, aree pedonali, zone caratteristiche)
+
+Per ogni luogo fornisci:
+- name: nome ESATTO del luogo (es: "Ristorante Da Mario", "Scavi di Pompei")
+- place_type: DEVE corrispondere al tipo reale del luogo
+- address: via/piazza se disponibile (deve essere a ${cityName}!)
+- zone: quartiere/zona DENTRO ${cityName}
+- description: max 80 caratteri
+- why_people_go: 1-3 motivi (es: ["Mangiare bene", "Vista mare"])
+- best_times: quando andare (es: ["pranzo", "cena", "aperitivo"])
+- confidence: 
+  - 0.9-1.0 = sei CERTO che esiste a ${cityName}
+  - 0.7-0.9 = molto probabile
+  - 0.5-0.7 = possibile ma da verificare
+  - sotto 0.5 = NON INCLUDERE
+
+MASSIMO 20 suggerimenti totali, privilegia la qualità sulla quantità.`;
 
     const aiResponse = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
       method: 'POST',
@@ -153,13 +176,13 @@ Regole:
         model: 'google/gemini-2.5-flash',
         messages: [
           { role: 'system', content: systemPrompt },
-          { role: 'user', content: `Analizza questi contenuti web e estrai i luoghi:\n\n${combinedContent}` }
+          { role: 'user', content: `Analizza questi contenuti web ed estrai SOLO luoghi che sono FISICAMENTE dentro ${cityName}:\n\n${combinedContent}` }
         ],
         tools: [{
           type: 'function',
           function: {
             name: 'extract_places',
-            description: 'Extract suggested places from web content',
+            description: `Extract places located ONLY in ${cityName}`,
             parameters: {
               type: 'object',
               properties: {
@@ -168,17 +191,18 @@ Regole:
                   items: {
                     type: 'object',
                     properties: {
-                      name: { type: 'string' },
+                      name: { type: 'string', description: 'Exact name of the place' },
                       place_type: { 
                         type: 'string', 
-                        enum: ['attraction', 'restaurant', 'bar', 'club', 'experience', 'view', 'zone'] 
+                        enum: ['attraction', 'restaurant', 'bar', 'club', 'experience', 'view', 'zone'],
+                        description: 'Type must match what the place actually is'
                       },
-                      address: { type: 'string' },
-                      zone: { type: 'string' },
-                      description: { type: 'string' },
-                      why_people_go: { type: 'array', items: { type: 'string' } },
-                      best_times: { type: 'array', items: { type: 'string' } },
-                      confidence: { type: 'number' }
+                      address: { type: 'string', description: `Address in ${cityName}` },
+                      zone: { type: 'string', description: `Neighborhood/area within ${cityName}` },
+                      description: { type: 'string', description: 'Brief description max 80 chars' },
+                      why_people_go: { type: 'array', items: { type: 'string' }, description: '1-3 reasons' },
+                      best_times: { type: 'array', items: { type: 'string' }, description: 'Best times to visit' },
+                      confidence: { type: 'number', description: 'How certain this place is in the target city (0-1)' }
                     },
                     required: ['name', 'place_type', 'confidence']
                   }
@@ -191,6 +215,8 @@ Regole:
         tool_choice: { type: 'function', function: { name: 'extract_places' } }
       }),
     });
+
+    
 
     if (!aiResponse.ok) {
       const errorText = await aiResponse.text();
