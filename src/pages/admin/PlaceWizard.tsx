@@ -125,7 +125,7 @@ export default function PlaceWizard() {
       case 0:
         return <StepContext {...commonProps} cities={cities || []} />;
       case 1:
-        return <StepIdentity {...commonProps} />;
+        return <StepIdentity {...commonProps} cityName={currentCity?.name || cities?.find(c => c.id === formData.city_id)?.name || ''} />;
       case 2:
         return <StepWhy {...commonProps} />;
       case 3:

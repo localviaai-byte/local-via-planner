@@ -1,14 +1,29 @@
 import { motion } from 'framer-motion';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Button } from '@/components/ui/button';
+import { Sparkles, Loader2 } from 'lucide-react';
+import { useAIPrefill } from '@/hooks/useAIPrefill';
 import type { PlaceFormData } from '@/types/database';
 
 interface StepIdentityProps {
   formData: PlaceFormData;
   onUpdate: (updates: Partial<PlaceFormData>) => void;
+  cityName?: string;
 }
 
-export default function StepIdentity({ formData, onUpdate }: StepIdentityProps) {
+export default function StepIdentity({ formData, onUpdate, cityName = '' }: StepIdentityProps) {
+  const { prefillPlace, isLoading } = useAIPrefill();
+
+  const handleAIPrefill = async () => {
+    const updates = await prefillPlace(formData.name, formData.place_type, cityName);
+    if (updates) {
+      onUpdate(updates);
+    }
+  };
+
+  const canPrefill = formData.name.trim().length >= 2 && cityName.trim().length > 0;
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 10 }}
@@ -37,6 +52,34 @@ export default function StepIdentity({ formData, onUpdate }: StepIdentityProps) 
           maxLength={100}
         />
       </div>
+
+      {/* AI Prefill Button */}
+      {cityName && (
+        <div className="pt-2">
+          <Button
+            type="button"
+            variant="outline"
+            onClick={handleAIPrefill}
+            disabled={!canPrefill || isLoading}
+            className="w-full gap-2 border-primary/30 hover:border-primary hover:bg-primary/5"
+          >
+            {isLoading ? (
+              <>
+                <Loader2 className="h-4 w-4 animate-spin" />
+                Cerco informazioni...
+              </>
+            ) : (
+              <>
+                <Sparkles className="h-4 w-4" />
+                🔍 Cerca e pre-compila con AI
+              </>
+            )}
+          </Button>
+          <p className="text-xs text-muted-foreground text-center mt-2">
+            L'AI cercherà info sul web per pre-compilare i campi
+          </p>
+        </div>
+      )}
 
       {/* Address */}
       <div className="space-y-2">
