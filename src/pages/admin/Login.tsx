@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
@@ -12,15 +12,22 @@ export default function AdminLogin() {
   const [password, setPassword] = useState('');
   const [isSignUp, setIsSignUp] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   
-  const { signIn, signUp } = useAuth();
+  const { user, isLoading, signIn, signUp } = useAuth();
   const navigate = useNavigate();
+
+  // Redirect if already logged in
+  useEffect(() => {
+    if (user && !isLoading) {
+      navigate('/admin', { replace: true });
+    }
+  }, [user, isLoading, navigate]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
-    setIsLoading(true);
+    setIsSubmitting(true);
 
     try {
       const { error } = isSignUp 
@@ -29,15 +36,23 @@ export default function AdminLogin() {
 
       if (error) {
         setError(error.message);
-      } else {
-        navigate('/admin');
+        setIsSubmitting(false);
       }
+      // Don't navigate here - let useEffect handle it when auth state updates
     } catch (err) {
       setError('Si è verificato un errore. Riprova.');
-    } finally {
-      setIsLoading(false);
+      setIsSubmitting(false);
     }
   };
+
+  // Show loading while checking auth
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="loading-text">Caricamento...</div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background flex flex-col items-center justify-center p-4">
@@ -99,9 +114,9 @@ export default function AdminLogin() {
             <Button
               type="submit"
               className="w-full"
-              disabled={isLoading}
+              disabled={isSubmitting}
             >
-              {isLoading 
+              {isSubmitting 
                 ? 'Caricamento...' 
                 : isSignUp 
                   ? 'Registrati' 
