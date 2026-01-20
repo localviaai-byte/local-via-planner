@@ -808,3 +808,239 @@ export const DEFAULT_PLACE_FORM_DATA: PlaceFormData = {
   time_to_spend: '',
   best_period: null,
 };
+
+// =====================================================
+// PRODUCTS & ADD-ONS SYSTEM
+// =====================================================
+
+export type ProductType = 
+  | 'guided_tour'
+  | 'tasting'
+  | 'workshop'
+  | 'dining_experience'
+  | 'transport'
+  | 'photo_experience'
+  | 'ticket';
+
+export type PlanItemType = 'place' | 'product';
+
+export type AnchorType = 'before' | 'after' | 'instead' | 'standalone';
+
+export const PRODUCT_TYPE_OPTIONS = [
+  { id: 'guided_tour', label: 'Tour Guidato', icon: '🎤', description: 'Guida professionale per gruppi o privati' },
+  { id: 'tasting', label: 'Degustazione', icon: '🍷', description: 'Vino, olio, prodotti tipici' },
+  { id: 'workshop', label: 'Workshop', icon: '🎨', description: 'Corsi, laboratori, esperienze hands-on' },
+  { id: 'dining_experience', label: 'Esperienza Culinaria', icon: '🍝', description: 'Cene speciali, cooking class' },
+  { id: 'transport', label: 'Trasporto', icon: '🚗', description: 'Transfer, noleggio, tour in barca' },
+  { id: 'photo_experience', label: 'Photo Experience', icon: '📸', description: 'Shooting, tour fotografici' },
+  { id: 'ticket', label: 'Biglietto', icon: '🎟️', description: 'Ingressi, skip-the-line, combo' },
+] as const;
+
+export const ANCHOR_TYPE_OPTIONS = [
+  { id: 'before', label: 'Prima di', description: 'Mostra prima di un place' },
+  { id: 'after', label: 'Dopo', description: 'Mostra dopo un place' },
+  { id: 'instead', label: 'Al posto di', description: 'Sostituisce uno slot (es. cena)' },
+  { id: 'standalone', label: 'Autonomo', description: 'Non legato a un place specifico' },
+] as const;
+
+export interface Product {
+  id: string;
+  city_id: string;
+  zone_id: string | null;
+  
+  product_type: ProductType;
+  title: string;
+  short_pitch: string;
+  description: string | null;
+  
+  duration_minutes: number | null;
+  price_cents: number | null;
+  currency: string;
+  
+  // Logistics
+  meeting_point: string | null;
+  latitude: number | null;
+  longitude: number | null;
+  capacity_note: string | null;
+  booking_url: string | null;
+  vendor_name: string | null;
+  vendor_contact: string | null;
+  photo_url: string | null;
+  
+  // Timing preferences
+  preferred_time_buckets: TimeBucket[];
+  
+  status: PlaceStatus;
+  created_by: string | null;
+  created_at: string;
+  updated_at: string;
+  
+  // Joined data
+  city?: City;
+  zone?: CityZone;
+  rules?: ProductRule[];
+  tags?: ProductTag[];
+}
+
+export interface ProductTag {
+  product_id: string;
+  tag_id: string;
+  weight: number;
+  created_at: string;
+  tag?: Tag;
+}
+
+export interface ProductRule {
+  id: string;
+  product_id: string;
+  
+  // Trigger context
+  trigger_place_types: PlaceType[];
+  trigger_interest_keys: string[];
+  trigger_time_buckets: TimeBucket[];
+  trigger_zone_ids: string[];
+  
+  // Trip constraints
+  min_trip_days: number | null;
+  max_trip_days: number | null;
+  
+  // User compatibility
+  requires_pace_max: number | null;
+  suitable_for: IdealFor[];
+  min_social_level: number | null;
+  
+  // Display settings
+  anchor_type: AnchorType | null;
+  requires_booking: boolean;
+  priority: number;
+  
+  note_internal: string | null;
+  created_at: string;
+}
+
+export interface TripPlan {
+  id: string;
+  user_id: string | null;
+  city_id: string;
+  
+  title: string | null;
+  start_date: string | null;
+  days: number;
+  
+  preferences: Record<string, unknown>;
+  
+  created_at: string;
+  updated_at: string;
+  
+  // Joined data
+  city?: City;
+  items?: PlanItem[];
+}
+
+export interface PlanItem {
+  id: string;
+  plan_id: string;
+  
+  item_type: PlanItemType;
+  place_id: string | null;
+  product_id: string | null;
+  
+  day_index: number;
+  start_time: string | null;
+  end_time: string | null;
+  slot_type: string | null;
+  
+  notes: string | null;
+  is_booked: boolean;
+  
+  sort_order: number;
+  created_at: string;
+  
+  // Joined data
+  place?: Place;
+  product?: Product;
+}
+
+// Form data for product wizard
+export interface ProductFormData {
+  city_id: string;
+  zone_id: string | null;
+  
+  product_type: ProductType | null;
+  title: string;
+  short_pitch: string;
+  description: string;
+  
+  duration_minutes: number | null;
+  price_cents: number | null;
+  currency: string;
+  
+  meeting_point: string;
+  latitude: number | null;
+  longitude: number | null;
+  capacity_note: string;
+  booking_url: string;
+  vendor_name: string;
+  vendor_contact: string;
+  photo_url: string;
+  
+  preferred_time_buckets: TimeBucket[];
+}
+
+export const DEFAULT_PRODUCT_FORM_DATA: ProductFormData = {
+  city_id: '',
+  zone_id: null,
+  product_type: null,
+  title: '',
+  short_pitch: '',
+  description: '',
+  duration_minutes: null,
+  price_cents: null,
+  currency: 'EUR',
+  meeting_point: '',
+  latitude: null,
+  longitude: null,
+  capacity_note: '',
+  booking_url: '',
+  vendor_name: '',
+  vendor_contact: '',
+  photo_url: '',
+  preferred_time_buckets: [],
+};
+
+// Form data for product rules
+export interface ProductRuleFormData {
+  trigger_place_types: PlaceType[];
+  trigger_interest_keys: string[];
+  trigger_time_buckets: TimeBucket[];
+  trigger_zone_ids: string[];
+  
+  min_trip_days: number | null;
+  max_trip_days: number | null;
+  
+  requires_pace_max: number | null;
+  suitable_for: IdealFor[];
+  min_social_level: number | null;
+  
+  anchor_type: AnchorType | null;
+  requires_booking: boolean;
+  priority: number;
+  
+  note_internal: string;
+}
+
+export const DEFAULT_PRODUCT_RULE_FORM_DATA: ProductRuleFormData = {
+  trigger_place_types: [],
+  trigger_interest_keys: [],
+  trigger_time_buckets: [],
+  trigger_zone_ids: [],
+  min_trip_days: null,
+  max_trip_days: null,
+  requires_pace_max: null,
+  suitable_for: [],
+  min_social_level: null,
+  anchor_type: null,
+  requires_booking: true,
+  priority: 3,
+  note_internal: '',
+};

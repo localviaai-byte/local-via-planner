@@ -876,6 +876,288 @@ export type Database = {
           },
         ]
       }
+      plan_items: {
+        Row: {
+          created_at: string
+          day_index: number
+          end_time: string | null
+          id: string
+          is_booked: boolean | null
+          item_type: Database["public"]["Enums"]["plan_item_type"]
+          notes: string | null
+          place_id: string | null
+          plan_id: string
+          product_id: string | null
+          slot_type: string | null
+          sort_order: number | null
+          start_time: string | null
+        }
+        Insert: {
+          created_at?: string
+          day_index?: number
+          end_time?: string | null
+          id?: string
+          is_booked?: boolean | null
+          item_type: Database["public"]["Enums"]["plan_item_type"]
+          notes?: string | null
+          place_id?: string | null
+          plan_id: string
+          product_id?: string | null
+          slot_type?: string | null
+          sort_order?: number | null
+          start_time?: string | null
+        }
+        Update: {
+          created_at?: string
+          day_index?: number
+          end_time?: string | null
+          id?: string
+          is_booked?: boolean | null
+          item_type?: Database["public"]["Enums"]["plan_item_type"]
+          notes?: string | null
+          place_id?: string | null
+          plan_id?: string
+          product_id?: string | null
+          slot_type?: string | null
+          sort_order?: number | null
+          start_time?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "plan_items_place_id_fkey"
+            columns: ["place_id"]
+            isOneToOne: false
+            referencedRelation: "places"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "plan_items_plan_id_fkey"
+            columns: ["plan_id"]
+            isOneToOne: false
+            referencedRelation: "trip_plans"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "plan_items_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      product_rules: {
+        Row: {
+          anchor_type: string | null
+          created_at: string
+          id: string
+          max_trip_days: number | null
+          min_social_level: number | null
+          min_trip_days: number | null
+          note_internal: string | null
+          priority: number | null
+          product_id: string
+          requires_booking: boolean | null
+          requires_pace_max: number | null
+          suitable_for: Database["public"]["Enums"]["ideal_for"][] | null
+          trigger_interest_keys: string[] | null
+          trigger_place_types:
+            | Database["public"]["Enums"]["place_type"][]
+            | null
+          trigger_time_buckets:
+            | Database["public"]["Enums"]["time_bucket"][]
+            | null
+          trigger_zone_ids: string[] | null
+        }
+        Insert: {
+          anchor_type?: string | null
+          created_at?: string
+          id?: string
+          max_trip_days?: number | null
+          min_social_level?: number | null
+          min_trip_days?: number | null
+          note_internal?: string | null
+          priority?: number | null
+          product_id: string
+          requires_booking?: boolean | null
+          requires_pace_max?: number | null
+          suitable_for?: Database["public"]["Enums"]["ideal_for"][] | null
+          trigger_interest_keys?: string[] | null
+          trigger_place_types?:
+            | Database["public"]["Enums"]["place_type"][]
+            | null
+          trigger_time_buckets?:
+            | Database["public"]["Enums"]["time_bucket"][]
+            | null
+          trigger_zone_ids?: string[] | null
+        }
+        Update: {
+          anchor_type?: string | null
+          created_at?: string
+          id?: string
+          max_trip_days?: number | null
+          min_social_level?: number | null
+          min_trip_days?: number | null
+          note_internal?: string | null
+          priority?: number | null
+          product_id?: string
+          requires_booking?: boolean | null
+          requires_pace_max?: number | null
+          suitable_for?: Database["public"]["Enums"]["ideal_for"][] | null
+          trigger_interest_keys?: string[] | null
+          trigger_place_types?:
+            | Database["public"]["Enums"]["place_type"][]
+            | null
+          trigger_time_buckets?:
+            | Database["public"]["Enums"]["time_bucket"][]
+            | null
+          trigger_zone_ids?: string[] | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "product_rules_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      product_tags: {
+        Row: {
+          created_at: string
+          product_id: string
+          tag_id: string
+          weight: number | null
+        }
+        Insert: {
+          created_at?: string
+          product_id: string
+          tag_id: string
+          weight?: number | null
+        }
+        Update: {
+          created_at?: string
+          product_id?: string
+          tag_id?: string
+          weight?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "product_tags_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "product_tags_tag_id_fkey"
+            columns: ["tag_id"]
+            isOneToOne: false
+            referencedRelation: "tags"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      products: {
+        Row: {
+          booking_url: string | null
+          capacity_note: string | null
+          city_id: string
+          created_at: string
+          created_by: string | null
+          currency: string | null
+          description: string | null
+          duration_minutes: number | null
+          id: string
+          latitude: number | null
+          longitude: number | null
+          meeting_point: string | null
+          photo_url: string | null
+          preferred_time_buckets:
+            | Database["public"]["Enums"]["time_bucket"][]
+            | null
+          price_cents: number | null
+          product_type: Database["public"]["Enums"]["product_type"]
+          short_pitch: string
+          status: Database["public"]["Enums"]["place_status"]
+          title: string
+          updated_at: string
+          vendor_contact: string | null
+          vendor_name: string | null
+          zone_id: string | null
+        }
+        Insert: {
+          booking_url?: string | null
+          capacity_note?: string | null
+          city_id: string
+          created_at?: string
+          created_by?: string | null
+          currency?: string | null
+          description?: string | null
+          duration_minutes?: number | null
+          id?: string
+          latitude?: number | null
+          longitude?: number | null
+          meeting_point?: string | null
+          photo_url?: string | null
+          preferred_time_buckets?:
+            | Database["public"]["Enums"]["time_bucket"][]
+            | null
+          price_cents?: number | null
+          product_type: Database["public"]["Enums"]["product_type"]
+          short_pitch: string
+          status?: Database["public"]["Enums"]["place_status"]
+          title: string
+          updated_at?: string
+          vendor_contact?: string | null
+          vendor_name?: string | null
+          zone_id?: string | null
+        }
+        Update: {
+          booking_url?: string | null
+          capacity_note?: string | null
+          city_id?: string
+          created_at?: string
+          created_by?: string | null
+          currency?: string | null
+          description?: string | null
+          duration_minutes?: number | null
+          id?: string
+          latitude?: number | null
+          longitude?: number | null
+          meeting_point?: string | null
+          photo_url?: string | null
+          preferred_time_buckets?:
+            | Database["public"]["Enums"]["time_bucket"][]
+            | null
+          price_cents?: number | null
+          product_type?: Database["public"]["Enums"]["product_type"]
+          short_pitch?: string
+          status?: Database["public"]["Enums"]["place_status"]
+          title?: string
+          updated_at?: string
+          vendor_contact?: string | null
+          vendor_name?: string | null
+          zone_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "products_city_id_fkey"
+            columns: ["city_id"]
+            isOneToOne: false
+            referencedRelation: "cities"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "products_zone_id_fkey"
+            columns: ["zone_id"]
+            isOneToOne: false
+            referencedRelation: "city_zones"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       tags: {
         Row: {
           created_at: string
@@ -902,6 +1184,50 @@ export type Database = {
           tag_key?: string
         }
         Relationships: []
+      }
+      trip_plans: {
+        Row: {
+          city_id: string
+          created_at: string
+          days: number | null
+          id: string
+          preferences: Json | null
+          start_date: string | null
+          title: string | null
+          updated_at: string
+          user_id: string | null
+        }
+        Insert: {
+          city_id: string
+          created_at?: string
+          days?: number | null
+          id?: string
+          preferences?: Json | null
+          start_date?: string | null
+          title?: string | null
+          updated_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          city_id?: string
+          created_at?: string
+          days?: number | null
+          id?: string
+          preferences?: Json | null
+          start_date?: string | null
+          title?: string | null
+          updated_at?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "trip_plans_city_id_fkey"
+            columns: ["city_id"]
+            isOneToOne: false
+            referencedRelation: "cities"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       user_roles: {
         Row: {
@@ -1004,7 +1330,16 @@ export type Database = {
         | "zone"
         | "experience"
         | "view"
+      plan_item_type: "place" | "product"
       price_level: "budget" | "moderate" | "expensive" | "luxury"
+      product_type:
+        | "guided_tour"
+        | "tasting"
+        | "workshop"
+        | "dining_experience"
+        | "transport"
+        | "photo_experience"
+        | "ticket"
       review_decision: "approve" | "reject" | "request_changes"
       suggested_stay: "short" | "medium" | "long"
       target_audience: "locals" | "tourists" | "mixed" | "students" | "couples"
@@ -1210,7 +1545,17 @@ export const Constants = {
         "experience",
         "view",
       ],
+      plan_item_type: ["place", "product"],
       price_level: ["budget", "moderate", "expensive", "luxury"],
+      product_type: [
+        "guided_tour",
+        "tasting",
+        "workshop",
+        "dining_experience",
+        "transport",
+        "photo_experience",
+        "ticket",
+      ],
       review_decision: ["approve", "reject", "request_changes"],
       suggested_stay: ["short", "medium", "long"],
       target_audience: ["locals", "tourists", "mixed", "students", "couples"],
