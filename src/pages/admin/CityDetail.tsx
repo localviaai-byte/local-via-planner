@@ -12,6 +12,7 @@ import type { PlaceType, PlaceStatus } from '@/types/database';
 import { PLACE_TYPE_OPTIONS } from '@/types/database';
 import { DiscoveryPanel } from '@/components/admin/DiscoveryPanel';
 import { CityConnectionsPanel } from '@/components/admin/CityConnectionsPanel';
+import { ProductsPanel } from '@/components/admin/ProductsPanel';
 
 const STATUS_CONFIG: Record<PlaceStatus, { label: string; color: string }> = {
   draft: { label: 'Bozza', color: 'bg-muted text-muted-foreground' },
@@ -144,6 +145,14 @@ export default function CityDetail() {
           cityName={city.name}
           region={city.region || undefined}
           country={city.country}
+        />
+      </div>
+      
+      {/* Products/Add-ons Panel */}
+      <div className="px-4 pt-2">
+        <ProductsPanel 
+          cityId={cityId!}
+          cityName={city.name}
         />
       </div>
       
