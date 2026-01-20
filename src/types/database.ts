@@ -74,6 +74,7 @@ export interface CityConnection {
   local_tip: string | null;
   warning: string | null;
   seasonality_note: string | null;
+  day_worth: DayWorthType | null;
   is_active: boolean;
   created_at: string;
   created_by: string | null;
@@ -113,6 +114,30 @@ export interface CityClusterMember {
   cluster?: CityCluster;
 }
 
+export type DayWorthType = 'full_day' | 'half_day' | 'combine_with_other';
+
+export const DAY_WORTH_OPTIONS = [
+  { id: 'full_day', label: 'Vale la giornata', icon: '🌅', description: 'Destinazione che merita un giorno intero' },
+  { id: 'half_day', label: 'Mezza giornata', icon: '⏰', description: 'Bastano 3-4 ore per vedere tutto' },
+  { id: 'combine_with_other', label: 'Meglio combinata', icon: '🔗', description: 'Da abbinare ad altra tappa vicina' },
+] as const;
+
+export const FRICTION_LABELS: Record<number, string> = {
+  1: 'Scorrevole',
+  2: 'Semplice',
+  3: 'Qualche sbatti',
+  4: 'Impegnativo',
+  5: 'Stressante',
+};
+
+export const RELIABILITY_LABELS: Record<number, string> = {
+  1: 'Inaffidabile',
+  2: 'A volte ritardi',
+  3: 'Nella media',
+  4: 'Affidabile',
+  5: 'Puntualissimo',
+};
+
 export interface CityConnectionFormData {
   city_id_to: string;
   connection_type: ConnectionType;
@@ -127,6 +152,7 @@ export interface CityConnectionFormData {
   local_tip: string;
   warning: string;
   seasonality_note: string;
+  day_worth: DayWorthType | null;
 }
 
 export const DEFAULT_CONNECTION_FORM_DATA: CityConnectionFormData = {
@@ -143,6 +169,7 @@ export const DEFAULT_CONNECTION_FORM_DATA: CityConnectionFormData = {
   local_tip: '',
   warning: '',
   seasonality_note: '',
+  day_worth: null,
 };
 
 // =====================================================
