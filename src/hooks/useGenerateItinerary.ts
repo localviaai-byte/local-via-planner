@@ -17,6 +17,8 @@ export interface ItineraryPlace {
   indoor_outdoor: string | null;
   crowd_level: string | null;
   vibe_touristy_to_local: number | null;
+  latitude: number | null;
+  longitude: number | null;
 }
 
 export interface ProductSuggestion {
@@ -56,6 +58,8 @@ export interface GeneratedItinerary {
     id: string;
     name: string;
     region: string | null;
+    latitude: number | null;
+    longitude: number | null;
   };
   meta: {
     placesUsed: number;

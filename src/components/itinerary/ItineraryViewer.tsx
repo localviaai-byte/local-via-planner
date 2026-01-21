@@ -19,6 +19,7 @@ import { TimelineSlotReal } from './TimelineSlotReal';
 import { SelectedProductsIndicator } from './SelectedProductsIndicator';
 import { SavePlanSheet } from './SavePlanSheet';
 import { ExtrasCheckoutSheet } from './ExtrasCheckoutSheet';
+import { ItineraryMapSheet } from './ItineraryMapSheet';
 import { useSelectedProducts } from '@/contexts/SelectedProductsContext';
 import { useTripPlan } from '@/contexts/TripPlanContext';
 import { type TripPreferences } from '@/lib/mockData';
@@ -35,6 +36,7 @@ export function ItineraryViewer({ preferences, generatedData, onBack, onRegenera
   const [activeDay, setActiveDay] = useState(0);
   const [showDayTransition, setShowDayTransition] = useState(false);
   const [showSaveSheet, setShowSaveSheet] = useState(false);
+  const [showMapSheet, setShowMapSheet] = useState(false);
   const daySectionRefs = useRef<(HTMLDivElement | null)[]>([]);
   const isScrollingRef = useRef(false);
   
@@ -366,10 +368,19 @@ export function ItineraryViewer({ preferences, generatedData, onBack, onRegenera
       {/* Checkout Sheet */}
       <ExtrasCheckoutSheet />
 
+      {/* Map Sheet */}
+      <ItineraryMapSheet
+        isOpen={showMapSheet}
+        onOpenChange={setShowMapSheet}
+        generatedData={generatedData}
+        activeDay={activeDay}
+        onDayChange={setActiveDay}
+      />
+
       {/* Bottom CTA */}
       <div className="sticky bottom-0 bg-background border-t border-border z-30">
         <div className="container max-w-2xl py-4 px-4 flex gap-3">
-          <Button variant="outline" className="flex-1">
+          <Button variant="outline" className="flex-1" onClick={() => setShowMapSheet(true)}>
             <Map className="w-4 h-4 mr-2" />
             Mappa
           </Button>
