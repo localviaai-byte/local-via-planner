@@ -10,13 +10,30 @@ interface StepIdentityProps {
   formData: PlaceFormData;
   onUpdate: (updates: Partial<PlaceFormData>) => void;
   cityName?: string;
+  cityRegion?: string | null;
+  cityLatitude?: number | null;
+  cityLongitude?: number | null;
 }
 
-export default function StepIdentity({ formData, onUpdate, cityName = '' }: StepIdentityProps) {
+export default function StepIdentity({ 
+  formData, 
+  onUpdate, 
+  cityName = '',
+  cityRegion,
+  cityLatitude,
+  cityLongitude
+}: StepIdentityProps) {
   const { prefillPlace, isLoading } = useAIPrefill();
 
   const handleAIPrefill = async () => {
-    const updates = await prefillPlace(formData.name, formData.place_type, cityName);
+    const updates = await prefillPlace(
+      formData.name, 
+      formData.place_type, 
+      cityName,
+      cityRegion,
+      cityLatitude,
+      cityLongitude
+    );
     if (updates) {
       onUpdate(updates);
     }
