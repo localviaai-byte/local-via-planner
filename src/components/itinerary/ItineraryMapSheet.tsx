@@ -253,27 +253,25 @@ export function ItineraryMapSheet({
         font-size: 14px;
         box-shadow: 0 3px 10px rgba(0,0,0,0.3);
         cursor: pointer;
-        transition: transform 0.2s;
       `;
       el.innerHTML = `${point.slotIndex}`;
-      el.onmouseenter = () => { el.style.transform = 'scale(1.15)'; };
-      el.onmouseleave = () => { el.style.transform = 'scale(1)'; };
 
       const popup = new mapboxgl.Popup({ 
         offset: 25,
-        closeButton: false,
+        closeButton: true,
+        closeOnClick: false,
         className: 'custom-popup'
       }).setHTML(`
-        <div style="padding: 10px; min-width: 160px; font-family: system-ui, sans-serif;">
-          <div style="font-weight: 600; margin-bottom: 4px; font-size: 14px;">${point.name}</div>
-          <div style="font-size: 12px; color: #666; display: flex; align-items: center; gap: 4px;">
-            <span style="display: inline-block; width: 8px; height: 8px; background: ${color}; border-radius: 50%;"></span>
-            ${point.time}
+        <div style="padding: 12px; min-width: 180px; font-family: system-ui, sans-serif;">
+          <div style="font-weight: 600; margin-bottom: 6px; font-size: 15px;">${point.name}</div>
+          <div style="font-size: 13px; color: #666; display: flex; align-items: center; gap: 6px;">
+            <span style="display: inline-block; width: 10px; height: 10px; background: ${color}; border-radius: 50%;"></span>
+            ${point.time} · ${point.type}
           </div>
         </div>
       `);
 
-      const marker = new mapboxgl.Marker({ element: el })
+      const marker = new mapboxgl.Marker({ element: el, anchor: 'center' })
         .setLngLat([point.lng, point.lat])
         .setPopup(popup)
         .addTo(map.current!);
