@@ -437,10 +437,10 @@ export const avoidOptions = [
 ];
 
 export const maxTravelOptions = [
-  { id: 0 as const, label: 'Solo in città', description: 'Rimani nella destinazione scelta' },
-  { id: 30 as const, label: 'Max 30 min', description: 'Dintorni veloci da raggiungere' },
-  { id: 60 as const, label: 'Max 60 min', description: 'Day-trip brevi possibili' },
-  { id: 90 as const, label: 'Anche 90+ min', description: 'Gite in giornata complete' },
+  { id: 0 as const, label: 'Solo in città', description: 'Rimani qui' },
+  { id: 30 as const, label: 'Max 30 min', description: 'Dintorni vicini' },
+  { id: 60 as const, label: 'Max 60 min', description: 'Day-trip brevi' },
+  { id: 90 as const, label: '90+ min', description: 'Gite complete' },
 ];
 
 export const defaultPreferences: TripPreferences = {
