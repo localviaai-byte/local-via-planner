@@ -90,7 +90,7 @@ export interface TripPreferences {
   budget: 1 | 2 | 3;
   dietaryRestrictions: string[];
   activityStyle: 'highlights' | 'maximize';
-  guidedTours: boolean;
+  guidedTours: 'autonomous' | 'guided' | 'unknown';
   walkingTolerance: 'low' | 'medium' | 'high';
   accommodation: { zone: string } | null;
   transport: 'walking' | 'car' | 'public' | 'taxi';
@@ -460,7 +460,7 @@ export const defaultPreferences: TripPreferences = {
   budget: 2,
   dietaryRestrictions: [],
   activityStyle: 'highlights',
-  guidedTours: false,
+  guidedTours: 'unknown',
   walkingTolerance: 'medium',
   accommodation: null,
   transport: 'walking',
