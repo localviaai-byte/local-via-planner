@@ -206,20 +206,33 @@ export function ItineraryMapSheet({
   // Update markers and route when day changes
   useEffect(() => {
     if (!map.current || !mapLoaded) return;
+    
+    // Ensure style is fully loaded before modifying
+    if (!map.current.isStyleLoaded()) {
+      map.current.once('style.load', () => {
+        // Re-trigger this effect
+        setMapLoaded(prev => prev);
+      });
+      return;
+    }
 
     // Clear existing markers
     markersRef.current.forEach(marker => marker.remove());
     markersRef.current = [];
 
-    // Remove existing route layer
-    if (map.current.getLayer('route')) {
-      map.current.removeLayer('route');
-    }
-    if (map.current.getSource('route')) {
-      map.current.removeSource('route');
-    }
-    if (map.current.getLayer('route-arrows')) {
-      map.current.removeLayer('route-arrows');
+    // Remove existing route layer safely
+    try {
+      if (map.current.getLayer('route')) {
+        map.current.removeLayer('route');
+      }
+      if (map.current.getSource('route')) {
+        map.current.removeSource('route');
+      }
+      if (map.current.getLayer('route-arrows')) {
+        map.current.removeLayer('route-arrows');
+      }
+    } catch (e) {
+      console.warn('Error removing layers:', e);
     }
 
     if (dayPoints.length === 0) {
