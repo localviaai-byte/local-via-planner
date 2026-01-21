@@ -127,10 +127,20 @@ export function ItineraryMapSheet({
 
   const { itinerary, city } = generatedData;
 
-  // Sync local state when sheet opens or external day changes
+  // Sync local state ONLY when opening the sheet (or while closed).
+  // If the parent changes activeDay due to scroll observers while the sheet is open,
+  // we intentionally keep the local selection stable.
+  const wasOpenRef = useRef(false);
   useEffect(() => {
-    if (isOpen) {
+    if (!isOpen) {
       setLocalActiveDay(externalActiveDay);
+      wasOpenRef.current = false;
+      return;
+    }
+
+    if (!wasOpenRef.current) {
+      setLocalActiveDay(externalActiveDay);
+      wasOpenRef.current = true;
     }
   }, [isOpen, externalActiveDay]);
 
