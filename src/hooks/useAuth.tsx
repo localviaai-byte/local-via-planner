@@ -88,17 +88,26 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const signIn = async (email: string, password: string) => {
     setIsLoading(true);
     const { error } = await supabase.auth.signInWithPassword({ email, password });
+    // If sign-in fails, onAuthStateChange will NOT fire, so we must clear loading.
+    if (error) {
+      setIsLoading(false);
+    }
     return { error: error as Error | null };
   };
 
   const signUp = async (email: string, password: string) => {
-    const { error } = await supabase.auth.signUp({ 
+    setIsLoading(true);
+    const { data, error } = await supabase.auth.signUp({ 
       email, 
       password,
       options: {
         emailRedirectTo: `${window.location.origin}/admin`
       }
     });
+    // If sign-up fails OR requires email confirmation (no session), clear loading.
+    if (error || !data.session) {
+      setIsLoading(false);
+    }
     return { error: error as Error | null };
   };
 
