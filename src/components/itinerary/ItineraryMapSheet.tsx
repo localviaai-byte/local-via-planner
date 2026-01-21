@@ -60,9 +60,25 @@ function getPlaceCoordinates(
   index: number,
   cityCenter: { lat: number; lng: number }
 ): { lat: number; lng: number } | null {
-  // Use actual coordinates if available
+  // If DB coordinates exist but are clearly wrong (e.g. Pompei -> Trento),
+  // ignore them and use name-based / city-center fallbacks.
   if (place.latitude && place.longitude) {
-    return { lat: place.latitude, lng: place.longitude };
+    const R = 6371;
+    const dLat = ((place.latitude - cityCenter.lat) * Math.PI) / 180;
+    const dLon = ((place.longitude - cityCenter.lng) * Math.PI) / 180;
+    const a =
+      Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+      Math.cos((cityCenter.lat * Math.PI) / 180) *
+        Math.cos((place.latitude * Math.PI) / 180) *
+        Math.sin(dLon / 2) *
+        Math.sin(dLon / 2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    const distanceKm = R * c;
+
+    // Very generous threshold: only discard coordinates that are "obviously" outside the city.
+    if (distanceKm <= 200) {
+      return { lat: place.latitude, lng: place.longitude };
+    }
   }
 
   // Check known locations by name (case-insensitive)
@@ -94,7 +110,7 @@ export function ItineraryMapSheet({
   activeDay,
   onDayChange 
 }: ItineraryMapSheetProps) {
-  const mapContainer = useRef<HTMLDivElement>(null);
+  const [mapContainerEl, setMapContainerEl] = useState<HTMLDivElement | null>(null);
   const map = useRef<mapboxgl.Map | null>(null);
   const markersRef = useRef<mapboxgl.Marker[]>([]);
   
@@ -176,13 +192,13 @@ export function ItineraryMapSheet({
 
   // Initialize map
   useEffect(() => {
-    if (!isOpen || !token || !mapContainer.current || map.current) return;
+    if (!isOpen || !token || !mapContainerEl || map.current) return;
 
     mapboxgl.accessToken = token;
 
     setMapError(null);
     map.current = new mapboxgl.Map({
-      container: mapContainer.current,
+      container: mapContainerEl,
       style: 'mapbox://styles/mapbox/light-v11',
       center: [cityCenter.lng, cityCenter.lat],
       zoom: 15,
@@ -214,7 +230,7 @@ export function ItineraryMapSheet({
       setMapLoaded(false);
       setMapError(null);
     };
-  }, [isOpen, token, cityCenter]);
+  }, [isOpen, token, cityCenter, mapContainerEl]);
 
   // Ensure map resizes correctly when the Sheet opens (after layout/animation)
   useEffect(() => {
@@ -222,6 +238,16 @@ export function ItineraryMapSheet({
     const t = setTimeout(() => map.current?.resize(), 250);
     return () => clearTimeout(t);
   }, [isOpen]);
+
+  // ResizeObserver: keep Mapbox in sync with the Sheet's animated height changes
+  useEffect(() => {
+    if (!isOpen || !map.current || !mapContainerEl) return;
+    const ro = new ResizeObserver(() => {
+      map.current?.resize();
+    });
+    ro.observe(mapContainerEl);
+    return () => ro.disconnect();
+  }, [isOpen, mapContainerEl]);
 
   // Update markers and route when day changes
   useEffect(() => {
@@ -420,7 +446,7 @@ export function ItineraryMapSheet({
               <p className="text-xs text-muted-foreground break-words">{mapError}</p>
             </div>
           ) : (
-            <div ref={mapContainer} className="absolute inset-0" style={{ width: '100%', height: '100%' }} />
+            <div ref={setMapContainerEl} className="absolute inset-0" style={{ width: '100%', height: '100%' }} />
           )}
 
           {/* Walking Times Summary */}
