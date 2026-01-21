@@ -382,6 +382,76 @@ Suggerisci prodotti add-on dove appropriato (es. tour guidato prima di un museo,
     const placeMap = new Map(places.map(p => [p.id, p]));
     const productMap = new Map((products || []).map(p => [p.id, p]));
 
+    // Helper: Match products to slot based on place type and time
+    const matchProductsToSlot = (place: any, slotStartTime: string): any[] => {
+      if (!place || !products || products.length === 0) return [];
+      
+      const matchedProducts: any[] = [];
+      const slotHour = parseInt(slotStartTime.split(':')[0]);
+      
+      // Determine time bucket
+      let timeBucket: string;
+      if (slotHour < 12) timeBucket = 'morning';
+      else if (slotHour < 14) timeBucket = 'lunch';
+      else if (slotHour < 17) timeBucket = 'afternoon';
+      else if (slotHour < 18) timeBucket = 'aperitivo';
+      else if (slotHour < 21) timeBucket = 'dinner';
+      else timeBucket = 'evening';
+
+      for (const product of products) {
+        let score = 0;
+        
+        // Match by time bucket
+        if (product.preferred_time_buckets?.includes(timeBucket)) {
+          score += 2;
+        }
+        
+        // Match by place type and product type
+        if (place.place_type === 'attraction') {
+          if (product.product_type === 'guided_tour' || product.product_type === 'ticket') {
+            score += 3; // Strong match
+          }
+        }
+        if (place.place_type === 'restaurant') {
+          if (product.product_type === 'tasting' || product.product_type === 'dining_experience') {
+            score += 3;
+          }
+        }
+        if (place.place_type === 'view') {
+          if (product.product_type === 'photo_experience') {
+            score += 2;
+          }
+        }
+        if (place.place_type === 'experience') {
+          if (product.product_type === 'workshop') {
+            score += 2;
+          }
+        }
+
+        // Default: any approved product gets a base score for attractions
+        if (place.place_type === 'attraction' && score === 0) {
+          score = 1;
+        }
+
+        if (score > 0) {
+          matchedProducts.push({ product, score });
+        }
+      }
+
+      // Sort by score and return top 3
+      return matchedProducts
+        .sort((a, b) => b.score - a.score)
+        .slice(0, 3)
+        .map(m => ({
+          id: m.product.id,
+          title: m.product.title,
+          short_pitch: m.product.short_pitch,
+          price_cents: m.product.price_cents,
+          duration_minutes: m.product.duration_minutes,
+          product_type: m.product.product_type,
+        }));
+    };
+
     // Build final itinerary with full place data
     const itinerary: ItineraryDay[] = aiItinerary.days.map((day: any) => {
       const baseDate = new Date();
@@ -402,7 +472,8 @@ Suggerisci prodotti add-on dove appropriato (es. tour guidato prima di un museo,
             .filter(Boolean)
             .map((p: any) => ({ id: p.id, name: p.name, type: p.place_type }));
           
-          const productSuggestions = (slot.productIds || [])
+          // First try AI-suggested products, then fallback to rule-based matching
+          let productSuggestions = (slot.productIds || [])
             .map((id: string) => productMap.get(id))
             .filter(Boolean)
             .map((p: any) => ({
@@ -411,7 +482,13 @@ Suggerisci prodotti add-on dove appropriato (es. tour guidato prima di un museo,
               short_pitch: p.short_pitch,
               price_cents: p.price_cents,
               duration_minutes: p.duration_minutes,
+              product_type: p.product_type,
             }));
+          
+          // If AI didn't suggest products, use rule-based matching
+          if (productSuggestions.length === 0 && place) {
+            productSuggestions = matchProductsToSlot(place, slot.startTime);
+          }
 
           return {
             id: `day${day.dayNumber}-slot${idx}`,
