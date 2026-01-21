@@ -58,6 +58,8 @@ export function ItineraryViewer({ preferences, generatedData, onBack, onRegenera
   // Intersection Observer for automatic day switching on scroll
   useEffect(() => {
     if (itinerary.length <= 1) return;
+    // While the map sheet is open, don't let scroll observers override the selected day.
+    if (showMapSheet) return;
 
     const observerOptions = {
       root: null,
@@ -90,7 +92,7 @@ export function ItineraryViewer({ preferences, generatedData, onBack, onRegenera
     });
 
     return () => observer.disconnect();
-  }, [itinerary.length, activeDay]);
+  }, [itinerary.length, activeDay, showMapSheet]);
 
   // Scroll to day when tab is clicked
   const handleDayClick = (index: number) => {
