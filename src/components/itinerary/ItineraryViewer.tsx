@@ -38,7 +38,7 @@ export function ItineraryViewer({ preferences, generatedData, onBack, onRegenera
   const daySectionRefs = useRef<(HTMLDivElement | null)[]>([]);
   const isScrollingRef = useRef(false);
   
-  const { selectedProducts } = useSelectedProducts();
+  const { selectedProducts, addProduct } = useSelectedProducts();
   const { 
     planStatus, 
     isSaving, 
@@ -340,6 +340,9 @@ export function ItineraryViewer({ preferences, generatedData, onBack, onRegenera
                   dayIndex={dayIndex}
                   onReplace={() => {}}
                   onMove={() => {}}
+                  onAddProduct={(product, placeName) => {
+                    addProduct(product, dayIndex, slot.place?.id, placeName);
+                  }}
                 />
               ))}
             </div>
