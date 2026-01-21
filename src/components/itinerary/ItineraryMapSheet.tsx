@@ -100,6 +100,7 @@ export function ItineraryMapSheet({
   
   const { token, isLoading: tokenLoading, error: tokenError } = useMapboxToken();
   const [mapLoaded, setMapLoaded] = useState(false);
+  const [mapError, setMapError] = useState<string | null>(null);
 
   const { itinerary, city } = generatedData;
 
@@ -179,6 +180,7 @@ export function ItineraryMapSheet({
 
     mapboxgl.accessToken = token;
 
+    setMapError(null);
     map.current = new mapboxgl.Map({
       container: mapContainer.current,
       style: 'mapbox://styles/mapbox/light-v11',
@@ -194,147 +196,178 @@ export function ItineraryMapSheet({
 
     map.current.on('load', () => {
       setMapLoaded(true);
+      // The Sheet animates and can cause the map to initialize with a 0x0 size.
+      // Force a resize on the next frames to avoid a blank map.
+      requestAnimationFrame(() => map.current?.resize());
+      setTimeout(() => map.current?.resize(), 250);
+    });
+
+    map.current.on('error', (e) => {
+      const message = (e as any)?.error?.message || 'Errore caricamento mappa';
+      console.error('Mapbox error:', (e as any)?.error || e);
+      setMapError(message);
     });
 
     return () => {
       map.current?.remove();
       map.current = null;
       setMapLoaded(false);
+      setMapError(null);
     };
   }, [isOpen, token, cityCenter]);
+
+  // Ensure map resizes correctly when the Sheet opens (after layout/animation)
+  useEffect(() => {
+    if (!isOpen || !map.current) return;
+    const t = setTimeout(() => map.current?.resize(), 250);
+    return () => clearTimeout(t);
+  }, [isOpen]);
 
   // Update markers and route when day changes
   useEffect(() => {
     if (!map.current || !mapLoaded) return;
-    
-    // Ensure style is fully loaded before modifying
-    if (!map.current.isStyleLoaded()) {
-      map.current.once('style.load', () => {
-        // Re-trigger this effect
-        setMapLoaded(prev => prev);
+
+    const m = map.current;
+
+    const render = () => {
+      // Guard against rare races during style load (Mapbox can throw if we add sources too early)
+      if (!m || !m.isStyleLoaded()) return;
+
+      // Clear existing markers
+      markersRef.current.forEach(marker => marker.remove());
+      markersRef.current = [];
+
+      // Remove existing route layer safely
+      try {
+        if (m.getLayer('route')) {
+          m.removeLayer('route');
+        }
+        if (m.getSource('route')) {
+          m.removeSource('route');
+        }
+        if (m.getLayer('route-arrows')) {
+          m.removeLayer('route-arrows');
+        }
+      } catch (e) {
+        console.warn('Error removing layers:', e);
+      }
+
+      if (dayPoints.length === 0) {
+        // Center on city if no points
+        m.flyTo({
+          center: [cityCenter.lng, cityCenter.lat],
+          zoom: 14,
+          duration: 500,
+        });
+        return;
+      }
+
+      // Add markers
+      dayPoints.forEach((point) => {
+        const color = typeColors[point.type] || typeColors.attraction;
+        
+        // Create custom marker element
+        const el = document.createElement('div');
+        el.className = 'custom-marker';
+        el.style.cssText = `
+          width: 36px;
+          height: 36px;
+          background: ${color};
+          border: 3px solid white;
+          border-radius: 50%;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          color: white;
+          font-weight: bold;
+          font-size: 14px;
+          box-shadow: 0 3px 10px rgba(0,0,0,0.3);
+          cursor: pointer;
+        `;
+        el.innerHTML = `${point.slotIndex}`;
+
+        const popup = new mapboxgl.Popup({ 
+          offset: 25,
+          closeButton: true,
+          closeOnClick: false,
+          className: 'custom-popup'
+        }).setHTML(`
+          <div style="padding: 12px; min-width: 180px; font-family: system-ui, sans-serif;">
+            <div style="font-weight: 600; margin-bottom: 6px; font-size: 15px;">${point.name}</div>
+            <div style="font-size: 13px; color: #666; display: flex; align-items: center; gap: 6px;">
+              <span style="display: inline-block; width: 10px; height: 10px; background: ${color}; border-radius: 50%;"></span>
+              ${point.time} · ${point.type}
+            </div>
+          </div>
+        `);
+
+        const marker = new mapboxgl.Marker({ element: el, anchor: 'center' })
+          .setLngLat([point.lng, point.lat])
+          .setPopup(popup)
+          .addTo(m);
+
+        markersRef.current.push(marker);
       });
-      return;
-    }
 
-    // Clear existing markers
-    markersRef.current.forEach(marker => marker.remove());
-    markersRef.current = [];
+      // Draw connecting line (dashed)
+      if (dayPoints.length >= 2) {
+        const coordinates = dayPoints.map(p => [p.lng, p.lat]);
+        
+        m.addSource('route', {
+          type: 'geojson',
+          data: {
+            type: 'Feature',
+            properties: {},
+            geometry: {
+              type: 'LineString',
+              coordinates,
+            },
+          },
+        });
 
-    // Remove existing route layer safely
-    try {
-      if (map.current.getLayer('route')) {
-        map.current.removeLayer('route');
+        // Dashed line
+        m.addLayer({
+          id: 'route',
+          type: 'line',
+          source: 'route',
+          layout: {
+            'line-join': 'round',
+            'line-cap': 'round',
+          },
+          paint: {
+            'line-color': '#6366F1',
+            'line-width': 3,
+            'line-opacity': 0.8,
+            'line-dasharray': [2, 2],
+          },
+        });
       }
-      if (map.current.getSource('route')) {
-        map.current.removeSource('route');
-      }
-      if (map.current.getLayer('route-arrows')) {
-        map.current.removeLayer('route-arrows');
-      }
-    } catch (e) {
-      console.warn('Error removing layers:', e);
-    }
 
-    if (dayPoints.length === 0) {
-      // Center on city if no points
-      map.current.flyTo({
-        center: [cityCenter.lng, cityCenter.lat],
-        zoom: 14,
+      // Fit bounds to show all points
+      const bounds = new mapboxgl.LngLatBounds();
+      dayPoints.forEach(p => bounds.extend([p.lng, p.lat]));
+      
+      m.fitBounds(bounds, {
+        padding: { top: 80, bottom: 140, left: 50, right: 50 },
+        maxZoom: 16,
         duration: 500,
       });
-      return;
+    };
+
+    // If the style isn't ready yet, wait until the map is idle to avoid
+    // "Style is not done loading" crashes (common race in Mapbox GL).
+    if (!m.isStyleLoaded()) {
+      m.once('idle', render);
+      return () => {
+        try {
+          m.off('idle', render);
+        } catch {
+          // ignore
+        }
+      };
     }
 
-    // Add markers
-    dayPoints.forEach((point) => {
-      const color = typeColors[point.type] || typeColors.attraction;
-      
-      // Create custom marker element
-      const el = document.createElement('div');
-      el.className = 'custom-marker';
-      el.style.cssText = `
-        width: 36px;
-        height: 36px;
-        background: ${color};
-        border: 3px solid white;
-        border-radius: 50%;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        color: white;
-        font-weight: bold;
-        font-size: 14px;
-        box-shadow: 0 3px 10px rgba(0,0,0,0.3);
-        cursor: pointer;
-      `;
-      el.innerHTML = `${point.slotIndex}`;
-
-      const popup = new mapboxgl.Popup({ 
-        offset: 25,
-        closeButton: true,
-        closeOnClick: false,
-        className: 'custom-popup'
-      }).setHTML(`
-        <div style="padding: 12px; min-width: 180px; font-family: system-ui, sans-serif;">
-          <div style="font-weight: 600; margin-bottom: 6px; font-size: 15px;">${point.name}</div>
-          <div style="font-size: 13px; color: #666; display: flex; align-items: center; gap: 6px;">
-            <span style="display: inline-block; width: 10px; height: 10px; background: ${color}; border-radius: 50%;"></span>
-            ${point.time} · ${point.type}
-          </div>
-        </div>
-      `);
-
-      const marker = new mapboxgl.Marker({ element: el, anchor: 'center' })
-        .setLngLat([point.lng, point.lat])
-        .setPopup(popup)
-        .addTo(map.current!);
-
-      markersRef.current.push(marker);
-    });
-
-    // Draw connecting line (dashed)
-    if (dayPoints.length >= 2) {
-      const coordinates = dayPoints.map(p => [p.lng, p.lat]);
-      
-      map.current.addSource('route', {
-        type: 'geojson',
-        data: {
-          type: 'Feature',
-          properties: {},
-          geometry: {
-            type: 'LineString',
-            coordinates,
-          },
-        },
-      });
-
-      // Dashed line
-      map.current.addLayer({
-        id: 'route',
-        type: 'line',
-        source: 'route',
-        layout: {
-          'line-join': 'round',
-          'line-cap': 'round',
-        },
-        paint: {
-          'line-color': '#6366F1',
-          'line-width': 3,
-          'line-opacity': 0.8,
-          'line-dasharray': [2, 2],
-        },
-      });
-    }
-
-    // Fit bounds to show all points
-    const bounds = new mapboxgl.LngLatBounds();
-    dayPoints.forEach(p => bounds.extend([p.lng, p.lat]));
-    
-    map.current.fitBounds(bounds, {
-      padding: { top: 80, bottom: 140, left: 50, right: 50 },
-      maxZoom: 16,
-      duration: 500,
-    });
+    render();
   }, [dayPoints, mapLoaded, cityCenter]);
 
   const totalWalkingTime = walkingSegments.reduce((acc, seg) => acc + seg.walkingMinutes, 0);
@@ -379,6 +412,12 @@ export function ItineraryMapSheet({
             <div className="absolute inset-0 flex flex-col items-center justify-center bg-muted gap-2">
               <AlertCircle className="w-8 h-8 text-destructive" />
               <p className="text-destructive text-sm">Errore caricamento mappa</p>
+            </div>
+          ) : mapError ? (
+            <div className="absolute inset-0 flex flex-col items-center justify-center bg-muted gap-2 p-4 text-center">
+              <AlertCircle className="w-8 h-8 text-destructive" />
+              <p className="text-destructive text-sm">Errore caricamento mappa</p>
+              <p className="text-xs text-muted-foreground break-words">{mapError}</p>
             </div>
           ) : (
             <div ref={mapContainer} className="absolute inset-0" style={{ width: '100%', height: '100%' }} />
