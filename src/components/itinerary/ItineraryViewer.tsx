@@ -61,7 +61,8 @@ export function ItineraryViewer({ preferences, generatedData, onBack, onRegenera
   useEffect(() => {
     if (itinerary.length <= 1) return;
     // While the map sheet is open, don't let scroll observers override the selected day.
-    if (showMapSheet) return;
+    // Same for the calendar sheet: switching days there should not be immediately overridden.
+    if (showMapSheet || showCalendarSheet) return;
 
     const observerOptions = {
       root: null,
@@ -94,7 +95,7 @@ export function ItineraryViewer({ preferences, generatedData, onBack, onRegenera
     });
 
     return () => observer.disconnect();
-  }, [itinerary.length, activeDay, showMapSheet]);
+  }, [itinerary.length, activeDay, showMapSheet, showCalendarSheet]);
 
   // Scroll to day when tab is clicked
   const handleDayClick = (index: number) => {
