@@ -668,6 +668,8 @@ export interface PlaceFormData {
   address: string;
   zone: string;
   photo_url: string;
+  latitude: number | null;
+  longitude: number | null;
   
   // Step 2: Why
   why_people_go: WhyPeopleGo[];
@@ -758,6 +760,8 @@ export const DEFAULT_PLACE_FORM_DATA: PlaceFormData = {
   address: '',
   zone: '',
   photo_url: '',
+  latitude: null,
+  longitude: null,
   why_people_go: [],
   why_other: '',
   social_level: 3,

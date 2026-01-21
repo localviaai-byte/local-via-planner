@@ -14,6 +14,8 @@ interface AIPrefillData {
   vibe_touristy_to_local: number | null;
   local_warning: string | null;
   suggested_one_liner: string | null;
+  latitude: number | null;
+  longitude: number | null;
 }
 
 export function useAIPrefill() {
@@ -93,6 +95,12 @@ export function useAIPrefill() {
       }
       if (prefillData.suggested_one_liner) {
         updates.local_one_liner = prefillData.suggested_one_liner;
+      }
+      if (prefillData.latitude !== null && prefillData.latitude !== undefined) {
+        updates.latitude = prefillData.latitude;
+      }
+      if (prefillData.longitude !== null && prefillData.longitude !== undefined) {
+        updates.longitude = prefillData.longitude;
       }
 
       const fieldCount = Object.keys(updates).length;

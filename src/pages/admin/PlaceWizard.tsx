@@ -46,6 +46,8 @@ function placeToFormData(place: Place): PlaceFormData {
     address: place.address || '',
     zone: place.zone || '',
     photo_url: place.photo_url || '',
+    latitude: place.latitude ?? null,
+    longitude: place.longitude ?? null,
     why_people_go: place.why_people_go || [],
     why_other: place.why_other || '',
     social_level: place.social_level ?? 3,
