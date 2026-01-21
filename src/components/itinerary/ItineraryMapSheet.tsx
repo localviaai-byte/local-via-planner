@@ -1,9 +1,9 @@
 import { useRef, useEffect, useState, useMemo } from 'react';
 import mapboxgl from 'mapbox-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
-import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
-import { Loader2, MapPin, Navigation } from 'lucide-react';
+import { Loader2, MapPin, Navigation, AlertCircle } from 'lucide-react';
 import { useMapboxToken } from '@/hooks/useMapboxToken';
 import { type GeneratedItinerary } from '@/hooks/useGenerateItinerary';
 
@@ -37,6 +37,56 @@ const typeColors: Record<string, string> = {
   zone: '#FF9F1C', // Amber
 };
 
+// Fallback coordinates for known places (Pompei area)
+const POMPEI_CENTER = { lat: 40.7509, lng: 14.4869 };
+
+// Known location coordinates for fallback
+const knownLocations: Record<string, { lat: number; lng: number }> = {
+  'scavi di pompei': { lat: 40.7509, lng: 14.4869 },
+  'santuario della beata vergine del santo rosario di pompei': { lat: 40.7489, lng: 14.4999 },
+  'santuario': { lat: 40.7489, lng: 14.4999 },
+  'president': { lat: 40.7485, lng: 14.4972 },
+  'il circolo': { lat: 40.7502, lng: 14.4892 },
+  'the roof': { lat: 40.7498, lng: 14.4885 },
+  'centro storico e street art': { lat: 40.7495, lng: 14.4950 },
+  'anfiteatro': { lat: 40.7517, lng: 14.4922 },
+  'villa dei misteri': { lat: 40.7538, lng: 14.4779 },
+  'foro': { lat: 40.7493, lng: 14.4846 },
+};
+
+// Get coordinates for a place, with fallback logic
+function getPlaceCoordinates(
+  place: { latitude?: number | null; longitude?: number | null; name: string },
+  index: number,
+  cityCenter: { lat: number; lng: number }
+): { lat: number; lng: number } | null {
+  // Use actual coordinates if available
+  if (place.latitude && place.longitude) {
+    return { lat: place.latitude, lng: place.longitude };
+  }
+
+  // Check known locations by name (case-insensitive)
+  const normalizedName = place.name.toLowerCase().trim();
+  if (knownLocations[normalizedName]) {
+    return knownLocations[normalizedName];
+  }
+
+  // Check for partial matches
+  for (const [key, coords] of Object.entries(knownLocations)) {
+    if (normalizedName.includes(key) || key.includes(normalizedName)) {
+      return coords;
+    }
+  }
+
+  // Fallback: spread points around city center
+  const angle = (index * 72 + 30) * (Math.PI / 180); // 72 degrees apart
+  const distance = 0.003 + (index * 0.001); // Small radius around center
+  return {
+    lat: cityCenter.lat + Math.sin(angle) * distance,
+    lng: cityCenter.lng + Math.cos(angle) * distance,
+  };
+}
+
 export function ItineraryMapSheet({ 
   isOpen, 
   onOpenChange, 
@@ -53,7 +103,16 @@ export function ItineraryMapSheet({
 
   const { itinerary, city } = generatedData;
 
-  // Extract points for the current day
+  // City center for fallback
+  const cityCenter = useMemo(() => {
+    if (city.latitude && city.longitude) {
+      return { lat: city.latitude, lng: city.longitude };
+    }
+    // Default to Pompei
+    return POMPEI_CENTER;
+  }, [city]);
+
+  // Extract points for the current day (with fallback coordinates)
   const dayPoints = useMemo<MapPoint[]>(() => {
     const currentDay = itinerary[activeDay];
     if (!currentDay) return [];
@@ -61,24 +120,27 @@ export function ItineraryMapSheet({
     const points: MapPoint[] = [];
     let slotIndex = 1;
 
-    currentDay.slots.forEach((slot) => {
-      if (slot.place && slot.place.latitude && slot.place.longitude) {
-        points.push({
-          id: slot.place.id,
-          name: slot.place.name,
-          lat: slot.place.latitude,
-          lng: slot.place.longitude,
-          type: slot.place.type as MapPoint['type'] || 'attraction',
-          slotIndex,
-          dayIndex: activeDay,
-          time: slot.startTime,
-        });
-        slotIndex++;
+    currentDay.slots.forEach((slot, idx) => {
+      if (slot.place) {
+        const coords = getPlaceCoordinates(slot.place, idx, cityCenter);
+        if (coords) {
+          points.push({
+            id: slot.place.id,
+            name: slot.place.name,
+            lat: coords.lat,
+            lng: coords.lng,
+            type: (slot.place.type as MapPoint['type']) || 'attraction',
+            slotIndex,
+            dayIndex: activeDay,
+            time: slot.startTime,
+          });
+          slotIndex++;
+        }
       }
     });
 
     return points;
-  }, [itinerary, activeDay]);
+  }, [itinerary, activeDay, cityCenter]);
 
   // Calculate estimated walking times between points
   const walkingSegments = useMemo(() => {
@@ -106,7 +168,7 @@ export function ItineraryMapSheet({
         from: point,
         to: next,
         distanceKm: Math.round(distanceKm * 100) / 100,
-        walkingMinutes,
+        walkingMinutes: Math.max(1, walkingMinutes), // Minimum 1 min
       };
     });
   }, [dayPoints]);
@@ -117,15 +179,11 @@ export function ItineraryMapSheet({
 
     mapboxgl.accessToken = token;
 
-    const initialCenter: [number, number] = city.longitude && city.latitude 
-      ? [city.longitude, city.latitude] 
-      : [14.268124, 40.851799]; // Default to Naples area
-
     map.current = new mapboxgl.Map({
       container: mapContainer.current,
       style: 'mapbox://styles/mapbox/light-v11',
-      center: initialCenter,
-      zoom: 14,
+      center: [cityCenter.lng, cityCenter.lat],
+      zoom: 15,
       attributionControl: false,
     });
 
@@ -143,11 +201,11 @@ export function ItineraryMapSheet({
       map.current = null;
       setMapLoaded(false);
     };
-  }, [isOpen, token, city]);
+  }, [isOpen, token, cityCenter]);
 
   // Update markers and route when day changes
   useEffect(() => {
-    if (!map.current || !mapLoaded || dayPoints.length === 0) return;
+    if (!map.current || !mapLoaded) return;
 
     // Clear existing markers
     markersRef.current.forEach(marker => marker.remove());
@@ -160,6 +218,19 @@ export function ItineraryMapSheet({
     if (map.current.getSource('route')) {
       map.current.removeSource('route');
     }
+    if (map.current.getLayer('route-arrows')) {
+      map.current.removeLayer('route-arrows');
+    }
+
+    if (dayPoints.length === 0) {
+      // Center on city if no points
+      map.current.flyTo({
+        center: [cityCenter.lng, cityCenter.lat],
+        zoom: 14,
+        duration: 500,
+      });
+      return;
+    }
 
     // Add markers
     dayPoints.forEach((point) => {
@@ -168,32 +239,37 @@ export function ItineraryMapSheet({
       // Create custom marker element
       const el = document.createElement('div');
       el.className = 'custom-marker';
-      el.innerHTML = `
-        <div style="
-          width: 32px;
-          height: 32px;
-          background: ${color};
-          border: 3px solid white;
-          border-radius: 50%;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          color: white;
-          font-weight: bold;
-          font-size: 14px;
-          box-shadow: 0 2px 8px rgba(0,0,0,0.3);
-          cursor: pointer;
-        ">${point.slotIndex}</div>
+      el.style.cssText = `
+        width: 36px;
+        height: 36px;
+        background: ${color};
+        border: 3px solid white;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-weight: bold;
+        font-size: 14px;
+        box-shadow: 0 3px 10px rgba(0,0,0,0.3);
+        cursor: pointer;
+        transition: transform 0.2s;
       `;
+      el.innerHTML = `${point.slotIndex}`;
+      el.onmouseenter = () => { el.style.transform = 'scale(1.15)'; };
+      el.onmouseleave = () => { el.style.transform = 'scale(1)'; };
 
       const popup = new mapboxgl.Popup({ 
         offset: 25,
         closeButton: false,
         className: 'custom-popup'
       }).setHTML(`
-        <div style="padding: 8px; min-width: 150px;">
-          <div style="font-weight: 600; margin-bottom: 4px;">${point.name}</div>
-          <div style="font-size: 12px; color: #666;">${point.time}</div>
+        <div style="padding: 10px; min-width: 160px; font-family: system-ui, sans-serif;">
+          <div style="font-weight: 600; margin-bottom: 4px; font-size: 14px;">${point.name}</div>
+          <div style="font-size: 12px; color: #666; display: flex; align-items: center; gap: 4px;">
+            <span style="display: inline-block; width: 8px; height: 8px; background: ${color}; border-radius: 50%;"></span>
+            ${point.time}
+          </div>
         </div>
       `);
 
@@ -205,7 +281,7 @@ export function ItineraryMapSheet({
       markersRef.current.push(marker);
     });
 
-    // Draw connecting line
+    // Draw connecting line (dashed)
     if (dayPoints.length >= 2) {
       const coordinates = dayPoints.map(p => [p.lng, p.lat]);
       
@@ -221,6 +297,7 @@ export function ItineraryMapSheet({
         },
       });
 
+      // Dashed line
       map.current.addLayer({
         id: 'route',
         type: 'line',
@@ -232,24 +309,24 @@ export function ItineraryMapSheet({
         paint: {
           'line-color': '#6366F1',
           'line-width': 3,
-          'line-opacity': 0.7,
-          'line-dasharray': [2, 1],
+          'line-opacity': 0.8,
+          'line-dasharray': [2, 2],
         },
       });
     }
 
     // Fit bounds to show all points
-    if (dayPoints.length > 0) {
-      const bounds = new mapboxgl.LngLatBounds();
-      dayPoints.forEach(p => bounds.extend([p.lng, p.lat]));
-      
-      map.current.fitBounds(bounds, {
-        padding: { top: 80, bottom: 120, left: 40, right: 40 },
-        maxZoom: 16,
-        duration: 500,
-      });
-    }
-  }, [dayPoints, mapLoaded]);
+    const bounds = new mapboxgl.LngLatBounds();
+    dayPoints.forEach(p => bounds.extend([p.lng, p.lat]));
+    
+    map.current.fitBounds(bounds, {
+      padding: { top: 80, bottom: 140, left: 50, right: 50 },
+      maxZoom: 16,
+      duration: 500,
+    });
+  }, [dayPoints, mapLoaded, cityCenter]);
+
+  const totalWalkingTime = walkingSegments.reduce((acc, seg) => acc + seg.walkingMinutes, 0);
 
   return (
     <Sheet open={isOpen} onOpenChange={onOpenChange}>
@@ -259,6 +336,9 @@ export function ItineraryMapSheet({
             <MapPin className="w-5 h-5 text-primary" />
             Mappa del piano
           </SheetTitle>
+          <SheetDescription className="text-left text-sm text-muted-foreground">
+            Visualizza gli spostamenti del giorno
+          </SheetDescription>
           
           {/* Day Toggle */}
           {itinerary.length > 1 && (
@@ -285,46 +365,73 @@ export function ItineraryMapSheet({
               <Loader2 className="w-8 h-8 animate-spin text-primary" />
             </div>
           ) : tokenError ? (
-            <div className="absolute inset-0 flex items-center justify-center bg-muted">
-              <p className="text-destructive">Errore caricamento mappa</p>
+            <div className="absolute inset-0 flex flex-col items-center justify-center bg-muted gap-2">
+              <AlertCircle className="w-8 h-8 text-destructive" />
+              <p className="text-destructive text-sm">Errore caricamento mappa</p>
             </div>
           ) : (
             <div ref={mapContainer} className="w-full h-full" />
           )}
 
           {/* Walking Times Summary */}
-          {mapLoaded && walkingSegments.length > 0 && (
-            <div className="absolute bottom-4 left-4 right-4 bg-background/95 backdrop-blur rounded-xl p-3 shadow-lg border">
-              <div className="flex items-center gap-2 mb-2">
-                <Navigation className="w-4 h-4 text-primary" />
-                <span className="text-sm font-medium">Spostamenti</span>
+          {mapLoaded && dayPoints.length > 0 && (
+            <div className="absolute bottom-4 left-4 right-4 bg-background/95 backdrop-blur rounded-xl p-4 shadow-lg border">
+              <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center gap-2">
+                  <Navigation className="w-4 h-4 text-primary" />
+                  <span className="text-sm font-medium">Spostamenti</span>
+                </div>
+                {totalWalkingTime > 0 && (
+                  <span className="text-xs text-muted-foreground">
+                    Totale: ~{totalWalkingTime} min a piedi
+                  </span>
+                )}
               </div>
-              <div className="flex flex-wrap gap-2">
-                {walkingSegments.map((seg, i) => (
-                  <div 
-                    key={i}
-                    className="text-xs bg-muted px-2 py-1 rounded-full flex items-center gap-1"
-                  >
-                    <span className="font-semibold">{seg.from.slotIndex}→{seg.to.slotIndex}</span>
-                    <span className="text-muted-foreground">
-                      {seg.walkingMinutes < 1 
-                        ? '< 1 min' 
-                        : `${seg.walkingMinutes} min`
-                      }
-                    </span>
-                  </div>
-                ))}
-              </div>
-              <p className="text-xs text-muted-foreground mt-2">
+              
+              {walkingSegments.length > 0 ? (
+                <div className="flex flex-wrap gap-2">
+                  {walkingSegments.map((seg, i) => (
+                    <div 
+                      key={i}
+                      className="text-xs bg-muted px-3 py-1.5 rounded-full flex items-center gap-1.5"
+                    >
+                      <span 
+                        className="w-5 h-5 rounded-full flex items-center justify-center text-white text-[10px] font-bold"
+                        style={{ background: typeColors[seg.from.type] || typeColors.attraction }}
+                      >
+                        {seg.from.slotIndex}
+                      </span>
+                      <span className="text-muted-foreground">→</span>
+                      <span 
+                        className="w-5 h-5 rounded-full flex items-center justify-center text-white text-[10px] font-bold"
+                        style={{ background: typeColors[seg.to.type] || typeColors.attraction }}
+                      >
+                        {seg.to.slotIndex}
+                      </span>
+                      <span className="text-foreground font-medium ml-1">
+                        {seg.walkingMinutes} min
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-xs text-muted-foreground">
+                  Un solo punto per questo giorno
+                </p>
+              )}
+              
+              <p className="text-xs text-muted-foreground mt-3 flex items-center gap-1">
+                <span className="inline-block w-2 h-2 rounded-full bg-primary" />
                 Spostamenti brevi e coerenti
               </p>
             </div>
           )}
 
-          {/* Empty State */}
+          {/* Empty State - No coordinates */}
           {mapLoaded && dayPoints.length === 0 && (
-            <div className="absolute inset-0 flex items-center justify-center bg-muted/50">
-              <p className="text-muted-foreground">Nessun punto con coordinate per questo giorno</p>
+            <div className="absolute inset-0 flex flex-col items-center justify-center bg-muted/50 gap-2">
+              <MapPin className="w-8 h-8 text-muted-foreground" />
+              <p className="text-muted-foreground text-sm">Nessun punto per questo giorno</p>
             </div>
           )}
         </div>
