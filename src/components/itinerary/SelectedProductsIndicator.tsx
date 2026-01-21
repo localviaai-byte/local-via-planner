@@ -1,8 +1,9 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ShoppingBag, X, ChevronUp, Trash2 } from 'lucide-react';
+import { ShoppingBag, X, Trash2, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useSelectedProducts } from '@/contexts/SelectedProductsContext';
+import { useTripPlan } from '@/contexts/TripPlanContext';
 import {
   Drawer,
   DrawerContent,
@@ -11,22 +12,21 @@ import {
   DrawerClose,
 } from '@/components/ui/drawer';
 
-interface SelectedProductsIndicatorProps {
-  onContinue?: () => void;
-}
-
-export function SelectedProductsIndicator({ onContinue }: SelectedProductsIndicatorProps) {
+export function SelectedProductsIndicator() {
   const [isOpen, setIsOpen] = useState(false);
   const { 
     selectedProducts, 
     removeProduct, 
-    getTotalPrice, 
-    getProductsByDay,
+    getTotalPrice,
   } = useSelectedProducts();
+  const { planStatus, openCheckout } = useTripPlan();
 
   const totalCount = selectedProducts.length;
   const totalPrice = getTotalPrice();
   const formattedTotal = `€${(totalPrice / 100).toFixed(0)}`;
+  
+  // Check if products are confirmed (paid)
+  const isConfirmed = planStatus === 'CONFIRMED_WITH_EXTRAS';
 
   // Group products by day
   const productsByDay = selectedProducts.reduce((acc, item) => {
@@ -74,7 +74,9 @@ export function SelectedProductsIndicator({ onContinue }: SelectedProductsIndica
                   Extra del tuo viaggio
                 </DrawerTitle>
                 <p className="text-sm text-muted-foreground">
-                  {totalCount} {totalCount === 1 ? 'esperienza selezionata' : 'esperienze selezionate'}
+                  {isConfirmed 
+                    ? 'Esperienze confermate e prenotate' 
+                    : 'Aggiunti al piano, pronti da confermare'}
                 </p>
               </div>
             </div>
@@ -112,13 +114,20 @@ export function SelectedProductsIndicator({ onContinue }: SelectedProductsIndica
                       </div>
                     </div>
                     
-                    <button
-                      onClick={() => removeProduct(item.product.id, item.dayIndex)}
-                      className="p-2 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-lg transition-colors"
-                      aria-label="Rimuovi"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
+                    {!isConfirmed && (
+                      <button
+                        onClick={() => removeProduct(item.product.id, item.dayIndex)}
+                        className="p-2 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-lg transition-colors"
+                        aria-label="Rimuovi"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    )}
+                    {isConfirmed && (
+                      <span className="text-xs text-green-600 font-medium px-2 py-1 bg-green-100 rounded-full">
+                        Prenotato
+                      </span>
+                    )}
                   </div>
                 ))}
               </div>
@@ -127,26 +136,41 @@ export function SelectedProductsIndicator({ onContinue }: SelectedProductsIndica
 
           {/* Fixed footer */}
           <div className="border-t border-border p-4 bg-background">
-            <div className="flex items-center justify-between mb-3">
-              <span className="text-sm text-muted-foreground">Totale stimato</span>
-              <span className="text-xl font-bold text-foreground">{formattedTotal}</span>
-            </div>
-            
-            <Button 
-              onClick={() => {
-                setIsOpen(false);
-                onContinue?.();
-              }}
-              className="w-full"
-              size="lg"
-            >
-              <ChevronUp className="w-4 h-4 mr-2" />
-              Continua con la pianificazione
-            </Button>
-            
-            <p className="text-xs text-muted-foreground text-center mt-3">
-              Il pagamento avverrà solo alla conferma del viaggio
-            </p>
+            {!isConfirmed ? (
+              <>
+                <div className="flex items-center justify-between mb-3">
+                  <div>
+                    <span className="text-sm text-muted-foreground">Totale stimato</span>
+                    <p className="text-xs text-muted-foreground">
+                      {totalCount} {totalCount === 1 ? 'esperienza' : 'esperienze'}
+                    </p>
+                  </div>
+                  <span className="text-xl font-bold text-foreground">{formattedTotal}</span>
+                </div>
+                
+                <Button 
+                  onClick={() => {
+                    setIsOpen(false);
+                    openCheckout();
+                  }}
+                  className="w-full bg-gradient-hero"
+                  size="lg"
+                >
+                  <Sparkles className="w-4 h-4 mr-2" />
+                  Conferma e procedi al pagamento
+                </Button>
+                
+                <p className="text-xs text-muted-foreground text-center mt-3">
+                  Il pagamento avverrà solo alla conferma
+                </p>
+              </>
+            ) : (
+              <div className="text-center py-2">
+                <p className="text-sm text-green-600 font-medium">
+                  ✓ Tutte le esperienze sono state confermate
+                </p>
+              </div>
+            )}
           </div>
         </DrawerContent>
       </Drawer>

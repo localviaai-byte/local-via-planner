@@ -10,12 +10,19 @@ import {
   Sparkles,
   Coffee,
   Footprints,
-  Package
+  Package,
+  Check,
+  Loader2
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { TimelineSlotReal } from './TimelineSlotReal';
+import { SelectedProductsIndicator } from './SelectedProductsIndicator';
+import { SavePlanSheet } from './SavePlanSheet';
+import { ExtrasCheckoutSheet } from './ExtrasCheckoutSheet';
+import { useSelectedProducts } from '@/contexts/SelectedProductsContext';
+import { useTripPlan } from '@/contexts/TripPlanContext';
 import { type TripPreferences } from '@/lib/mockData';
-import { type GeneratedItinerary, type GeneratedDay, type GeneratedSlot } from '@/hooks/useGenerateItinerary';
+import { type GeneratedItinerary } from '@/hooks/useGenerateItinerary';
 
 interface ItineraryViewerProps {
   preferences: TripPreferences;
@@ -27,10 +34,24 @@ interface ItineraryViewerProps {
 export function ItineraryViewer({ preferences, generatedData, onBack, onRegenerate }: ItineraryViewerProps) {
   const [activeDay, setActiveDay] = useState(0);
   const [showDayTransition, setShowDayTransition] = useState(false);
+  const [showSaveSheet, setShowSaveSheet] = useState(false);
   const daySectionRefs = useRef<(HTMLDivElement | null)[]>([]);
   const isScrollingRef = useRef(false);
   
+  const { selectedProducts } = useSelectedProducts();
+  const { 
+    planStatus, 
+    isSaving, 
+    savePlan, 
+    setPlanStatus,
+    hasShownPostSaveSheet,
+    setHasShownPostSaveSheet,
+    openCheckout 
+  } = useTripPlan();
+  
   const { itinerary, city, meta } = generatedData;
+  const hasExtras = selectedProducts.length > 0;
+  const isSaved = planStatus !== 'DRAFT';
 
   // Intersection Observer for automatic day switching on scroll
   useEffect(() => {
@@ -98,6 +119,38 @@ export function ItineraryViewer({ preferences, generatedData, onBack, onRegenera
       slotAcc + (slot.productSuggestions?.length || 0), 0
     ), 0
   );
+
+  // Handle save plan
+  const handleSavePlan = async () => {
+    const success = await savePlan();
+    
+    if (success) {
+      // Update status based on extras
+      if (hasExtras) {
+        setPlanStatus('SAVED_WITH_EXTRAS');
+      } else {
+        setPlanStatus('SAVED');
+      }
+      
+      // Show post-save sheet (only once)
+      if (!hasShownPostSaveSheet) {
+        setTimeout(() => {
+          setShowSaveSheet(true);
+          setHasShownPostSaveSheet(true);
+        }, 500);
+      }
+    }
+  };
+
+  // Handle confirm extras from sheet
+  const handleConfirmExtras = () => {
+    setShowSaveSheet(false);
+    openCheckout();
+  };
+
+  const handleBackToPlan = () => {
+    setShowSaveSheet(false);
+  };
 
   return (
     <div className="min-h-screen bg-background">
@@ -294,8 +347,24 @@ export function ItineraryViewer({ preferences, generatedData, onBack, onRegenera
         ))}
       </main>
 
+      {/* Selected Products Indicator */}
+      <SelectedProductsIndicator />
+
+      {/* Save Plan Sheet */}
+      <SavePlanSheet
+        isOpen={showSaveSheet}
+        onOpenChange={setShowSaveSheet}
+        hasExtras={hasExtras}
+        extrasCount={selectedProducts.length}
+        onConfirmExtras={handleConfirmExtras}
+        onBackToPlan={handleBackToPlan}
+      />
+
+      {/* Checkout Sheet */}
+      <ExtrasCheckoutSheet />
+
       {/* Bottom CTA */}
-      <div className="sticky bottom-0 bg-background border-t border-border">
+      <div className="sticky bottom-0 bg-background border-t border-border z-30">
         <div className="container max-w-2xl py-4 px-4 flex gap-3">
           <Button variant="outline" className="flex-1">
             <Map className="w-4 h-4 mr-2" />
@@ -305,9 +374,27 @@ export function ItineraryViewer({ preferences, generatedData, onBack, onRegenera
             <Calendar className="w-4 h-4 mr-2" />
             Calendario
           </Button>
-          <Button className="flex-1 bg-gradient-hero">
-            <Download className="w-4 h-4 mr-2" />
-            Salva
+          <Button 
+            className="flex-1 bg-gradient-hero"
+            onClick={handleSavePlan}
+            disabled={isSaving || isSaved}
+          >
+            {isSaving ? (
+              <>
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                Salvo...
+              </>
+            ) : isSaved ? (
+              <>
+                <Check className="w-4 h-4 mr-2" />
+                Salvato
+              </>
+            ) : (
+              <>
+                <Download className="w-4 h-4 mr-2" />
+                Salva
+              </>
+            )}
           </Button>
         </div>
       </div>
