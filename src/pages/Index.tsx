@@ -7,6 +7,8 @@ import { useGenerateItinerary, type GeneratedItinerary } from '@/hooks/useGenera
 import { type TripPreferences } from '@/lib/mockData';
 import { Loader2, Sparkles, RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { SelectedProductsProvider } from '@/contexts/SelectedProductsContext';
+import { TripPlanProvider } from '@/contexts/TripPlanContext';
 
 type AppState = 'landing' | 'wizard' | 'generating' | 'itinerary' | 'error';
 
@@ -167,12 +169,16 @@ const Index = () => {
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
         >
-          <ItineraryViewer 
-            preferences={preferences}
-            generatedData={generatedData}
-            onBack={handleBackToWizard}
-            onRegenerate={handleRegenerate}
-          />
+          <SelectedProductsProvider>
+            <TripPlanProvider>
+              <ItineraryViewer 
+                preferences={preferences}
+                generatedData={generatedData}
+                onBack={handleBackToWizard}
+                onRegenerate={handleRegenerate}
+              />
+            </TripPlanProvider>
+          </SelectedProductsProvider>
         </motion.div>
       )}
     </AnimatePresence>
