@@ -20,6 +20,7 @@ import { SelectedProductsIndicator } from './SelectedProductsIndicator';
 import { SavePlanSheet } from './SavePlanSheet';
 import { ExtrasCheckoutSheet } from './ExtrasCheckoutSheet';
 import { ItineraryMapSheet } from './ItineraryMapSheet';
+import { CalendarSheet } from './CalendarSheet';
 import { useSelectedProducts } from '@/contexts/SelectedProductsContext';
 import { useTripPlan } from '@/contexts/TripPlanContext';
 import { type TripPreferences } from '@/lib/mockData';
@@ -37,6 +38,7 @@ export function ItineraryViewer({ preferences, generatedData, onBack, onRegenera
   const [showDayTransition, setShowDayTransition] = useState(false);
   const [showSaveSheet, setShowSaveSheet] = useState(false);
   const [showMapSheet, setShowMapSheet] = useState(false);
+  const [showCalendarSheet, setShowCalendarSheet] = useState(false);
   const daySectionRefs = useRef<(HTMLDivElement | null)[]>([]);
   const isScrollingRef = useRef(false);
   
@@ -379,6 +381,15 @@ export function ItineraryViewer({ preferences, generatedData, onBack, onRegenera
         onDayChange={setActiveDay}
       />
 
+      {/* Calendar Sheet */}
+      <CalendarSheet
+        isOpen={showCalendarSheet}
+        onOpenChange={setShowCalendarSheet}
+        generatedData={generatedData}
+        activeDay={activeDay}
+        onDayChange={setActiveDay}
+      />
+
       {/* Bottom CTA */}
       <div className="sticky bottom-0 bg-background border-t border-border z-30">
         <div className="container max-w-2xl py-4 px-4 flex gap-3">
@@ -386,7 +397,7 @@ export function ItineraryViewer({ preferences, generatedData, onBack, onRegenera
             <Map className="w-4 h-4 mr-2" />
             Mappa
           </Button>
-          <Button variant="outline" className="flex-1">
+          <Button variant="outline" className="flex-1" onClick={() => setShowCalendarSheet(true)}>
             <Calendar className="w-4 h-4 mr-2" />
             Calendario
           </Button>
