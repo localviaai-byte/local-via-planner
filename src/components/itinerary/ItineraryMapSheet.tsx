@@ -107,18 +107,34 @@ export function ItineraryMapSheet({
   isOpen, 
   onOpenChange, 
   generatedData,
-  activeDay,
+  activeDay: externalActiveDay,
   onDayChange 
 }: ItineraryMapSheetProps) {
   const [mapContainerEl, setMapContainerEl] = useState<HTMLDivElement | null>(null);
   const map = useRef<mapboxgl.Map | null>(null);
   const markersRef = useRef<mapboxgl.Marker[]>([]);
   
+  // Local state for active day to ensure immediate UI updates
+  const [localActiveDay, setLocalActiveDay] = useState(externalActiveDay);
+  
   const { token, isLoading: tokenLoading, error: tokenError } = useMapboxToken();
   const [mapLoaded, setMapLoaded] = useState(false);
   const [mapError, setMapError] = useState<string | null>(null);
 
   const { itinerary, city } = generatedData;
+
+  // Sync local state when sheet opens or external day changes
+  useEffect(() => {
+    if (isOpen) {
+      setLocalActiveDay(externalActiveDay);
+    }
+  }, [isOpen, externalActiveDay]);
+
+  // Handle day change - update both local and parent state
+  const handleDayChange = (dayIndex: number) => {
+    setLocalActiveDay(dayIndex);
+    onDayChange(dayIndex);
+  };
 
   // City center for fallback
   const cityCenter = useMemo(() => {
@@ -131,7 +147,7 @@ export function ItineraryMapSheet({
 
   // Extract points for the current day (with fallback coordinates)
   const dayPoints = useMemo<MapPoint[]>(() => {
-    const currentDay = itinerary[activeDay];
+    const currentDay = itinerary[localActiveDay];
     if (!currentDay) return [];
 
     const points: MapPoint[] = [];
@@ -148,7 +164,7 @@ export function ItineraryMapSheet({
             lng: coords.lng,
             type: (slot.place.type as MapPoint['type']) || 'attraction',
             slotIndex,
-            dayIndex: activeDay,
+            dayIndex: localActiveDay,
             time: slot.startTime,
           });
           slotIndex++;
@@ -157,7 +173,7 @@ export function ItineraryMapSheet({
     });
 
     return points;
-  }, [itinerary, activeDay, cityCenter]);
+  }, [itinerary, localActiveDay, cityCenter]);
 
   // Calculate estimated walking times between points
   const walkingSegments = useMemo(() => {
@@ -416,9 +432,9 @@ export function ItineraryMapSheet({
               {itinerary.map((day, index) => (
                 <Button
                   key={day.dayNumber}
-                  variant={activeDay === index ? 'default' : 'outline'}
+                  variant={localActiveDay === index ? 'default' : 'outline'}
                   size="sm"
-                  onClick={() => onDayChange(index)}
+                  onClick={() => handleDayChange(index)}
                   className="flex-1"
                 >
                   Giorno {day.dayNumber}
