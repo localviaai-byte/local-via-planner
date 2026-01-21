@@ -89,13 +89,13 @@ export function StepDestination({ preferences, onUpdate }: StepDestinationProps)
           <motion.div
             initial={{ opacity: 0, height: 0 }}
             animate={{ opacity: 1, height: 'auto' }}
-            className="space-y-3"
+            className="space-y-2 mt-3"
           >
-            <label className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
-              <Train className="w-4 h-4" />
+            <label className="flex items-center gap-2 text-xs font-medium text-muted-foreground uppercase tracking-wide">
+              <Train className="w-3.5 h-3.5" />
               Ti va di spostarti fuori città?
             </label>
-            <div className="grid grid-cols-2 gap-2">
+            <div className="grid grid-cols-2 gap-1.5">
               {maxTravelOptions.map((option) => (
                 <Button
                   key={option.id}
@@ -105,10 +105,10 @@ export function StepDestination({ preferences, onUpdate }: StepDestinationProps)
                     maxTravelMinutes: option.id,
                     nearbyAreas: option.id > 0 
                   })}
-                  className="h-auto py-3 flex flex-col items-start text-left"
+                  className="h-auto py-2 px-2 flex flex-col items-start text-left overflow-hidden"
                 >
-                  <span className="font-medium">{option.label}</span>
-                  <span className="text-xs opacity-70 font-normal">{option.description}</span>
+                  <span className="font-medium text-sm truncate w-full">{option.label}</span>
+                  <span className="text-[10px] opacity-70 font-normal truncate w-full">{option.description}</span>
                 </Button>
               ))}
             </div>
