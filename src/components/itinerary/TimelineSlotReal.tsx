@@ -9,8 +9,8 @@ import {
   ChevronRight,
   ChevronDown,
   Users,
-  ExternalLink,
-  Check
+  Check,
+  Plus
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ProductDetailSheet } from './ProductDetailSheet';
@@ -470,7 +470,7 @@ function ProductCard({
           onClick={onQuickAdd}
         >
           Aggiungi
-          <ExternalLink className="w-3 h-3 ml-1" />
+          <Plus className="w-3 h-3 ml-1" />
         </Button>
       </div>
     </div>
