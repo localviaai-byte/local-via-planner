@@ -21,6 +21,14 @@ export function HeroSection({ onStart }: HeroSectionProps) {
         {/* Gradient Overlay - warm and cinematic */}
         <div className="absolute inset-0 bg-gradient-overlay" />
 
+        {/* Login Button - top right */}
+        <a 
+          href="/admin/login"
+          className="absolute top-4 right-4 z-20 px-3 py-1.5 text-sm text-white/80 hover:text-white bg-black/20 hover:bg-black/30 backdrop-blur-sm rounded-full transition-colors border border-white/10"
+        >
+          Login
+        </a>
+
         {/* Content */}
         <div className="relative z-10 h-full flex flex-col items-center justify-end text-center px-6 pb-12">
           <motion.div
