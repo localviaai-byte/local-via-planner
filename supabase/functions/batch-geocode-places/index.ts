@@ -167,6 +167,32 @@ async function geocodePlace(
     ) || validFeatures[0];
 
     const [longitude, latitude] = bestFeature.center;
+    
+    // Final validation: check distance from city center (max 50km default)
+    if (city.latitude && city.longitude) {
+      const R = 6371;
+      const dLat = ((latitude - city.latitude) * Math.PI) / 180;
+      const dLon = ((longitude - city.longitude) * Math.PI) / 180;
+      const a =
+        Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+        Math.cos((city.latitude * Math.PI) / 180) *
+          Math.cos((latitude * Math.PI) / 180) *
+          Math.sin(dLon / 2) *
+          Math.sin(dLon / 2);
+      const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+      const distanceKm = R * c;
+      
+      if (distanceKm > 50) {
+        console.log(`⚠️ Result too far from city center: ${distanceKm.toFixed(1)}km - rejecting`);
+        return {
+          placeId: place.id,
+          placeName: place.name,
+          success: false,
+          error: `Result ${distanceKm.toFixed(0)}km from city center - too far`,
+        };
+      }
+      console.log(`Distance from city center: ${distanceKm.toFixed(1)}km - OK`);
+    }
 
     return {
       placeId: place.id,
@@ -281,13 +307,21 @@ serve(async (req) => {
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
     const body = await req.json().catch(() => ({}));
-    const { cityId, dryRun = false, limit = 100 } = body;
+    const { cityId, dryRun = false, limit = 100, forceReGeocode = false, maxDistanceKm = 50 } = body;
 
+    // Build query - either missing coordinates OR force re-geocode mode
     let query = supabase
       .from("places")
       .select("id, name, address, zone, city_id")
-      .or("latitude.is.null,longitude.is.null")
       .limit(Math.min(limit, 500));
+
+    if (forceReGeocode) {
+      // Re-geocode all places (for fixing wrong coordinates)
+      console.log("Force re-geocode mode enabled");
+    } else {
+      // Only places missing coordinates
+      query = query.or("latitude.is.null,longitude.is.null");
+    }
 
     if (cityId) {
       query = query.eq("city_id", cityId);
