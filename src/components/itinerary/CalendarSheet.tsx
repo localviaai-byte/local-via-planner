@@ -35,22 +35,24 @@ export function CalendarSheet({
   onDayChange,
 }: CalendarSheetProps) {
   const { itinerary } = generatedData;
-  const currentDay = itinerary[activeDay];
+  
+  // Safely get current day with bounds check
+  const safeActiveDay = Math.max(0, Math.min(activeDay, itinerary.length - 1));
+  const currentDay = itinerary[safeActiveDay];
 
-  if (!currentDay) return null;
-
-  // Calculate timeline bounds
+  // Calculate timeline bounds - memoize per day
   const parseTime = (timeStr: string): number => {
+    if (!timeStr) return 9 * 60; // default 9:00
     const [h, m] = timeStr.split(':').map(Number);
-    return h * 60 + m;
+    return (h || 0) * 60 + (m || 0);
   };
 
   const formatTime = (timeStr: string): string => {
-    return timeStr; // Already in HH:MM format
+    return timeStr || '09:00';
   };
 
-  // Get earliest start and latest end
-  const timeSlots = currentDay.slots.filter(s => s.startTime && s.endTime);
+  // Get earliest start and latest end for current day
+  const timeSlots = currentDay?.slots?.filter(s => s.startTime && s.endTime) || [];
   const earliestStart = timeSlots.length > 0 
     ? Math.min(...timeSlots.map(s => parseTime(s.startTime)))
     : 9 * 60;
@@ -61,8 +63,8 @@ export function CalendarSheet({
   // Round to hour boundaries for display
   const startHour = Math.floor(earliestStart / 60);
   const endHour = Math.ceil(latestEnd / 60);
-  const totalMinutes = (endHour - startHour) * 60;
-  const pixelsPerMinute = 2; // 2px per minute = 120px per hour
+  const totalMinutes = Math.max((endHour - startHour) * 60, 60); // min 1 hour
+  const pixelsPerMinute = 2;
 
   // Calculate slot position and height
   const getSlotStyle = (slot: GeneratedSlot) => {
@@ -71,8 +73,8 @@ export function CalendarSheet({
     const duration = endMin - startMin;
     
     return {
-      top: startMin * pixelsPerMinute,
-      height: Math.max(duration * pixelsPerMinute, 40), // Minimum height
+      top: Math.max(0, startMin * pixelsPerMinute),
+      height: Math.max(duration * pixelsPerMinute, 40),
     };
   };
 
@@ -135,9 +137,14 @@ export function CalendarSheet({
     }
   };
 
+  // Early return after all hooks
+  if (!currentDay) {
+    return null;
+  }
+
   return (
     <Sheet open={isOpen} onOpenChange={onOpenChange}>
-      <SheetContent side="bottom" className="h-[85vh] p-0 rounded-t-3xl">
+      <SheetContent side="bottom" className="h-[85vh] p-0 rounded-t-3xl" aria-describedby={undefined}>
         <div className="flex flex-col h-full">
           {/* Header */}
           <SheetHeader className="px-4 pt-4 pb-3 border-b border-border">
