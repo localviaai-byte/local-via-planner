@@ -24,7 +24,10 @@ export function useAIPrefill() {
   const prefillPlace = async (
     placeName: string,
     placeType: string | null,
-    cityName: string
+    cityName: string,
+    cityRegion?: string | null,
+    cityLatitude?: number | null,
+    cityLongitude?: number | null
   ): Promise<Partial<PlaceFormData> | null> => {
     if (!placeName.trim() || !cityName.trim()) {
       toast.error('Inserisci prima il nome del posto');
@@ -39,6 +42,9 @@ export function useAIPrefill() {
           placeName: placeName.trim(),
           placeType: placeType || 'attraction',
           cityName: cityName.trim(),
+          cityRegion: cityRegion || undefined,
+          cityLatitude: cityLatitude || undefined,
+          cityLongitude: cityLongitude || undefined,
         },
       });
 

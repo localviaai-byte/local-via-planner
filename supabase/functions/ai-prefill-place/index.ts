@@ -9,6 +9,9 @@ interface PlacePrefillRequest {
   placeName: string;
   placeType: string;
   cityName: string;
+  cityRegion?: string;
+  cityLatitude?: number;
+  cityLongitude?: number;
 }
 
 interface PlacePrefillResponse {
@@ -33,7 +36,7 @@ serve(async (req) => {
   }
 
   try {
-    const { placeName, placeType, cityName }: PlacePrefillRequest = await req.json();
+    const { placeName, placeType, cityName, cityRegion, cityLatitude, cityLongitude }: PlacePrefillRequest = await req.json();
 
     if (!placeName || !cityName) {
       return new Response(
@@ -217,35 +220,70 @@ Fornisci i seguenti dati nel formato strutturato richiesto:
 
     console.log("Prefill data extracted:", prefillData);
 
-    // Geocode the place to get coordinates
+    // Geocode the place using region-aware logic
     const MAPBOX_TOKEN = Deno.env.get("MAPBOX_TOKEN");
     if (MAPBOX_TOKEN && (prefillData.address || placeName)) {
       try {
+        // Use the region-aware geocode-place function logic inline
         const searchQuery = prefillData.address 
           ? `${prefillData.address}, ${cityName}, Italia`
           : `${placeName}, ${cityName}, Italia`;
 
-        console.log(`Geocoding: "${searchQuery}"`);
+        console.log(`Geocoding: "${searchQuery}" (region: ${cityRegion || 'unknown'})`);
+
+        // Italian regions with approximate bounding boxes
+        const REGION_BOUNDS: Record<string, { minLat: number; maxLat: number; minLng: number; maxLng: number; center: { lat: number; lng: number } }> = {
+          'campania': { minLat: 39.9, maxLat: 41.5, minLng: 13.7, maxLng: 15.8, center: { lat: 40.85, lng: 14.25 } },
+          'lazio': { minLat: 41.0, maxLat: 42.9, minLng: 11.4, maxLng: 14.0, center: { lat: 41.9, lng: 12.5 } },
+          'toscana': { minLat: 42.2, maxLat: 44.5, minLng: 9.7, maxLng: 12.4, center: { lat: 43.35, lng: 11.05 } },
+          'lombardia': { minLat: 44.7, maxLat: 46.6, minLng: 8.5, maxLng: 11.4, center: { lat: 45.65, lng: 9.95 } },
+          'veneto': { minLat: 44.8, maxLat: 47.1, minLng: 10.6, maxLng: 13.1, center: { lat: 45.45, lng: 11.85 } },
+          'puglia': { minLat: 39.8, maxLat: 42.2, minLng: 15.0, maxLng: 18.5, center: { lat: 41.0, lng: 16.5 } },
+          'sicilia': { minLat: 36.6, maxLat: 38.8, minLng: 12.4, maxLng: 15.7, center: { lat: 37.5, lng: 14.0 } },
+        };
+        const ITALY_BOUNDS = { minLat: 35.5, maxLat: 47.1, minLng: 6.6, maxLng: 18.5, center: { lat: 41.9, lng: 12.5 } };
+
+        const normalizedRegion = cityRegion?.toLowerCase().trim() || '';
+        const regionBounds = REGION_BOUNDS[normalizedRegion] || ITALY_BOUNDS;
+        
+        const proximityLng = cityLongitude || regionBounds.center.lng;
+        const proximityLat = cityLatitude || regionBounds.center.lat;
 
         const geocodeUrl = new URL("https://api.mapbox.com/geocoding/v5/mapbox.places/" + encodeURIComponent(searchQuery) + ".json");
         geocodeUrl.searchParams.set("access_token", MAPBOX_TOKEN);
-        geocodeUrl.searchParams.set("limit", "1");
-        geocodeUrl.searchParams.set("types", "poi,address,place");
+        geocodeUrl.searchParams.set("limit", "5");
+        geocodeUrl.searchParams.set("types", "poi,address,place,locality");
         geocodeUrl.searchParams.set("country", "IT");
         geocodeUrl.searchParams.set("language", "it");
+        geocodeUrl.searchParams.set("proximity", `${proximityLng},${proximityLat}`);
 
         const geocodeResponse = await fetch(geocodeUrl.toString());
         
         if (geocodeResponse.ok) {
           const geocodeData = await geocodeResponse.json();
           
-          if (geocodeData.features && geocodeData.features.length > 0) {
-            const [longitude, latitude] = geocodeData.features[0].center;
+          // Filter to region bounds
+          const isInRegion = (feature: { center: number[] }): boolean => {
+            const [lng, lat] = feature.center;
+            return lat >= regionBounds.minLat && lat <= regionBounds.maxLat && 
+                   lng >= regionBounds.minLng && lng <= regionBounds.maxLng;
+          };
+          
+          const validFeatures = (geocodeData.features || []).filter(isInRegion);
+          
+          if (validFeatures.length > 0) {
+            // Prefer result containing city name
+            const cityNameLower = cityName.toLowerCase();
+            const bestFeature = validFeatures.find((f: { place_name: string }) =>
+              f.place_name.toLowerCase().includes(cityNameLower)
+            ) || validFeatures[0];
+            
+            const [longitude, latitude] = bestFeature.center;
             prefillData.latitude = latitude;
             prefillData.longitude = longitude;
-            console.log(`Geocoded coordinates: ${latitude}, ${longitude}`);
+            console.log(`Geocoded coordinates: ${latitude}, ${longitude} (in ${normalizedRegion || 'italy'} region)`);
           } else {
-            console.log("No geocoding results found");
+            console.log(`No geocoding results in ${normalizedRegion || 'italy'} region`);
             prefillData.latitude = null;
             prefillData.longitude = null;
           }

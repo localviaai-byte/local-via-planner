@@ -249,7 +249,16 @@ export default function PlaceWizard() {
       case 0:
         return <StepContext {...commonProps} cities={cities || []} />;
       case 1:
-        return <StepIdentity {...commonProps} cityName={currentCity?.name || cities?.find(c => c.id === formData.city_id)?.name || ''} />;
+        const city = currentCity || cities?.find(c => c.id === formData.city_id);
+        return (
+          <StepIdentity 
+            {...commonProps} 
+            cityName={city?.name || ''} 
+            cityRegion={city?.region}
+            cityLatitude={city?.latitude ? Number(city.latitude) : null}
+            cityLongitude={city?.longitude ? Number(city.longitude) : null}
+          />
+        );
       case 2:
         return <StepWhy {...commonProps} />;
       case 3:

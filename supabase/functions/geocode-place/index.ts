@@ -10,6 +10,9 @@ interface GeocodeRequest {
   placeName: string;
   address?: string;
   cityName: string;
+  cityLatitude?: number;
+  cityLongitude?: number;
+  region?: string;
   country?: string;
   placeId?: string;
 }
@@ -22,13 +25,49 @@ interface GeocodeResponse {
   error?: string;
 }
 
+// Italian regions with approximate bounding boxes [minLat, maxLat, minLng, maxLng]
+const REGION_BOUNDS: Record<string, { minLat: number; maxLat: number; minLng: number; maxLng: number; center: { lat: number; lng: number } }> = {
+  'campania': { minLat: 39.9, maxLat: 41.5, minLng: 13.7, maxLng: 15.8, center: { lat: 40.85, lng: 14.25 } },
+  'lazio': { minLat: 41.0, maxLat: 42.9, minLng: 11.4, maxLng: 14.0, center: { lat: 41.9, lng: 12.5 } },
+  'toscana': { minLat: 42.2, maxLat: 44.5, minLng: 9.7, maxLng: 12.4, center: { lat: 43.35, lng: 11.05 } },
+  'lombardia': { minLat: 44.7, maxLat: 46.6, minLng: 8.5, maxLng: 11.4, center: { lat: 45.65, lng: 9.95 } },
+  'veneto': { minLat: 44.8, maxLat: 47.1, minLng: 10.6, maxLng: 13.1, center: { lat: 45.45, lng: 11.85 } },
+  'emilia-romagna': { minLat: 43.7, maxLat: 45.1, minLng: 9.2, maxLng: 12.8, center: { lat: 44.5, lng: 11.0 } },
+  'piemonte': { minLat: 44.0, maxLat: 46.5, minLng: 6.6, maxLng: 9.2, center: { lat: 45.05, lng: 7.9 } },
+  'puglia': { minLat: 39.8, maxLat: 42.2, minLng: 15.0, maxLng: 18.5, center: { lat: 41.0, lng: 16.5 } },
+  'sicilia': { minLat: 36.6, maxLat: 38.8, minLng: 12.4, maxLng: 15.7, center: { lat: 37.5, lng: 14.0 } },
+  'sardegna': { minLat: 38.8, maxLat: 41.3, minLng: 8.1, maxLng: 9.8, center: { lat: 40.0, lng: 9.0 } },
+  'calabria': { minLat: 37.9, maxLat: 40.2, minLng: 15.6, maxLng: 17.2, center: { lat: 38.9, lng: 16.3 } },
+  'liguria': { minLat: 43.7, maxLat: 44.7, minLng: 7.5, maxLng: 10.1, center: { lat: 44.3, lng: 8.8 } },
+  'marche': { minLat: 42.7, maxLat: 43.9, minLng: 12.1, maxLng: 13.9, center: { lat: 43.3, lng: 13.0 } },
+  'abruzzo': { minLat: 41.7, maxLat: 42.9, minLng: 13.0, maxLng: 14.8, center: { lat: 42.35, lng: 13.9 } },
+  'friuli-venezia giulia': { minLat: 45.6, maxLat: 46.7, minLng: 12.3, maxLng: 13.9, center: { lat: 46.1, lng: 13.2 } },
+  'trentino-alto adige': { minLat: 45.7, maxLat: 47.1, minLng: 10.4, maxLng: 12.5, center: { lat: 46.4, lng: 11.4 } },
+  'umbria': { minLat: 42.4, maxLat: 43.6, minLng: 12.1, maxLng: 13.3, center: { lat: 42.9, lng: 12.6 } },
+  'basilicata': { minLat: 39.9, maxLat: 41.1, minLng: 15.3, maxLng: 16.9, center: { lat: 40.5, lng: 16.0 } },
+  'molise': { minLat: 41.3, maxLat: 42.1, minLng: 13.9, maxLng: 15.2, center: { lat: 41.7, lng: 14.6 } },
+  "valle d'aosta": { minLat: 45.5, maxLat: 46.0, minLng: 6.8, maxLng: 7.9, center: { lat: 45.74, lng: 7.32 } },
+};
+
+// Default bounds for Italy
+const ITALY_BOUNDS = { minLat: 35.5, maxLat: 47.1, minLng: 6.6, maxLng: 18.5, center: { lat: 41.9, lng: 12.5 } };
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    const { placeName, address, cityName, country = "Italia", placeId }: GeocodeRequest = await req.json();
+    const { 
+      placeName, 
+      address, 
+      cityName, 
+      cityLatitude,
+      cityLongitude,
+      region,
+      country = "Italia", 
+      placeId 
+    }: GeocodeRequest = await req.json();
 
     if (!placeName || !cityName) {
       return new Response(
@@ -46,12 +85,33 @@ serve(async (req) => {
       );
     }
 
+    // Get region bounds for filtering - normalize region name
+    const normalizedRegion = region?.toLowerCase().trim() || '';
+    const regionBounds = REGION_BOUNDS[normalizedRegion] || ITALY_BOUNDS;
+    
+    // Determine proximity center - prefer city coords, then region center
+    const proximityLng = cityLongitude || regionBounds.center.lng;
+    const proximityLat = cityLatitude || regionBounds.center.lat;
+    
+    console.log(`Geocoding: "${placeName}" in ${cityName}, region: ${region || 'unknown'}`);
+    console.log(`Using proximity: ${proximityLng}, ${proximityLat}`);
+    console.log(`Region bounds: lat ${regionBounds.minLat}-${regionBounds.maxLat}, lng ${regionBounds.minLng}-${regionBounds.maxLng}`);
+
+    // Filter function based on region bounds
+    const isInRegion = (feature: { center: number[] }): boolean => {
+      const [lng, lat] = feature.center;
+      return lat >= regionBounds.minLat && lat <= regionBounds.maxLat && 
+             lng >= regionBounds.minLng && lng <= regionBounds.maxLng;
+    };
+
+    const containsCityName = (featurePlaceName: string, targetCity: string): boolean => {
+      return featurePlaceName.toLowerCase().includes(targetCity.toLowerCase());
+    };
+
     // Build search query
     const searchQuery = address 
       ? `${address}, ${cityName}, ${country}`
       : `${placeName}, ${cityName}, ${country}`;
-
-    console.log(`Geocoding: "${searchQuery}"`);
 
     const geocodeUrl = new URL("https://api.mapbox.com/geocoding/v5/mapbox.places/" + encodeURIComponent(searchQuery) + ".json");
     geocodeUrl.searchParams.set("access_token", MAPBOX_TOKEN);
@@ -59,7 +119,7 @@ serve(async (req) => {
     geocodeUrl.searchParams.set("types", "poi,address,place,locality");
     geocodeUrl.searchParams.set("country", "IT");
     geocodeUrl.searchParams.set("language", "it");
-    geocodeUrl.searchParams.set("proximity", "14.4869,40.7509");
+    geocodeUrl.searchParams.set("proximity", `${proximityLng},${proximityLat}`);
 
     const geocodeResponse = await fetch(geocodeUrl.toString());
     
@@ -75,19 +135,15 @@ serve(async (req) => {
     const geocodeData = await geocodeResponse.json();
     console.log("Mapbox response features count:", geocodeData.features?.length || 0);
 
-    // Filter features to only those in Campania/Southern Italy region
-    const isInCampaniaRegion = (feature: { center: number[] }): boolean => {
-      const [lng, lat] = feature.center;
-      return lat > 39.5 && lat < 41.5 && lng > 13 && lng < 16;
-    };
-
-    const containsCityName = (featurePlaceName: string, targetCity: string): boolean => {
-      return featurePlaceName.toLowerCase().includes(targetCity.toLowerCase());
-    };
-
     // Filter to valid regional results first
-    let validFeatures = (geocodeData.features || []).filter(isInCampaniaRegion);
-    console.log(`Valid features in region: ${validFeatures.length}`);
+    let validFeatures = (geocodeData.features || []).filter(isInRegion);
+    console.log(`Valid features in region ${normalizedRegion || 'italy'}: ${validFeatures.length}`);
+
+    // Log all features for debugging
+    (geocodeData.features || []).forEach((f: { place_name: string; center: number[] }, i: number) => {
+      const inRegion = isInRegion(f);
+      console.log(`  Feature ${i}: "${f.place_name}" at [${f.center[1].toFixed(4)}, ${f.center[0].toFixed(4)}] - in region: ${inRegion}`);
+    });
 
     // Find best match
     let bestFeature = null;
@@ -97,9 +153,9 @@ serve(async (req) => {
       ) || validFeatures[0];
     }
 
-    // Fallback search if no results
-    if (!bestFeature) {
-      const fallbackQuery = `${placeName} ${cityName} Campania`;
+    // Fallback search with region name if no results
+    if (!bestFeature && region) {
+      const fallbackQuery = `${placeName} ${cityName} ${region}`;
       console.log(`No valid results in region, trying fallback: "${fallbackQuery}"`);
       
       const fallbackUrl = new URL("https://api.mapbox.com/geocoding/v5/mapbox.places/" + encodeURIComponent(fallbackQuery) + ".json");
@@ -107,13 +163,14 @@ serve(async (req) => {
       fallbackUrl.searchParams.set("limit", "5");
       fallbackUrl.searchParams.set("country", "IT");
       fallbackUrl.searchParams.set("language", "it");
-      fallbackUrl.searchParams.set("proximity", "14.4869,40.7509");
+      fallbackUrl.searchParams.set("proximity", `${proximityLng},${proximityLat}`);
 
       const fallbackResponse = await fetch(fallbackUrl.toString());
       const fallbackData = await fallbackResponse.json();
 
       if (fallbackData.features && fallbackData.features.length > 0) {
-        validFeatures = fallbackData.features.filter(isInCampaniaRegion);
+        validFeatures = fallbackData.features.filter(isInRegion);
+        console.log(`Fallback found ${validFeatures.length} valid features in region`);
         if (validFeatures.length > 0) {
           bestFeature = validFeatures.find((f: { place_name: string }) => 
             containsCityName(f.place_name, cityName)
@@ -129,7 +186,7 @@ serve(async (req) => {
           success: true, 
           latitude: null, 
           longitude: null,
-          error: "Coordinate non trovate" 
+          error: "Coordinate non trovate nella regione specificata" 
         }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
