@@ -28,32 +28,32 @@ export function StepDestination({ preferences, onUpdate }: StepDestinationProps)
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: -20 }}
-      className="space-y-8"
+      className="space-y-6"
     >
-      {/* Editorial header */}
-      <div className="text-center mb-8">
-        <h2 className="font-display text-3xl font-semibold text-foreground mb-3 tracking-tight">
+      {/* Editorial header - more compact on mobile */}
+      <div className="text-center mb-4">
+        <h2 className="font-display text-2xl sm:text-3xl font-semibold text-foreground mb-2 tracking-tight">
           Dove vuoi andare?
         </h2>
-        <p className="text-muted-foreground">
+        <p className="text-sm text-muted-foreground">
           Raccontaci come sarà questo viaggio
         </p>
       </div>
 
-      {/* City Selection - Editorial cards */}
-      <div className="space-y-4">
-        <label className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
-          <MapPin className="w-4 h-4" />
+      {/* City Selection - Compact mobile cards */}
+      <div className="space-y-3">
+        <label className="flex items-center gap-2 text-xs font-medium text-muted-foreground uppercase tracking-wide">
+          <MapPin className="w-3.5 h-3.5" />
           Destinazione
         </label>
-        <div className="grid gap-3">
+        <div className="grid gap-2">
           {cities.map((city) => (
             <motion.button
               key={city.id}
               type="button"
               onClick={() => onUpdate({ city: city.id })}
               className={`
-                relative p-4 rounded-2xl text-left transition-all duration-200
+                relative p-3 rounded-xl text-left transition-all duration-200
                 ${preferences.city === city.id
                   ? 'bg-card ring-2 ring-primary shadow-card'
                   : 'bg-card hover:shadow-soft'
@@ -61,18 +61,18 @@ export function StepDestination({ preferences, onUpdate }: StepDestinationProps)
               `}
               whileTap={{ scale: 0.98 }}
             >
-              <div className="flex items-center gap-4">
-                <div className="w-14 h-14 rounded-xl bg-secondary flex items-center justify-center text-2xl">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-lg bg-secondary flex items-center justify-center text-xl sm:text-2xl flex-shrink-0">
                   {city.id === 'pompei' ? '🏛️' : city.id === 'napoli' ? '🌋' : '🌊'}
                 </div>
-                <div className="flex-1">
-                  <h3 className="font-display text-lg font-semibold text-foreground">{city.name}</h3>
-                  <p className="text-sm text-muted-foreground">{city.description}</p>
-                  <div className="flex gap-2 mt-2">
+                <div className="flex-1 min-w-0">
+                  <h3 className="font-display text-base font-semibold text-foreground">{city.name}</h3>
+                  <p className="text-xs text-muted-foreground line-clamp-1">{city.description}</p>
+                  <div className="flex flex-wrap gap-1.5 mt-1.5">
                     {city.popularFor.slice(0, 3).map((tag) => (
                       <span
                         key={tag}
-                        className="px-2 py-0.5 bg-secondary text-xs text-muted-foreground rounded-full"
+                        className="px-1.5 py-0.5 bg-secondary text-[10px] text-muted-foreground rounded-full"
                       >
                         {tag}
                       </span>
@@ -116,44 +116,44 @@ export function StepDestination({ preferences, onUpdate }: StepDestinationProps)
         )}
       </div>
 
-      {/* Duration */}
-      <div className="space-y-4">
-        <label className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
-          <Calendar className="w-4 h-4" />
+      {/* Duration - more compact */}
+      <div className="space-y-3">
+        <label className="flex items-center gap-2 text-xs font-medium text-muted-foreground uppercase tracking-wide">
+          <Calendar className="w-3.5 h-3.5" />
           Durata del viaggio
         </label>
-        <div className="grid grid-cols-4 gap-2">
+        <div className="grid grid-cols-4 gap-1.5">
           {[1, 2, 3, 4].map((days) => (
             <Button
               key={days}
               type="button"
               variant={preferences.numDays === days ? 'default' : 'outline'}
               onClick={() => onUpdate({ numDays: days })}
-              className="h-12"
+              className="h-10 text-sm px-2"
             >
-              {days} {days === 1 ? 'giorno' : 'giorni'}
+              {days} {days === 1 ? 'g' : 'gg'}
             </Button>
           ))}
         </div>
       </div>
 
-      {/* Travel Composition */}
-      <div className="space-y-4">
-        <label className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
-          <Users className="w-4 h-4" />
+      {/* Travel Composition - more compact */}
+      <div className="space-y-3">
+        <label className="flex items-center gap-2 text-xs font-medium text-muted-foreground uppercase tracking-wide">
+          <Users className="w-3.5 h-3.5" />
           Con chi viaggi?
         </label>
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-4 gap-1.5">
           {travelWithOptions.map((option) => (
             <Button
               key={option.value}
               type="button"
               variant={preferences.travelWith === option.value ? 'default' : 'outline'}
               onClick={() => onUpdate({ travelWith: option.value as TripPreferences['travelWith'] })}
-              className="h-auto py-4 flex flex-col gap-1"
+              className="h-auto py-2.5 flex flex-col gap-0.5 px-1"
             >
-              <span className="text-2xl">{option.icon}</span>
-              <span>{option.label}</span>
+              <span className="text-lg">{option.icon}</span>
+              <span className="text-[10px] leading-tight">{option.label}</span>
             </Button>
           ))}
         </div>
