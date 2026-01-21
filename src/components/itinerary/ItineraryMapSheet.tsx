@@ -330,7 +330,7 @@ export function ItineraryMapSheet({
 
   return (
     <Sheet open={isOpen} onOpenChange={onOpenChange}>
-      <SheetContent side="bottom" className="h-[85vh] p-0 rounded-t-2xl overflow-hidden">
+      <SheetContent side="bottom" className="h-[85vh] p-0 rounded-t-2xl overflow-hidden flex flex-col">
         <SheetHeader className="p-4 pb-2 border-b bg-background">
           <SheetTitle className="flex items-center gap-2 text-left">
             <MapPin className="w-5 h-5 text-primary" />
@@ -358,7 +358,7 @@ export function ItineraryMapSheet({
           )}
         </SheetHeader>
 
-        <div className="relative h-full">
+        <div className="relative flex-1" style={{ minHeight: 'calc(85vh - 140px)' }}>
           {/* Map Container */}
           {tokenLoading ? (
             <div className="absolute inset-0 flex items-center justify-center bg-muted">
@@ -370,7 +370,7 @@ export function ItineraryMapSheet({
               <p className="text-destructive text-sm">Errore caricamento mappa</p>
             </div>
           ) : (
-            <div ref={mapContainer} className="w-full h-full" />
+            <div ref={mapContainer} className="absolute inset-0" style={{ width: '100%', height: '100%' }} />
           )}
 
           {/* Walking Times Summary */}
