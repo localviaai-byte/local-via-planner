@@ -135,7 +135,8 @@ serve(async (req) => {
         best_times, best_days, ideal_for,
         vibe_touristy_to_local, social_level,
         physical_effort, mental_effort,
-        why_people_go, mood_primary
+        why_people_go, mood_primary,
+        latitude, longitude
       `)
       .eq("city_id", cityId)
       .eq("status", "approved");
@@ -433,6 +434,8 @@ Suggerisci prodotti add-on dove appropriato (es. tour guidato prima di un museo,
               indoor_outdoor: place.indoor_outdoor,
               crowd_level: place.crowd_level,
               vibe_touristy_to_local: place.vibe_touristy_to_local,
+              latitude: place.latitude,
+              longitude: place.longitude,
             } : undefined,
             reason: slot.reason,
             alternatives,
@@ -453,6 +456,8 @@ Suggerisci prodotti add-on dove appropriato (es. tour guidato prima di un museo,
           id: city.id,
           name: city.name,
           region: city.region,
+          latitude: city.latitude,
+          longitude: city.longitude,
         },
         meta: {
           placesUsed: places.length,
