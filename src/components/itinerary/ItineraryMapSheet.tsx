@@ -113,6 +113,10 @@ export function ItineraryMapSheet({
   const [mapContainerEl, setMapContainerEl] = useState<HTMLDivElement | null>(null);
   const map = useRef<mapboxgl.Map | null>(null);
   const markersRef = useRef<mapboxgl.Marker[]>([]);
+
+  // Prevent resize loops / flicker (Sheet animations + Mapbox resize can trigger frequent observers)
+  const resizeRafRef = useRef<number | null>(null);
+  const lastResizeAtRef = useRef<number>(0);
   
   // Local state for active day to ensure immediate UI updates
   const [localActiveDay, setLocalActiveDay] = useState(externalActiveDay);
@@ -134,6 +138,27 @@ export function ItineraryMapSheet({
   const handleDayChange = (dayIndex: number) => {
     setLocalActiveDay(dayIndex);
     onDayChange(dayIndex);
+  };
+
+  const scheduleMapResize = (delayMs = 0) => {
+    const doResize = () => {
+      if (!map.current) return;
+      // Throttle: avoid excessive resize calls that can cause visible tile flicker.
+      const now = performance.now();
+      if (now - lastResizeAtRef.current < 100) return;
+      lastResizeAtRef.current = now;
+
+      if (resizeRafRef.current) cancelAnimationFrame(resizeRafRef.current);
+      resizeRafRef.current = requestAnimationFrame(() => {
+        map.current?.resize();
+      });
+    };
+
+    if (delayMs > 0) {
+      window.setTimeout(doResize, delayMs);
+    } else {
+      doResize();
+    }
   };
 
   // City center for fallback
@@ -230,8 +255,8 @@ export function ItineraryMapSheet({
       setMapLoaded(true);
       // The Sheet animates and can cause the map to initialize with a 0x0 size.
       // Force a resize on the next frames to avoid a blank map.
-      requestAnimationFrame(() => map.current?.resize());
-      setTimeout(() => map.current?.resize(), 250);
+      scheduleMapResize(0);
+      scheduleMapResize(250);
     });
 
     map.current.on('error', (e) => {
@@ -241,6 +266,7 @@ export function ItineraryMapSheet({
     });
 
     return () => {
+      if (resizeRafRef.current) cancelAnimationFrame(resizeRafRef.current);
       map.current?.remove();
       map.current = null;
       setMapLoaded(false);
@@ -251,7 +277,8 @@ export function ItineraryMapSheet({
   // Ensure map resizes correctly when the Sheet opens (after layout/animation)
   useEffect(() => {
     if (!isOpen || !map.current) return;
-    const t = setTimeout(() => map.current?.resize(), 250);
+    scheduleMapResize(250);
+    const t = setTimeout(() => scheduleMapResize(0), 350);
     return () => clearTimeout(t);
   }, [isOpen]);
 
@@ -259,17 +286,39 @@ export function ItineraryMapSheet({
   useEffect(() => {
     if (!isOpen || !map.current || !mapContainerEl) return;
     const ro = new ResizeObserver(() => {
-      map.current?.resize();
+      scheduleMapResize(0);
     });
     ro.observe(mapContainerEl);
     return () => ro.disconnect();
   }, [isOpen, mapContainerEl]);
+
+  // Avoid re-rendering the whole map (markers + fitBounds) unless points really changed.
+  const pointsSignature = useMemo(() => {
+    if (!dayPoints.length) return 'empty';
+    return dayPoints
+      .map((p) => `${p.id}:${p.slotIndex}:${p.lat.toFixed(5)},${p.lng.toFixed(5)}`)
+      .join('|');
+  }, [dayPoints]);
+
+  const lastRenderedSignatureRef = useRef<string>('');
+  const lastRenderedDayRef = useRef<number>(-1);
 
   // Update markers and route when day changes
   useEffect(() => {
     if (!map.current || !mapLoaded) return;
 
     const m = map.current;
+
+     // If parent re-renders frequently (e.g. due to observers), don't re-fit / re-add layers
+     // unless the actual coordinates changed.
+     if (
+       lastRenderedSignatureRef.current === pointsSignature &&
+       lastRenderedDayRef.current === localActiveDay
+     ) {
+       return;
+     }
+     lastRenderedSignatureRef.current = pointsSignature;
+     lastRenderedDayRef.current = localActiveDay;
 
     const render = () => {
       // Guard against rare races during style load (Mapbox can throw if we add sources too early)
@@ -299,7 +348,7 @@ export function ItineraryMapSheet({
         m.flyTo({
           center: [cityCenter.lng, cityCenter.lat],
           zoom: 14,
-          duration: 500,
+          duration: 0,
         });
         return;
       }
@@ -392,7 +441,7 @@ export function ItineraryMapSheet({
       m.fitBounds(bounds, {
         padding: { top: 80, bottom: 140, left: 50, right: 50 },
         maxZoom: 16,
-        duration: 500,
+        duration: 250,
       });
     };
 
@@ -410,7 +459,7 @@ export function ItineraryMapSheet({
     }
 
     render();
-  }, [dayPoints, mapLoaded, cityCenter]);
+  }, [dayPoints, mapLoaded, cityCenter, localActiveDay, pointsSignature]);
 
   const totalWalkingTime = walkingSegments.reduce((acc, seg) => acc + seg.walkingMinutes, 0);
 
