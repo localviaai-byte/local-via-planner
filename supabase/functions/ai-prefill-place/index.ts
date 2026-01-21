@@ -22,6 +22,8 @@ interface PlacePrefillResponse {
   vibe_touristy_to_local: number | null;
   local_warning: string | null;
   suggested_one_liner: string | null;
+  latitude: number | null;
+  longitude: number | null;
 }
 
 serve(async (req) => {
@@ -214,6 +216,53 @@ Fornisci i seguenti dati nel formato strutturato richiesto:
     }
 
     console.log("Prefill data extracted:", prefillData);
+
+    // Geocode the place to get coordinates
+    const MAPBOX_TOKEN = Deno.env.get("MAPBOX_TOKEN");
+    if (MAPBOX_TOKEN && (prefillData.address || placeName)) {
+      try {
+        const searchQuery = prefillData.address 
+          ? `${prefillData.address}, ${cityName}, Italia`
+          : `${placeName}, ${cityName}, Italia`;
+
+        console.log(`Geocoding: "${searchQuery}"`);
+
+        const geocodeUrl = new URL("https://api.mapbox.com/geocoding/v5/mapbox.places/" + encodeURIComponent(searchQuery) + ".json");
+        geocodeUrl.searchParams.set("access_token", MAPBOX_TOKEN);
+        geocodeUrl.searchParams.set("limit", "1");
+        geocodeUrl.searchParams.set("types", "poi,address,place");
+        geocodeUrl.searchParams.set("country", "IT");
+        geocodeUrl.searchParams.set("language", "it");
+
+        const geocodeResponse = await fetch(geocodeUrl.toString());
+        
+        if (geocodeResponse.ok) {
+          const geocodeData = await geocodeResponse.json();
+          
+          if (geocodeData.features && geocodeData.features.length > 0) {
+            const [longitude, latitude] = geocodeData.features[0].center;
+            prefillData.latitude = latitude;
+            prefillData.longitude = longitude;
+            console.log(`Geocoded coordinates: ${latitude}, ${longitude}`);
+          } else {
+            console.log("No geocoding results found");
+            prefillData.latitude = null;
+            prefillData.longitude = null;
+          }
+        } else {
+          console.error("Geocoding request failed:", geocodeResponse.status);
+          prefillData.latitude = null;
+          prefillData.longitude = null;
+        }
+      } catch (geocodeError) {
+        console.error("Geocoding error:", geocodeError);
+        prefillData.latitude = null;
+        prefillData.longitude = null;
+      }
+    } else {
+      prefillData.latitude = null;
+      prefillData.longitude = null;
+    }
 
     return new Response(JSON.stringify(prefillData), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },

@@ -85,6 +85,8 @@ export function useCreatePlace() {
         address: formData.address || null,
         zone: formData.zone || null,
         photo_url: formData.photo_url || null,
+        latitude: formData.latitude || null,
+        longitude: formData.longitude || null,
         why_people_go: formData.why_people_go,
         why_other: formData.why_other || null,
         social_level: formData.social_level,
