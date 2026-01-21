@@ -22,7 +22,7 @@ interface TripPreferences {
   budget: number;
   dietaryRestrictions: string[];
   activityStyle: string;
-  guidedTours: boolean;
+  guidedTours: 'autonomous' | 'guided' | 'unknown';
   walkingTolerance: string;
   accommodation: { zone: string } | null;
   transport: string;
@@ -234,8 +234,9 @@ REGOLE CRITICHE:
 7. Tolleranza camminata: ${preferences.walkingTolerance}
 8. Orario inizio: ${preferences.startTime === 'early' ? '8:00-9:00' : preferences.startTime === 'normal' ? '9:30-10:00' : '11:00+'}
 9. Stile pranzo: ${preferences.lunchStyle === 'long' ? 'Lungo (90min)' : 'Veloce (45min)'}
+10. Visite guidate: ${preferences.guidedTours === 'guided' ? 'Preferisce tour guidati - suggerisci SEMPRE prodotti/esperienze guidate' : preferences.guidedTours === 'autonomous' ? 'Preferisce visitare in autonomia - suggerisci prodotti SOLO se molto rilevanti' : 'Non ha preferenze - suggerisci prodotti quando migliorano l\'esperienza'}
 
-Per ogni slot suggerisci prodotti/esperienze add-on SOLO se pertinenti e se migliorano l'esperienza.
+Per ogni slot suggerisci prodotti/esperienze add-on seguendo le preferenze dell'utente.
 Usa il campo "local_one_liner" come base per le descrizioni - è il DNA del posto.`;
 
     const userPrompt = `Crea un itinerario di ${preferences.numDays} ${preferences.numDays === 1 ? 'giorno' : 'giorni'} a ${city.name}.

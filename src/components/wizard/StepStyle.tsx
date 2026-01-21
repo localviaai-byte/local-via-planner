@@ -73,22 +73,33 @@ export function StepStyle({ preferences, onUpdate }: StepStyleProps) {
           <Users className="w-4 h-4" />
           Visite guidate
         </label>
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-3 gap-3">
           <Button
             type="button"
-            variant={!preferences.guidedTours ? 'default' : 'outline'}
-            onClick={() => onUpdate({ guidedTours: false })}
-            className="h-12"
+            variant={preferences.guidedTours === 'unknown' ? 'default' : 'outline'}
+            onClick={() => onUpdate({ guidedTours: 'unknown' })}
+            className="h-auto py-4 flex flex-col gap-1"
           >
-            🚶 Autonomo
+            <span className="text-xl">🤷</span>
+            <span className="text-sm">Non lo so</span>
           </Button>
           <Button
             type="button"
-            variant={preferences.guidedTours ? 'default' : 'outline'}
-            onClick={() => onUpdate({ guidedTours: true })}
-            className="h-12"
+            variant={preferences.guidedTours === 'autonomous' ? 'default' : 'outline'}
+            onClick={() => onUpdate({ guidedTours: 'autonomous' })}
+            className="h-auto py-4 flex flex-col gap-1"
           >
-            🎤 Con guida
+            <span className="text-xl">🚶</span>
+            <span className="text-sm">Autonomo</span>
+          </Button>
+          <Button
+            type="button"
+            variant={preferences.guidedTours === 'guided' ? 'default' : 'outline'}
+            onClick={() => onUpdate({ guidedTours: 'guided' })}
+            className="h-auto py-4 flex flex-col gap-1"
+          >
+            <span className="text-xl">🎤</span>
+            <span className="text-sm">Con guida</span>
           </Button>
         </div>
       </div>
