@@ -11,7 +11,7 @@ interface GeocodeRequest {
   address?: string;
   cityName: string;
   country?: string;
-  placeId?: string; // If provided, update the place directly
+  placeId?: string;
 }
 
 interface GeocodeResponse {
@@ -23,7 +23,6 @@ interface GeocodeResponse {
 }
 
 serve(async (req) => {
-  // Handle CORS preflight
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
@@ -47,27 +46,20 @@ serve(async (req) => {
       );
     }
 
-    // Build search query - prioritize address if available, include more context
-    let searchQuery: string;
-    if (address) {
-      searchQuery = `${address}, ${cityName}, ${country}`;
-    } else {
-      // For POI names, include the city name in the search
-      searchQuery = `${placeName}, ${cityName}, ${country}`;
-    }
+    // Build search query
+    const searchQuery = address 
+      ? `${address}, ${cityName}, ${country}`
+      : `${placeName}, ${cityName}, ${country}`;
 
     console.log(`Geocoding: "${searchQuery}"`);
 
-    // Call Mapbox Geocoding API
     const geocodeUrl = new URL("https://api.mapbox.com/geocoding/v5/mapbox.places/" + encodeURIComponent(searchQuery) + ".json");
     geocodeUrl.searchParams.set("access_token", MAPBOX_TOKEN);
-    geocodeUrl.searchParams.set("limit", "5"); // Get more results to filter
+    geocodeUrl.searchParams.set("limit", "5");
     geocodeUrl.searchParams.set("types", "poi,address,place,locality");
-    geocodeUrl.searchParams.set("country", "IT"); // Limit to Italy
+    geocodeUrl.searchParams.set("country", "IT");
     geocodeUrl.searchParams.set("language", "it");
-    
-    // Add proximity bias towards the general area if we know it (use center of Italy as broad hint)
-    geocodeUrl.searchParams.set("proximity", "14.4869,40.7509"); // Near Napoli/Pompei area by default
+    geocodeUrl.searchParams.set("proximity", "14.4869,40.7509");
 
     const geocodeResponse = await fetch(geocodeUrl.toString());
     
@@ -83,36 +75,32 @@ serve(async (req) => {
     const geocodeData = await geocodeResponse.json();
     console.log("Mapbox response features count:", geocodeData.features?.length || 0);
 
-    // Helper to check if a result contains our city name
-    const containsCityName = (placeName: string, targetCity: string): boolean => {
-      const normalizedPlace = placeName.toLowerCase();
-      const normalizedCity = targetCity.toLowerCase();
-      return normalizedPlace.includes(normalizedCity);
+    // Filter features to only those in Campania/Southern Italy region
+    const isInCampaniaRegion = (feature: { center: number[] }): boolean => {
+      const [lng, lat] = feature.center;
+      return lat > 39.5 && lat < 41.5 && lng > 13 && lng < 16;
     };
 
-    // Find the best matching result (one that contains our city name)
+    const containsCityName = (featurePlaceName: string, targetCity: string): boolean => {
+      return featurePlaceName.toLowerCase().includes(targetCity.toLowerCase());
+    };
+
+    // Filter to valid regional results first
+    let validFeatures = (geocodeData.features || []).filter(isInCampaniaRegion);
+    console.log(`Valid features in region: ${validFeatures.length}`);
+
+    // Find best match
     let bestFeature = null;
-    if (geocodeData.features && geocodeData.features.length > 0) {
-      // First, try to find a result that matches our city
-      bestFeature = geocodeData.features.find((f: { place_name: string }) => 
+    if (validFeatures.length > 0) {
+      bestFeature = validFeatures.find((f: { place_name: string }) => 
         containsCityName(f.place_name, cityName)
-      );
-      
-      // If no city match, use the first result but only if it's in southern Italy (rough check)
-      if (!bestFeature) {
-        const firstFeature = geocodeData.features[0];
-        const [lng, lat] = firstFeature.center;
-        // Check if it's in southern Italy (lat ~38-42, lng ~13-18 for Campania area)
-        if (lat > 38 && lat < 42 && lng > 13 && lng < 18) {
-          bestFeature = firstFeature;
-        }
-      }
+      ) || validFeatures[0];
     }
 
+    // Fallback search if no results
     if (!bestFeature) {
-      // Try a more specific fallback search
       const fallbackQuery = `${placeName} ${cityName} Campania`;
-      console.log(`No valid results, trying fallback: "${fallbackQuery}"`);
+      console.log(`No valid results in region, trying fallback: "${fallbackQuery}"`);
       
       const fallbackUrl = new URL("https://api.mapbox.com/geocoding/v5/mapbox.places/" + encodeURIComponent(fallbackQuery) + ".json");
       fallbackUrl.searchParams.set("access_token", MAPBOX_TOKEN);
@@ -125,9 +113,12 @@ serve(async (req) => {
       const fallbackData = await fallbackResponse.json();
 
       if (fallbackData.features && fallbackData.features.length > 0) {
-        bestFeature = fallbackData.features.find((f: { place_name: string }) => 
-          containsCityName(f.place_name, cityName)
-        ) || fallbackData.features[0];
+        validFeatures = fallbackData.features.filter(isInCampaniaRegion);
+        if (validFeatures.length > 0) {
+          bestFeature = validFeatures.find((f: { place_name: string }) => 
+            containsCityName(f.place_name, cityName)
+          ) || validFeatures[0];
+        }
       }
     }
 
@@ -148,7 +139,6 @@ serve(async (req) => {
     const formatted_address = bestFeature.place_name;
 
     console.log(`Found coordinates: ${latitude}, ${longitude} for "${formatted_address}"`);
-
 
     // If placeId is provided, update the place directly in the database
     if (placeId) {
