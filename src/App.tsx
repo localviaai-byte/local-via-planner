@@ -12,6 +12,7 @@ import CityWizard from "./pages/admin/CityWizard";
 import CityDetail from "./pages/admin/CityDetail";
 import PlaceWizard from "./pages/admin/PlaceWizard";
 import AcceptInvite from "./pages/admin/AcceptInvite";
+import ContributorDashboard from "./pages/admin/ContributorDashboard";
 
 const queryClient = new QueryClient();
 
@@ -99,6 +100,16 @@ const App = () => (
               element={
                 <ProtectedRoute>
                   <PlaceWizard />
+                </ProtectedRoute>
+              }
+            />
+            
+            {/* Contributor routes */}
+            <Route
+              path="/contributor"
+              element={
+                <ProtectedRoute>
+                  <ContributorDashboard />
                 </ProtectedRoute>
               }
             />

@@ -156,9 +156,9 @@ export default function AcceptInvite() {
       setStatus('success');
       toast.success('Account creato con successo!');
       
-      // Redirect after a short delay
+      // Redirect to contributor dashboard after a short delay
       setTimeout(() => {
-        navigate('/admin');
+        navigate('/contributor');
       }, 2000);
       
     } catch (err: any) {
