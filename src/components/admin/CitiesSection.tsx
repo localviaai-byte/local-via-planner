@@ -1,7 +1,9 @@
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Plus, Building2, ChevronRight } from 'lucide-react';
+import { Plus, Building2, ChevronRight, Search } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { useCitiesWithStats } from '@/hooks/useCities';
@@ -103,6 +105,13 @@ function CityCard({ city, onClick }: CityCardProps) {
 export function CitiesSection() {
   const navigate = useNavigate();
   const { data: cities, isLoading } = useCitiesWithStats();
+  const [searchQuery, setSearchQuery] = useState('');
+  
+  // Filter cities based on search
+  const filteredCities = cities?.filter(city => 
+    city.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    city.region?.toLowerCase().includes(searchQuery.toLowerCase())
+  );
   
   return (
     <div>
@@ -117,6 +126,17 @@ export function CitiesSection() {
         </p>
       </div>
       
+      {/* Search bar */}
+      <div className="relative mb-4">
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+        <Input
+          placeholder="Cerca città..."
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          className="pl-10 bg-card"
+        />
+      </div>
+      
       {/* Loading state */}
       {isLoading && (
         <div className="space-y-4">
@@ -127,15 +147,22 @@ export function CitiesSection() {
       )}
       
       {/* Cities list */}
-      {!isLoading && cities && cities.length > 0 && (
+      {!isLoading && filteredCities && filteredCities.length > 0 && (
         <div className="space-y-4">
-          {cities.map(city => (
+          {filteredCities.map(city => (
             <CityCard
               key={city.id}
               city={city}
               onClick={() => navigate(`/admin/cities/${city.id}`)}
             />
           ))}
+        </div>
+      )}
+      
+      {/* No results */}
+      {!isLoading && cities && cities.length > 0 && filteredCities?.length === 0 && (
+        <div className="text-center py-8">
+          <p className="text-muted-foreground">Nessuna città trovata per "{searchQuery}"</p>
         </div>
       )}
       
