@@ -14,7 +14,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { useContributors, useCreateInvite, useDeleteInvite } from '@/hooks/useContributors';
+import { useContributors, useDeleteInvite, useDeleteContributor } from '@/hooks/useContributors';
 import { useCitiesWithStats } from '@/hooks/useCities';
 import { InviteContributorSheet } from './InviteContributorSheet';
 import { toast } from 'sonner';
@@ -38,6 +38,7 @@ export function ContributorsSection() {
   const { data: contributors, isLoading } = useContributors();
   const { data: cities } = useCitiesWithStats();
   const deleteInvite = useDeleteInvite();
+  const deleteContributor = useDeleteContributor();
   const [copiedId, setCopiedId] = useState<string | null>(null);
   
   const handleCopyLink = async (inviteCode: string) => {
@@ -55,6 +56,17 @@ export function ContributorsSection() {
         toast.success('Invito eliminato');
       } catch {
         toast.error('Errore nell\'eliminazione');
+      }
+    }
+  };
+  
+  const handleDeleteContributor = async (userId: string, email: string) => {
+    if (confirm(`Vuoi eliminare definitivamente l'account di ${email}? Questa azione è irreversibile.`)) {
+      try {
+        await deleteContributor.mutateAsync(userId);
+        toast.success('Contributor eliminato definitivamente');
+      } catch (error: any) {
+        toast.error(error.message || 'Errore nell\'eliminazione');
       }
     }
   };
@@ -126,6 +138,14 @@ export function ContributorsSection() {
                           </div>
                         </div>
                       </div>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => handleDeleteContributor(user.user_id, user.email || 'questo contributor')}
+                        disabled={deleteContributor.isPending}
+                      >
+                        <Trash2 className="w-4 h-4 text-destructive" />
+                      </Button>
                     </div>
                   </CardContent>
                 </Card>
