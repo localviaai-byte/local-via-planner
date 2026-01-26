@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { useCitiesWithStats } from '@/hooks/useCities';
+import { useAuth } from '@/hooks/useAuth';
 import type { CityStatus } from '@/types/database';
 
 const STATUS_CONFIG: Record<CityStatus, { label: string; color: string }> = {
@@ -104,6 +105,7 @@ function CityCard({ city, onClick }: CityCardProps) {
 
 export function CitiesSection() {
   const navigate = useNavigate();
+  const { isAdmin } = useAuth();
   const { data: cities, isLoading } = useCitiesWithStats();
   const [searchQuery, setSearchQuery] = useState('');
   
@@ -178,15 +180,17 @@ export function CitiesSection() {
           <p className="text-muted-foreground text-sm mb-6">
             Inizia creando la prima città per il tuo ecosistema
           </p>
-          <Button onClick={() => navigate('/admin/cities/new')}>
-            <Plus className="w-4 h-4 mr-2" />
-            Aggiungi città
-          </Button>
+          {isAdmin && (
+            <Button onClick={() => navigate('/admin/cities/new')}>
+              <Plus className="w-4 h-4 mr-2" />
+              Aggiungi città
+            </Button>
+          )}
         </div>
       )}
       
-      {/* FAB */}
-      {cities && cities.length > 0 && (
+      {/* FAB - Solo per admin */}
+      {isAdmin && cities && cities.length > 0 && (
         <motion.div
           initial={{ scale: 0 }}
           animate={{ scale: 1 }}
