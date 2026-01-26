@@ -1349,6 +1349,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      assign_role_from_invite: {
+        Args: { _invite_code: string; _user_id: string }
+        Returns: boolean
+      }
       calculate_quality_score: {
         Args: { place_row: Database["public"]["Tables"]["places"]["Row"] }
         Returns: number
