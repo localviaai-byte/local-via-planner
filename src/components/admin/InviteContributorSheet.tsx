@@ -18,6 +18,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { useCreateInvite } from '@/hooks/useContributors';
+import { useActivityLogger } from '@/hooks/useActivityLogger';
 import { toast } from 'sonner';
 import { Copy, Check, Mail } from 'lucide-react';
 import type { AppRole } from '@/types/database';
@@ -54,6 +55,7 @@ export function InviteContributorSheet({ open, onOpenChange, cities }: InviteCon
   const [copied, setCopied] = useState(false);
   
   const createInvite = useCreateInvite();
+  const { logCreate } = useActivityLogger();
   
   const handlePermissionChange = (permId: string, checked: boolean) => {
     if (checked) {
@@ -77,6 +79,15 @@ export function InviteContributorSheet({ open, onOpenChange, cities }: InviteCon
         role,
         assigned_city_id: cityId === 'all' ? null : cityId,
         permissions,
+      });
+      
+      // Log the invite creation
+      const cityName = cityId !== 'all' ? cities.find(c => c.id === cityId)?.name : null;
+      await logCreate('invite', result.id, { 
+        email, 
+        role, 
+        assigned_city: cityName || 'Tutte le città',
+        permissions 
       });
       
       // Use production URL if available, otherwise fallback to current origin
