@@ -8,13 +8,15 @@ import {
   MapPin,
   Plus,
   ChevronRight,
-  History
+  History,
+  UserCog
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useAuth } from '@/hooks/useAuth';
 import { CitiesSection } from '@/components/admin/CitiesSection';
 import { ContributorsSection } from '@/components/admin/ContributorsSection';
+import { UsersSection } from '@/components/admin/UsersSection';
 import { ActivityLogsSheet } from '@/components/admin/ActivityLogsSheet';
 
 export default function AdminDashboard() {
@@ -59,14 +61,18 @@ export default function AdminDashboard() {
       
       <main className="p-4 pb-24">
         <Tabs defaultValue="cities" className="w-full">
-          <TabsList className="grid w-full grid-cols-2 mb-6">
+          <TabsList className="grid w-full grid-cols-3 mb-6">
             <TabsTrigger value="cities" className="flex items-center gap-2">
               <Building2 className="w-4 h-4" />
               Città
             </TabsTrigger>
             <TabsTrigger value="contributors" className="flex items-center gap-2">
               <Users className="w-4 h-4" />
-              Contributors
+              Inviti
+            </TabsTrigger>
+            <TabsTrigger value="users" className="flex items-center gap-2">
+              <UserCog className="w-4 h-4" />
+              Utenti
             </TabsTrigger>
           </TabsList>
           
@@ -76,6 +82,10 @@ export default function AdminDashboard() {
           
           <TabsContent value="contributors">
             <ContributorsSection />
+          </TabsContent>
+          
+          <TabsContent value="users">
+            <UsersSection />
           </TabsContent>
         </Tabs>
       </main>
