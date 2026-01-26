@@ -132,6 +132,43 @@ export function useDeleteInvite() {
   });
 }
 
+// Delete a contributor (user + role)
+export function useDeleteContributor() {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: async (userId: string) => {
+      // Get current session for auth header
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) throw new Error('Not authenticated');
+      
+      // Call the edge function to delete the user
+      const response = await fetch(
+        `https://uocxfumnfmjauhtgvwly.supabase.co/functions/v1/delete-user`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${session.access_token}`,
+          },
+          body: JSON.stringify({ user_id: userId }),
+        }
+      );
+      
+      const result = await response.json();
+      
+      if (!response.ok) {
+        throw new Error(result.error || 'Failed to delete contributor');
+      }
+      
+      return result;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['contributors'] });
+    }
+  });
+}
+
 // Accept invite (used when contributor signs up)
 export function useAcceptInvite() {
   const queryClient = useQueryClient();
