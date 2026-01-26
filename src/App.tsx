@@ -11,6 +11,7 @@ import AdminDashboard from "./pages/admin/AdminDashboard";
 import CityWizard from "./pages/admin/CityWizard";
 import CityDetail from "./pages/admin/CityDetail";
 import PlaceWizard from "./pages/admin/PlaceWizard";
+import AcceptInvite from "./pages/admin/AcceptInvite";
 
 const queryClient = new QueryClient();
 
@@ -60,6 +61,7 @@ const App = () => (
             
             {/* Admin routes */}
             <Route path="/admin/login" element={<AdminLogin />} />
+            <Route path="/admin/invite/:code" element={<AcceptInvite />} />
             <Route
               path="/admin"
               element={

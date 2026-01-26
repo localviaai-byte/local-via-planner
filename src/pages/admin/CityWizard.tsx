@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { WizardProgress } from '@/components/ui/WizardProgress';
 import { useAuth } from '@/hooks/useAuth';
 import { useCreateCity } from '@/hooks/useCities';
+import { useActivityLogger } from '@/hooks/useActivityLogger';
 import { useToast } from '@/hooks/use-toast';
 import StepCityIdentity from '@/components/admin/city-wizard/StepCityIdentity';
 import StepCityStructure from '@/components/admin/city-wizard/StepCityStructure';
@@ -24,6 +25,7 @@ export default function CityWizard() {
   const { user } = useAuth();
   const { toast } = useToast();
   const createCity = useCreateCity();
+  const { logCreate } = useActivityLogger();
   
   const [currentStep, setCurrentStep] = useState(0);
   const [formData, setFormData] = useState<CityFormData>(DEFAULT_CITY_FORM_DATA);
@@ -56,6 +58,11 @@ export default function CityWizard() {
             created_by: user!.id,
           });
           setCreatedCityId(newCity.id);
+          await logCreate('city', newCity.id, { 
+            name: newCity.name, 
+            country: newCity.country,
+            region: newCity.region,
+          });
           toast({
             title: 'Città creata!',
             description: 'Ora puoi aggiungere dettagli sulla struttura e le zone.',

@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { useAuth } from '@/hooks/useAuth';
 import { useCities, useCreatePlace, usePlace, useUpdatePlace } from '@/hooks/usePlaces';
 import { useCity } from '@/hooks/useCities';
+import { useActivityLogger } from '@/hooks/useActivityLogger';
 import { WizardProgress } from '@/components/ui/WizardProgress';
 import { ChevronLeft, X, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
@@ -106,6 +107,7 @@ export default function PlaceWizard() {
   const { user } = useAuth();
   const { data: cities } = useCities();
   const { data: currentCity } = useCity(cityId);
+  const { logCreate, logUpdate } = useActivityLogger();
   const createPlace = useCreatePlace();
   const updatePlace = useUpdatePlace();
   
@@ -184,12 +186,22 @@ export default function PlaceWizard() {
             id: placeId,
             ...formData,
           });
+          await logUpdate('place', placeId, { 
+            name: formData.name, 
+            place_type: formData.place_type,
+            city_id: formData.city_id,
+          });
           toast.success('Luogo aggiornato con successo!');
         } else {
           // Create new place
-          await createPlace.mutateAsync({
+          const newPlace = await createPlace.mutateAsync({
             ...formData,
             created_by: user.id,
+          });
+          await logCreate('place', newPlace.id, { 
+            name: newPlace.name, 
+            place_type: newPlace.place_type,
+            city_id: newPlace.city_id,
           });
           toast.success('Luogo salvato con successo!');
         }
