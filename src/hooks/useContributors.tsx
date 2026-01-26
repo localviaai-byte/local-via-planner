@@ -38,9 +38,9 @@ export function useContributors() {
       
       if (rolesError) throw rolesError;
       
-      // Get pending invites
-      const { data: invites, error: invitesError } = await supabase
-        .from('contributor_invites')
+      // Get pending invites - use any to bypass type check since table was just created
+      const { data: invites, error: invitesError } = await (supabase
+        .from('contributor_invites' as any) as any)
         .select('*')
         .eq('status', 'pending')
         .order('created_at', { ascending: false });
@@ -88,8 +88,9 @@ export function useCreateInvite() {
       const expiresAt = new Date();
       expiresAt.setDate(expiresAt.getDate() + 7);
       
-      const { data: invite, error } = await supabase
-        .from('contributor_invites')
+      // Use any to bypass type check since table was just created
+      const { data: invite, error } = await (supabase
+        .from('contributor_invites' as any) as any)
         .insert({
           email: data.email,
           role: data.role,
@@ -118,8 +119,8 @@ export function useDeleteInvite() {
   
   return useMutation({
     mutationFn: async (inviteId: string) => {
-      const { error } = await supabase
-        .from('contributor_invites')
+      const { error } = await (supabase
+        .from('contributor_invites' as any) as any)
         .delete()
         .eq('id', inviteId);
       
@@ -142,8 +143,8 @@ export function useAcceptInvite() {
       if (!user) throw new Error('Not authenticated');
       
       // Find the invite
-      const { data: invite, error: findError } = await supabase
-        .from('contributor_invites')
+      const { data: invite, error: findError } = await (supabase
+        .from('contributor_invites' as any) as any)
         .select('*')
         .eq('invite_code', inviteCode)
         .eq('status', 'pending')
@@ -151,13 +152,15 @@ export function useAcceptInvite() {
       
       if (findError || !invite) throw new Error('Invito non valido o scaduto');
       
+      const typedInvite = invite as ContributorInvite;
+      
       // Check if expired
-      if (new Date(invite.expires_at) < new Date()) {
+      if (new Date(typedInvite.expires_at) < new Date()) {
         throw new Error('Invito scaduto');
       }
       
       // Check email matches
-      if (invite.email !== user.email) {
+      if (typedInvite.email !== user.email) {
         throw new Error('Questo invito è per un\'altra email');
       }
       
@@ -166,21 +169,21 @@ export function useAcceptInvite() {
         .from('user_roles')
         .insert({
           user_id: user.id,
-          role: invite.role,
-          assigned_city_id: invite.assigned_city_id,
+          role: typedInvite.role,
+          assigned_city_id: typedInvite.assigned_city_id,
         });
       
       if (roleError) throw roleError;
       
       // Update invite status
-      const { error: updateError } = await supabase
-        .from('contributor_invites')
+      const { error: updateError } = await (supabase
+        .from('contributor_invites' as any) as any)
         .update({ status: 'accepted' })
-        .eq('id', invite.id);
+        .eq('id', typedInvite.id);
       
       if (updateError) throw updateError;
       
-      return invite;
+      return typedInvite;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['contributors'] });

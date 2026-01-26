@@ -17,8 +17,8 @@ export function useActivityLogs(entityType?: string, limit = 50) {
   return useQuery({
     queryKey: ['activity-logs', entityType, limit],
     queryFn: async () => {
-      let query = supabase
-        .from('activity_logs')
+      // Use any to bypass type check since table was just created
+      let query = (supabase.from('activity_logs' as any) as any)
         .select('*')
         .order('created_at', { ascending: false })
         .limit(limit);
@@ -35,7 +35,7 @@ export function useActivityLogs(entityType?: string, limit = 50) {
         return [];
       }
       
-      return data as ActivityLog[];
+      return (data || []) as ActivityLog[];
     }
   });
 }
@@ -54,8 +54,8 @@ export function useLogActivity() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('Not authenticated');
       
-      const { error } = await supabase
-        .from('activity_logs')
+      // Use any to bypass type check since table was just created
+      const { error } = await (supabase.from('activity_logs' as any) as any)
         .insert({
           user_id: user.id,
           user_email: user.email,
