@@ -18,8 +18,8 @@ import ContributorDashboard from "./pages/admin/ContributorDashboard";
 
 const queryClient = new QueryClient();
 
-// Protected route wrapper
-function ProtectedRoute({ children }: { children: React.ReactNode }) {
+// Protected route wrapper for admin routes (admin/editor only)
+function AdminRoute({ children }: { children: React.ReactNode }) {
   const { user, isLoading, role, signOut } = useAuth();
   const [pendingInviteCode, setPendingInviteCode] = useState<string | null>(null);
   const [inviteChecked, setInviteChecked] = useState(false);
@@ -75,8 +75,13 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
     return <Navigate to="/admin/login" replace />;
   }
   
-  // Check if user has any role
-  if (!role) {
+  // Contributors should go to their dedicated dashboard
+  if (role === 'local_contributor') {
+    return <Navigate to="/contributor" replace />;
+  }
+  
+  // Check if user has admin or editor role
+  if (!role || (role !== 'admin' && role !== 'editor')) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center bg-background p-4 text-center">
         <h1 className="font-display text-xl font-semibold mb-2">Accesso non autorizzato</h1>
@@ -113,6 +118,52 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
   return <>{children}</>;
 }
 
+// Protected route wrapper for contributor routes
+function ContributorRoute({ children }: { children: React.ReactNode }) {
+  const { user, isLoading, role, signOut } = useAuth();
+  
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="loading-text">Caricamento...</div>
+      </div>
+    );
+  }
+  
+  if (!user) {
+    return <Navigate to="/admin/login" replace />;
+  }
+  
+  // Admins and editors should go to admin dashboard
+  if (role === 'admin' || role === 'editor') {
+    return <Navigate to="/admin" replace />;
+  }
+  
+  // Check if user has contributor role
+  if (role !== 'local_contributor') {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center bg-background p-4 text-center">
+        <h1 className="font-display text-xl font-semibold mb-2">Accesso non autorizzato</h1>
+        <p className="text-muted-foreground mb-4">
+          Non hai i permessi per accedere a questa area.
+        </p>
+        <p className="text-sm text-muted-foreground">
+          Contatta un amministratore per richiedere l'accesso.
+        </p>
+        <button
+          type="button"
+          className="mt-6 text-sm underline text-muted-foreground"
+          onClick={() => signOut()}
+        >
+          Esci
+        </button>
+      </div>
+    );
+  }
+  
+  return <>{children}</>;
+}
+
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <AuthProvider>
@@ -129,41 +180,41 @@ const App = () => (
             <Route
               path="/admin"
               element={
-                <ProtectedRoute>
+                <AdminRoute>
                   <AdminDashboard />
-                </ProtectedRoute>
+                </AdminRoute>
               }
             />
             <Route
               path="/admin/cities/new"
               element={
-                <ProtectedRoute>
+                <AdminRoute>
                   <CityWizard />
-                </ProtectedRoute>
+                </AdminRoute>
               }
             />
             <Route
               path="/admin/cities/:cityId"
               element={
-                <ProtectedRoute>
+                <AdminRoute>
                   <CityDetail />
-                </ProtectedRoute>
+                </AdminRoute>
               }
             />
             <Route
               path="/admin/cities/:cityId/places/new"
               element={
-                <ProtectedRoute>
+                <AdminRoute>
                   <PlaceWizard />
-                </ProtectedRoute>
+                </AdminRoute>
               }
             />
             <Route
               path="/admin/places/:id/edit"
               element={
-                <ProtectedRoute>
+                <AdminRoute>
                   <PlaceWizard />
-                </ProtectedRoute>
+                </AdminRoute>
               }
             />
             
@@ -171,9 +222,9 @@ const App = () => (
             <Route
               path="/contributor"
               element={
-                <ProtectedRoute>
+                <ContributorRoute>
                   <ContributorDashboard />
-                </ProtectedRoute>
+                </ContributorRoute>
               }
             />
             
