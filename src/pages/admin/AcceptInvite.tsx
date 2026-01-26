@@ -98,7 +98,7 @@ export default function AcceptInvite() {
         email: invite.email,
         password,
         options: {
-          emailRedirectTo: `${window.location.origin}/admin`,
+          emailRedirectTo: `${window.location.origin}/contributor`,
           data: {
             invited_via: code,
           }
@@ -119,27 +119,19 @@ export default function AcceptInvite() {
         throw new Error('Errore nella creazione dell\'account');
       }
       
-      // 2. Create user role
-      const { error: roleError } = await supabase
-        .from('user_roles')
-        .insert([{
-          user_id: authData.user.id,
-          role: invite.role as 'admin' | 'editor' | 'local_contributor',
-          assigned_city_id: invite.assigned_city_id,
-        }]);
+      // 2. Assign role using security definer function (bypasses RLS)
+      const { data: roleResult, error: roleError } = await supabase
+        .rpc('assign_role_from_invite', {
+          _user_id: authData.user.id,
+          _invite_code: code
+        });
       
       if (roleError) {
-        console.error('Error creating role:', roleError);
-        // Continue anyway, admin can fix this later
+        console.error('Error assigning role:', roleError);
+        // Don't throw - the user account was created, admin can fix role later
       }
       
-      // 3. Update invite status
-      await supabase
-        .from('contributor_invites')
-        .update({ status: 'accepted' })
-        .eq('id', invite.id);
-      
-      // 4. Log the activity
+      // 3. Log the activity (invite status is updated by the function)
       await supabase.from('activity_logs').insert({
         user_id: authData.user.id,
         user_email: invite.email,
