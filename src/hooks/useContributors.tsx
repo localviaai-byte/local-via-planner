@@ -38,9 +38,9 @@ export function useContributors() {
       
       if (rolesError) throw rolesError;
       
-      // Get pending invites - use any to bypass type check since table was just created
-      const { data: invites, error: invitesError } = await (supabase
-        .from('contributor_invites' as any) as any)
+      // Get pending invites
+      const { data: invites, error: invitesError } = await supabase
+        .from('contributor_invites')
         .select('*')
         .eq('status', 'pending')
         .order('created_at', { ascending: false });
@@ -48,15 +48,23 @@ export function useContributors() {
       // Don't throw on invites error - table might not exist yet
       const pendingInvites = invitesError ? [] : (invites as ContributorInvite[] || []);
       
-      // Map user roles - we need to get emails separately since we can't join auth.users
-      const activeUsers: ActiveUser[] = (userRoles || []).map(role => ({
-        id: role.id,
-        user_id: role.user_id,
-        email: '', // Will be populated if needed via separate query
-        role: role.role,
-        assigned_city_id: role.assigned_city_id,
-        created_at: role.created_at,
-      }));
+      // Fetch emails for each user using the RPC function
+      const activeUsers: ActiveUser[] = await Promise.all(
+        (userRoles || []).map(async (role) => {
+          const { data: email } = await supabase.rpc('get_user_email', { 
+            _user_id: role.user_id 
+          });
+          
+          return {
+            id: role.id,
+            user_id: role.user_id,
+            email: email || 'Email non disponibile',
+            role: role.role,
+            assigned_city_id: role.assigned_city_id,
+            created_at: role.created_at,
+          };
+        })
+      );
       
       return {
         activeUsers,
