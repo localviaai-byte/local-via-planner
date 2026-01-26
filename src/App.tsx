@@ -9,7 +9,11 @@ import { supabase } from "@/integrations/supabase/client";
 import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 import AdminLogin from "./pages/admin/Login";
-import AdminDashboard from "./pages/admin/AdminDashboard";
+import { AdminLayout } from "./components/admin/AdminLayout";
+import DashboardHome from "./pages/admin/DashboardHome";
+import CitiesPage from "./pages/admin/CitiesPage";
+import ContributorsPage from "./pages/admin/ContributorsPage";
+import UsersPage from "./pages/admin/UsersPage";
 import CityWizard from "./pages/admin/CityWizard";
 import CityDetail from "./pages/admin/CityDetail";
 import PlaceWizard from "./pages/admin/PlaceWizard";
@@ -177,14 +181,23 @@ const App = () => (
             {/* Admin routes */}
             <Route path="/admin/login" element={<AdminLogin />} />
             <Route path="/admin/invite/:code" element={<AcceptInvite />} />
+            
+            {/* Admin layout with nested routes */}
             <Route
               path="/admin"
               element={
                 <AdminRoute>
-                  <AdminDashboard />
+                  <AdminLayout />
                 </AdminRoute>
               }
-            />
+            >
+              <Route index element={<DashboardHome />} />
+              <Route path="cities" element={<CitiesPage />} />
+              <Route path="contributors" element={<ContributorsPage />} />
+              <Route path="users" element={<UsersPage />} />
+            </Route>
+            
+            {/* Admin standalone pages */}
             <Route
               path="/admin/cities/new"
               element={
