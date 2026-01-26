@@ -48,6 +48,7 @@ const ENTITY_CONFIG: Record<string, { icon: ReactNode; label: string }> = {
   connection: { icon: <Link2 className="w-4 h-4" />, label: 'Collegamento' },
   zone: { icon: <MapPin className="w-4 h-4" />, label: 'Zona' },
   invite: { icon: <Users className="w-4 h-4" />, label: 'Invito' },
+  contributor: { icon: <Users className="w-4 h-4" />, label: 'Contributor' },
   user_role: { icon: <Users className="w-4 h-4" />, label: 'Ruolo utente' },
 };
 
@@ -80,6 +81,7 @@ export function ActivityLogsSheet({ open, onOpenChange }: ActivityLogsSheetProps
               <SelectItem value="connection">Collegamenti</SelectItem>
               <SelectItem value="zone">Zone</SelectItem>
               <SelectItem value="invite">Inviti</SelectItem>
+              <SelectItem value="contributor">Contributors</SelectItem>
             </SelectContent>
           </Select>
         </div>

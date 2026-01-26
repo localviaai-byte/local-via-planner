@@ -16,6 +16,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { useContributors, useDeleteInvite, useDeleteContributor } from '@/hooks/useContributors';
 import { useCitiesWithStats } from '@/hooks/useCities';
+import { useActivityLogger } from '@/hooks/useActivityLogger';
 import { InviteContributorSheet } from './InviteContributorSheet';
 import { toast } from 'sonner';
 import type { AppRole } from '@/types/database';
@@ -39,6 +40,7 @@ export function ContributorsSection() {
   const { data: cities } = useCitiesWithStats();
   const deleteInvite = useDeleteInvite();
   const deleteContributor = useDeleteContributor();
+  const { logDelete } = useActivityLogger();
   const [copiedId, setCopiedId] = useState<string | null>(null);
   
   const handleCopyLink = async (inviteCode: string) => {
@@ -49,10 +51,11 @@ export function ContributorsSection() {
     setTimeout(() => setCopiedId(null), 2000);
   };
   
-  const handleDeleteInvite = async (inviteId: string) => {
+  const handleDeleteInvite = async (inviteId: string, email: string) => {
     if (confirm('Vuoi eliminare questo invito?')) {
       try {
         await deleteInvite.mutateAsync(inviteId);
+        await logDelete('invite', inviteId, { email });
         toast.success('Invito eliminato');
       } catch {
         toast.error('Errore nell\'eliminazione');
@@ -64,6 +67,7 @@ export function ContributorsSection() {
     if (confirm(`Vuoi eliminare definitivamente l'account di ${email}? Questa azione è irreversibile.`)) {
       try {
         await deleteContributor.mutateAsync(userId);
+        await logDelete('contributor', userId, { email });
         toast.success('Contributor eliminato definitivamente');
       } catch (error: any) {
         toast.error(error.message || 'Errore nell\'eliminazione');
@@ -215,7 +219,7 @@ export function ContributorsSection() {
                         <Button
                           variant="ghost"
                           size="icon"
-                          onClick={() => handleDeleteInvite(invite.id)}
+                          onClick={() => handleDeleteInvite(invite.id, invite.email)}
                         >
                           <Trash2 className="w-4 h-4 text-destructive" />
                         </Button>
