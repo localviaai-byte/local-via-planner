@@ -28,20 +28,21 @@ import {
   Users,
   Loader2
 } from 'lucide-react';
+import type { ReactNode } from 'react';
 
 interface ActivityLogsSheetProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }
 
-const ACTION_CONFIG: Record<string, { icon: React.ReactNode; color: string; label: string }> = {
+const ACTION_CONFIG: Record<string, { icon: ReactNode; color: string; label: string }> = {
   create: { icon: <Plus className="w-4 h-4" />, color: 'bg-olive/20 text-olive', label: 'Creazione' },
   update: { icon: <Edit2 className="w-4 h-4" />, color: 'bg-gold/20 text-gold', label: 'Modifica' },
   delete: { icon: <Trash2 className="w-4 h-4" />, color: 'bg-destructive/20 text-destructive', label: 'Eliminazione' },
   link: { icon: <Link2 className="w-4 h-4" />, color: 'bg-terracotta/20 text-terracotta', label: 'Collegamento' },
 };
 
-const ENTITY_CONFIG: Record<string, { icon: React.ReactNode; label: string }> = {
+const ENTITY_CONFIG: Record<string, { icon: ReactNode; label: string }> = {
   city: { icon: <Building2 className="w-4 h-4" />, label: 'Città' },
   place: { icon: <MapPin className="w-4 h-4" />, label: 'Luogo' },
   connection: { icon: <Link2 className="w-4 h-4" />, label: 'Collegamento' },
@@ -93,6 +94,7 @@ export function ActivityLogsSheet({ open, onOpenChange }: ActivityLogsSheetProps
               {logs.map(log => {
                 const actionConfig = ACTION_CONFIG[log.action_type] || ACTION_CONFIG.update;
                 const entityConfig = ENTITY_CONFIG[log.entity_type] || { icon: null, label: log.entity_type };
+                const details = log.details as Record<string, unknown> | null;
                 
                 return (
                   <div 
@@ -113,7 +115,7 @@ export function ActivityLogsSheet({ open, onOpenChange }: ActivityLogsSheetProps
                           </Badge>
                         </div>
                         <p className="text-sm mt-1">
-                          {log.details?.name || log.details?.title || 'Elemento'}
+                          {(details?.name as string) || (details?.title as string) || 'Elemento'}
                         </p>
                         <div className="flex items-center gap-2 mt-2 text-xs text-muted-foreground">
                           <span>{log.user_email || 'Utente sconosciuto'}</span>

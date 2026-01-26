@@ -14,6 +14,39 @@ export type Database = {
   }
   public: {
     Tables: {
+      activity_logs: {
+        Row: {
+          action_type: string
+          created_at: string
+          details: Json | null
+          entity_id: string | null
+          entity_type: string
+          id: string
+          user_email: string | null
+          user_id: string
+        }
+        Insert: {
+          action_type: string
+          created_at?: string
+          details?: Json | null
+          entity_id?: string | null
+          entity_type: string
+          id?: string
+          user_email?: string | null
+          user_id: string
+        }
+        Update: {
+          action_type?: string
+          created_at?: string
+          details?: Json | null
+          entity_id?: string | null
+          entity_type?: string
+          id?: string
+          user_email?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       cities: {
         Row: {
           best_times: Database["public"]["Enums"]["best_time_of_day"][] | null
@@ -298,6 +331,53 @@ export type Database = {
           {
             foreignKeyName: "city_zones_city_id_fkey"
             columns: ["city_id"]
+            isOneToOne: false
+            referencedRelation: "cities"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      contributor_invites: {
+        Row: {
+          assigned_city_id: string | null
+          created_at: string
+          created_by: string
+          email: string
+          expires_at: string
+          id: string
+          invite_code: string
+          permissions: string[] | null
+          role: Database["public"]["Enums"]["app_role"]
+          status: string
+        }
+        Insert: {
+          assigned_city_id?: string | null
+          created_at?: string
+          created_by: string
+          email: string
+          expires_at: string
+          id?: string
+          invite_code: string
+          permissions?: string[] | null
+          role?: Database["public"]["Enums"]["app_role"]
+          status?: string
+        }
+        Update: {
+          assigned_city_id?: string | null
+          created_at?: string
+          created_by?: string
+          email?: string
+          expires_at?: string
+          id?: string
+          invite_code?: string
+          permissions?: string[] | null
+          role?: Database["public"]["Enums"]["app_role"]
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "contributor_invites_assigned_city_id_fkey"
+            columns: ["assigned_city_id"]
             isOneToOne: false
             referencedRelation: "cities"
             referencedColumns: ["id"]
@@ -1283,6 +1363,15 @@ export type Database = {
           _user_id: string
         }
         Returns: boolean
+      }
+      log_activity: {
+        Args: {
+          _action_type: string
+          _details?: Json
+          _entity_id?: string
+          _entity_type: string
+        }
+        Returns: undefined
       }
     }
     Enums: {

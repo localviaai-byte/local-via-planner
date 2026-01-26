@@ -7,7 +7,7 @@ import { AuthProvider, useAuth } from "@/hooks/useAuth";
 import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 import AdminLogin from "./pages/admin/Login";
-import CityDashboard from "./pages/admin/CityDashboard";
+import AdminDashboard from "./pages/admin/AdminDashboard";
 import CityWizard from "./pages/admin/CityWizard";
 import CityDetail from "./pages/admin/CityDetail";
 import PlaceWizard from "./pages/admin/PlaceWizard";
@@ -64,7 +64,7 @@ const App = () => (
               path="/admin"
               element={
                 <ProtectedRoute>
-                  <CityDashboard />
+                  <AdminDashboard />
                 </ProtectedRoute>
               }
             />
