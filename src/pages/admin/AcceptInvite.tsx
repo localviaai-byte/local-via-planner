@@ -25,6 +25,7 @@ export default function AcceptInvite() {
   
   const [status, setStatus] = useState<InviteStatus>('loading');
   const [invite, setInvite] = useState<InviteData | null>(null);
+  const [authMode, setAuthMode] = useState<'create' | 'login'>('create');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -66,6 +67,7 @@ export default function AcceptInvite() {
       }
       
       setInvite(data as InviteData);
+      setAuthMode('create');
       setStatus('valid');
     } catch (err) {
       console.error('Error fetching invite:', err);
@@ -84,60 +86,77 @@ export default function AcceptInvite() {
       setError('La password deve essere di almeno 6 caratteri');
       return;
     }
-    
-    if (password !== confirmPassword) {
-      setError('Le password non coincidono');
-      return;
+
+    if (authMode === 'create') {
+      if (password !== confirmPassword) {
+        setError('Le password non coincidono');
+        return;
+      }
     }
     
     setStatus('processing');
     
     try {
-      // 1. Create user account
-      const { data: authData, error: signUpError } = await supabase.auth.signUp({
+      if (!code) throw new Error('Codice invito non valido');
+
+      let userId: string | null = null;
+      let didCreateUser = false;
+
+      // 1) Try to create the user. If it already exists, sign in instead.
+      const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
         email: invite.email,
         password,
         options: {
           emailRedirectTo: `${window.location.origin}/contributor`,
           data: {
             invited_via: code,
-          }
-        }
+          },
+        },
       });
-      
+
       if (signUpError) {
-        // Check if user already exists
-        if (signUpError.message.includes('already registered')) {
-          setError('Questo indirizzo email è già registrato. Prova ad accedere.');
-          setStatus('valid');
-          return;
+        // User already exists -> switch to login flow and continue
+        if (signUpError.message.toLowerCase().includes('already registered')) {
+          setAuthMode('login');
+          const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
+            email: invite.email,
+            password,
+          });
+          if (signInError) {
+            throw new Error('Questo indirizzo email è già registrato, ma la password non è corretta.');
+          }
+          userId = signInData.user?.id ?? null;
+        } else {
+          throw signUpError;
         }
-        throw signUpError;
+      } else {
+        // New user created
+        didCreateUser = true;
+        userId = signUpData.user?.id ?? null;
       }
-      
-      if (!authData.user) {
-        throw new Error('Errore nella creazione dell\'account');
+
+      if (!userId) {
+        throw new Error(didCreateUser ? "Errore nella creazione dell'account" : "Errore nell'accesso");
       }
       
       // 2. Assign role using security definer function (bypasses RLS)
-      const { data: roleResult, error: roleError } = await supabase
-        .rpc('assign_role_from_invite', {
-          _user_id: authData.user.id,
-          _invite_code: code
-        });
+      const { data: roleAssigned, error: roleError } = await supabase.rpc('assign_role_from_invite', {
+        _user_id: userId,
+        _invite_code: code,
+      });
       
-      if (roleError) {
+      if (roleError || !roleAssigned) {
         console.error('Error assigning role:', roleError);
-        // Don't throw - the user account was created, admin can fix role later
+        // Don't throw - user exists/logged in; admin can fix role later
       }
       
       // 3. Log the activity (invite status is updated by the function)
       await supabase.from('activity_logs').insert({
-        user_id: authData.user.id,
+        user_id: userId,
         user_email: invite.email,
         action_type: 'create',
         entity_type: 'contributor',
-        entity_id: authData.user.id,
+        entity_id: userId,
         details: {
           role: invite.role,
           invited_via: code,
@@ -146,11 +165,12 @@ export default function AcceptInvite() {
       });
       
       setStatus('success');
-      toast.success('Account creato con successo!');
+      toast.success(didCreateUser ? 'Account creato con successo!' : 'Invito attivato con successo!');
       
       // Redirect to contributor dashboard after a short delay
       setTimeout(() => {
-        navigate('/contributor');
+        // Force reload so AuthProvider re-fetches role after the RPC inserts user_roles
+        window.location.assign('/contributor');
       }, 2000);
       
     } catch (err: any) {
@@ -263,7 +283,7 @@ export default function AcceptInvite() {
           
           {/* Password */}
           <div className="space-y-2">
-            <Label htmlFor="password">Crea password</Label>
+            <Label htmlFor="password">{authMode === 'login' ? 'Password' : 'Crea password'}</Label>
             <div className="relative">
               <Input
                 id="password"
@@ -285,17 +305,19 @@ export default function AcceptInvite() {
           </div>
           
           {/* Confirm Password */}
-          <div className="space-y-2">
-            <Label htmlFor="confirmPassword">Conferma password</Label>
-            <Input
-              id="confirmPassword"
-              type={showPassword ? 'text' : 'password'}
-              value={confirmPassword}
-              onChange={(e) => setConfirmPassword(e.target.value)}
-              placeholder="Ripeti la password"
-              required
-            />
-          </div>
+          {authMode === 'create' && (
+            <div className="space-y-2">
+              <Label htmlFor="confirmPassword">Conferma password</Label>
+              <Input
+                id="confirmPassword"
+                type={showPassword ? 'text' : 'password'}
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                placeholder="Ripeti la password"
+                required
+              />
+            </div>
+          )}
           
           {/* Error message */}
           {error && (
@@ -313,10 +335,10 @@ export default function AcceptInvite() {
             {status === 'processing' ? (
               <>
                 <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                Creazione account...
+                {authMode === 'login' ? 'Accesso...' : 'Creazione account...'}
               </>
             ) : (
-              'Crea il mio account'
+              authMode === 'login' ? 'Accedi e attiva invito' : 'Crea il mio account'
             )}
           </Button>
         </form>
