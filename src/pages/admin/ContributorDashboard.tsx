@@ -184,7 +184,7 @@ export default function ContributorDashboard() {
                     )}
                   </div>
                   <Button 
-                    onClick={() => navigate(`/admin/cities/${assignedCity.id}/places/new`)}
+                    onClick={() => navigate(`/contributor/places/new`)}
                     className="bg-terracotta hover:bg-terracotta/90"
                   >
                     <Plus className="w-4 h-4 mr-2" />
@@ -251,7 +251,7 @@ export default function ContributorDashboard() {
                   </p>
                   {assignedCity && (
                     <Button 
-                      onClick={() => navigate(`/admin/cities/${assignedCity.id}/places/new`)}
+                      onClick={() => navigate(`/contributor/places/new`)}
                       className="bg-terracotta hover:bg-terracotta/90"
                     >
                       <Plus className="w-4 h-4 mr-2" />
@@ -265,7 +265,7 @@ export default function ContributorDashboard() {
                     <div 
                       key={place.id}
                       className="p-4 hover:bg-muted/50 cursor-pointer transition-colors"
-                      onClick={() => navigate(`/admin/places/${place.id}/edit`)}
+                      onClick={() => navigate(`/contributor/places/${place.id}/edit`)}
                     >
                       <div className="flex items-start justify-between gap-4">
                         <div className="flex-1 min-w-0">

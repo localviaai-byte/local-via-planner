@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/hooks/useAuth';
@@ -9,6 +9,7 @@ import { useActivityLogger } from '@/hooks/useActivityLogger';
 import { WizardProgress } from '@/components/ui/WizardProgress';
 import { ChevronLeft, X, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
+import { supabase } from '@/integrations/supabase/client';
 
 import StepContext from '@/components/admin/wizard/StepContext';
 import StepIdentity from '@/components/admin/wizard/StepIdentity';
@@ -103,13 +104,25 @@ function placeToFormData(place: Place): PlaceFormData {
 
 export default function PlaceWizard() {
   const navigate = useNavigate();
+  const location = useLocation();
   const { cityId, id: placeId } = useParams<{ cityId?: string; id?: string }>();
-  const { user } = useAuth();
+  const { user, role } = useAuth();
   const { data: cities } = useCities();
-  const { data: currentCity } = useCity(cityId);
   const { logCreate, logUpdate } = useActivityLogger();
   const createPlace = useCreatePlace();
   const updatePlace = useUpdatePlace();
+  
+  // Detect if we're on contributor routes
+  const isContributorRoute = location.pathname.startsWith('/contributor');
+  
+  // Contributor's assigned city (fetched if no cityId in route)
+  const [assignedCityId, setAssignedCityId] = useState<string | null>(null);
+  const [isLoadingAssignedCity, setIsLoadingAssignedCity] = useState(false);
+  
+  // Determine effective city ID
+  const effectiveCityId = cityId || assignedCityId;
+  
+  const { data: currentCity } = useCity(effectiveCityId || undefined);
   
   // Fetch existing place if editing
   const { data: existingPlace, isLoading: isLoadingPlace } = usePlace(placeId);
@@ -119,9 +132,36 @@ export default function PlaceWizard() {
   const [currentStep, setCurrentStep] = useState(0);
   const [formData, setFormData] = useState<PlaceFormData>({
     ...DEFAULT_PLACE_FORM_DATA,
-    city_id: cityId || '',
+    city_id: effectiveCityId || '',
   });
   const [isFormInitialized, setIsFormInitialized] = useState(false);
+
+  // Fetch assigned city for contributors when no cityId in route
+  useEffect(() => {
+    async function fetchAssignedCity() {
+      if (!user || cityId || isEditMode) return;
+      
+      setIsLoadingAssignedCity(true);
+      try {
+        const { data } = await supabase
+          .from('user_roles')
+          .select('assigned_city_id')
+          .eq('user_id', user.id)
+          .maybeSingle();
+        
+        if (data?.assigned_city_id) {
+          setAssignedCityId(data.assigned_city_id);
+          setFormData(prev => ({ ...prev, city_id: data.assigned_city_id }));
+        }
+      } catch (error) {
+        console.error('Error fetching assigned city:', error);
+      } finally {
+        setIsLoadingAssignedCity(false);
+      }
+    }
+    
+    fetchAssignedCity();
+  }, [user, cityId, isEditMode]);
 
   // Initialize form with existing place data when editing
   useEffect(() => {
@@ -133,10 +173,10 @@ export default function PlaceWizard() {
 
   // Set city_id when cityId param changes (for new places)
   useEffect(() => {
-    if (cityId && !isEditMode) {
-      setFormData(prev => ({ ...prev, city_id: cityId }));
+    if (effectiveCityId && !isEditMode && !isFormInitialized) {
+      setFormData(prev => ({ ...prev, city_id: effectiveCityId }));
     }
-  }, [cityId, isEditMode]);
+  }, [effectiveCityId, isEditMode, isFormInitialized]);
 
   const updateFormData = (updates: Partial<PlaceFormData>) => {
     setFormData(prev => ({ ...prev, ...updates }));
@@ -205,9 +245,13 @@ export default function PlaceWizard() {
           });
           toast.success('Luogo salvato con successo!');
         }
-        // Navigate back
-        const targetCityId = formData.city_id || cityId;
-        navigate(targetCityId ? `/admin/cities/${targetCityId}` : '/admin');
+        // Navigate back based on route type
+        if (isContributorRoute) {
+          navigate('/contributor');
+        } else {
+          const targetCityId = formData.city_id || effectiveCityId;
+          navigate(targetCityId ? `/admin/cities/${targetCityId}` : '/admin');
+        }
       } catch (error) {
         console.error('Error saving place:', error);
         toast.error('Errore nel salvataggio');
@@ -222,17 +266,21 @@ export default function PlaceWizard() {
   };
 
   const handleClose = () => {
-    const targetCityId = formData.city_id || cityId || existingPlace?.city_id;
-    navigate(targetCityId ? `/admin/cities/${targetCityId}` : '/admin');
+    if (isContributorRoute) {
+      navigate('/contributor');
+    } else {
+      const targetCityId = formData.city_id || effectiveCityId || existingPlace?.city_id;
+      navigate(targetCityId ? `/admin/cities/${targetCityId}` : '/admin');
+    }
   };
 
-  // Show loading state when fetching existing place
-  if (isEditMode && isLoadingPlace) {
+  // Show loading state when fetching existing place or assigned city
+  if ((isEditMode && isLoadingPlace) || isLoadingAssignedCity) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="flex flex-col items-center gap-3">
           <Loader2 className="w-8 h-8 animate-spin text-primary" />
-          <span className="text-muted-foreground">Caricamento luogo...</span>
+          <span className="text-muted-foreground">Caricamento...</span>
         </div>
       </div>
     );
@@ -245,11 +293,16 @@ export default function PlaceWizard() {
         <div className="flex flex-col items-center gap-3 text-center p-6">
           <span className="text-xl font-semibold">Luogo non trovato</span>
           <span className="text-muted-foreground">Il luogo richiesto non esiste.</span>
-          <Button onClick={() => navigate('/admin')}>Torna alla dashboard</Button>
+          <Button onClick={() => navigate(isContributorRoute ? '/contributor' : '/admin')}>Torna alla dashboard</Button>
         </div>
       </div>
     );
   }
+
+  // For contributors, filter cities to only show their assigned city
+  const availableCities = isContributorRoute && assignedCityId 
+    ? cities?.filter(c => c.id === assignedCityId) || []
+    : cities || [];
 
   const renderStep = () => {
     const commonProps = {
@@ -259,7 +312,7 @@ export default function PlaceWizard() {
 
     switch (currentStep) {
       case 0:
-        return <StepContext {...commonProps} cities={cities || []} />;
+        return <StepContext {...commonProps} cities={availableCities} isContributorMode={isContributorRoute} />;
       case 1:
         const city = currentCity || cities?.find(c => c.id === formData.city_id);
         return (

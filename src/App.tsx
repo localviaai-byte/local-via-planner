@@ -240,6 +240,22 @@ const App = () => (
                 </ContributorRoute>
               }
             />
+            <Route
+              path="/contributor/places/new"
+              element={
+                <ContributorRoute>
+                  <PlaceWizard />
+                </ContributorRoute>
+              }
+            />
+            <Route
+              path="/contributor/places/:id/edit"
+              element={
+                <ContributorRoute>
+                  <PlaceWizard />
+                </ContributorRoute>
+              }
+            />
             
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
