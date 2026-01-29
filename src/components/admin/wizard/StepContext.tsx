@@ -8,9 +8,17 @@ interface StepContextProps {
   formData: PlaceFormData;
   onUpdate: (updates: Partial<PlaceFormData>) => void;
   cities: City[];
+  isContributorMode?: boolean;
 }
 
-export default function StepContext({ formData, onUpdate, cities }: StepContextProps) {
+export default function StepContext({ formData, onUpdate, cities, isContributorMode = false }: StepContextProps) {
+  // For contributors with a single assigned city, auto-select it
+  const shouldShowCitySelect = !isContributorMode || cities.length !== 1;
+  
+  // Auto-select city for contributors
+  if (isContributorMode && cities.length === 1 && !formData.city_id) {
+    onUpdate({ city_id: cities[0].id });
+  }
   return (
     <motion.div
       initial={{ opacity: 0, y: 10 }}
@@ -27,25 +35,32 @@ export default function StepContext({ formData, onUpdate, cities }: StepContextP
         </p>
       </div>
 
-      {/* City select */}
-      <div className="space-y-2">
-        <label className="text-sm font-medium text-foreground">Città</label>
-        <Select
-          value={formData.city_id}
-          onValueChange={(value) => onUpdate({ city_id: value })}
-        >
-          <SelectTrigger className="bg-card">
-            <SelectValue placeholder="Seleziona una città" />
-          </SelectTrigger>
-          <SelectContent>
-            {cities.map((city) => (
-              <SelectItem key={city.id} value={city.id}>
-                {city.name}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </div>
+      {/* City select - hidden for contributors with single city */}
+      {shouldShowCitySelect ? (
+        <div className="space-y-2">
+          <label className="text-sm font-medium text-foreground">Città</label>
+          <Select
+            value={formData.city_id}
+            onValueChange={(value) => onUpdate({ city_id: value })}
+          >
+            <SelectTrigger className="bg-card">
+              <SelectValue placeholder="Seleziona una città" />
+            </SelectTrigger>
+            <SelectContent>
+              {cities.map((city) => (
+                <SelectItem key={city.id} value={city.id}>
+                  {city.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+      ) : (
+        <div className="p-4 bg-secondary/50 rounded-lg">
+          <p className="text-sm text-muted-foreground">Città assegnata</p>
+          <p className="font-medium text-foreground">{cities[0]?.name}</p>
+        </div>
+      )}
 
       {/* Place type grid */}
       <div className="space-y-3">
