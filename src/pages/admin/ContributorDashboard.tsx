@@ -23,7 +23,7 @@ interface ContributorStats {
 
 export default function ContributorDashboard() {
   const navigate = useNavigate();
-  const { user, role, signOut } = useAuth();
+  const { user, signOut } = useAuth();
   
   const [assignedCity, setAssignedCity] = useState<City | null>(null);
   const [places, setPlaces] = useState<Place[]>([]);
@@ -60,23 +60,31 @@ export default function ContributorDashboard() {
         setAssignedCity(city);
       }
       
-      // Fetch places created by this contributor
-      const { data: contributorPlaces } = await supabase
-        .from('places')
-        .select('*')
-        .eq('created_by', user.id)
-        .order('updated_at', { ascending: false });
-      
-      if (contributorPlaces) {
-        setPlaces(contributorPlaces);
-        
-        // Calculate stats
-        setStats({
-          totalPlaces: contributorPlaces.length,
-          pendingReview: contributorPlaces.filter(p => p.status === 'pending_review').length,
-          approved: contributorPlaces.filter(p => p.status === 'approved').length,
-          drafts: contributorPlaces.filter(p => p.status === 'draft').length,
-        });
+      // Fetch ALL places in the assigned city (to prevent duplicates)
+      if (cityId) {
+        const { data: cityPlaces } = await supabase
+          .from('places')
+          .select('*')
+          .eq('city_id', cityId)
+          .order('updated_at', { ascending: false });
+
+        if (cityPlaces) {
+          setPlaces(cityPlaces);
+
+          // Calculate stats (city-wide)
+          setStats({
+            totalPlaces: cityPlaces.length,
+            pendingReview: cityPlaces.filter(p => p.status === 'pending_review').length,
+            approved: cityPlaces.filter(p => p.status === 'approved').length,
+            drafts: cityPlaces.filter(p => p.status === 'draft').length,
+          });
+        } else {
+          setPlaces([]);
+          setStats({ totalPlaces: 0, pendingReview: 0, approved: 0, drafts: 0 });
+        }
+      } else {
+        setPlaces([]);
+        setStats({ totalPlaces: 0, pendingReview: 0, approved: 0, drafts: 0 });
       }
     } catch (error) {
       console.error('Error fetching contributor data:', error);
@@ -243,7 +251,7 @@ export default function ContributorDashboard() {
         >
           <Card>
             <CardHeader className="pb-3">
-              <CardTitle className="text-lg font-display">I tuoi luoghi</CardTitle>
+              <CardTitle className="text-lg font-display">Luoghi già segnalati</CardTitle>
             </CardHeader>
             <CardContent className="p-0">
               {places.length === 0 ? (
@@ -253,7 +261,7 @@ export default function ContributorDashboard() {
                   </div>
                   <h3 className="font-medium mb-2">Nessun luogo ancora</h3>
                   <p className="text-sm text-muted-foreground mb-4">
-                    Inizia a contribuire aggiungendo il tuo primo luogo!
+                    Non risultano luoghi per la tua città (o non hai accesso). Prova a ricaricare.
                   </p>
                   {assignedCity && (
                     <Button 
@@ -267,12 +275,22 @@ export default function ContributorDashboard() {
                 </div>
               ) : (
                 <div className="divide-y">
-                  {places.map((place) => (
-                    <div 
-                      key={place.id}
-                      className="p-4 hover:bg-muted/50 cursor-pointer transition-colors"
-                      onClick={() => navigate(`/contributor/places/${place.id}/edit`)}
-                    >
+                  {places.map((place) => {
+                    const canEdit = !!user && place.status === 'draft' && place.created_by === user.id;
+                    return (
+                      <div 
+                        key={place.id}
+                        className={`p-4 transition-colors ${canEdit ? 'hover:bg-muted/50 cursor-pointer' : 'cursor-default'}`}
+                        onClick={canEdit ? () => navigate(`/contributor/places/${place.id}/edit`) : undefined}
+                        role={canEdit ? 'button' : undefined}
+                        tabIndex={canEdit ? 0 : -1}
+                        onKeyDown={canEdit ? (e) => {
+                          if (e.key === 'Enter' || e.key === ' ') {
+                            e.preventDefault();
+                            navigate(`/contributor/places/${place.id}/edit`);
+                          }
+                        } : undefined}
+                      >
                       <div className="flex items-start justify-between gap-4">
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2 mb-1">
@@ -299,8 +317,9 @@ export default function ContributorDashboard() {
                           {new Date(place.updated_at).toLocaleDateString('it-IT')}
                         </div>
                       </div>
-                    </div>
-                  ))}
+                      </div>
+                    );
+                  })}
                 </div>
               )}
             </CardContent>
