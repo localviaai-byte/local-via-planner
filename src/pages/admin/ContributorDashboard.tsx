@@ -9,6 +9,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { SuggestionsSection } from '@/components/contributor/SuggestionsSection';
+import { ContributorOnboarding } from '@/components/contributor/ContributorOnboarding';
 import type { Tables } from '@/integrations/supabase/types';
 
 type Place = Tables<'places'>;
@@ -142,6 +143,8 @@ export default function ContributorDashboard() {
   
   return (
     <div className="min-h-screen bg-background">
+      {/* Onboarding modal */}
+      <ContributorOnboarding />
       {/* Header */}
       <header className="sticky top-0 z-50 bg-background/95 backdrop-blur border-b">
         <div className="max-w-4xl mx-auto px-4 py-3 flex items-center justify-between">
