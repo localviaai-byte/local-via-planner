@@ -1,13 +1,14 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { MapPin, Building2, Clock, CheckCircle2, AlertCircle, Plus, LogOut } from 'lucide-react';
+import { MapPin, Building2, Clock, AlertCircle, Plus, LogOut } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
+import { SuggestionsSection } from '@/components/contributor/SuggestionsSection';
 import type { Tables } from '@/integrations/supabase/types';
 
 type Place = Tables<'places'>;
@@ -228,6 +229,11 @@ export default function ContributorDashboard() {
             </CardContent>
           </Card>
         </motion.div>
+        
+        {/* AI Suggestions to classify */}
+        {assignedCity && user && (
+          <SuggestionsSection cityId={assignedCity.id} userId={user.id} />
+        )}
         
         {/* Places List */}
         <motion.div
