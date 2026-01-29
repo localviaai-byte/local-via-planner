@@ -55,23 +55,44 @@ Deno.serve(async (req) => {
     console.log(`Starting discovery for: ${fullLocation}`);
 
     // Step 1: Search for places using Firecrawl with more specific queries
+    // Double the search queries for broader coverage while keeping city specificity
     const searchQueries = [
-      // Attractions - be specific to the city
-      `"${cityName}" cosa vedere attrazioni turistiche monumenti`,
-      `"${cityName}" siti archeologici musei da visitare`,
-      // Restaurants - local focus
-      `"${cityName}" ristoranti tipici dove mangiare locale`,
-      `"${cityName}" trattoria osteria cucina tradizionale`,
-      // Bars & Aperitivo
-      `"${cityName}" bar aperitivo cocktail migliori`,
-      `"${cityName}" wine bar enoteca`,
-      // Nightlife
-      `"${cityName}" discoteca club vita notturna locali`,
-      // Views & Experiences
-      `"${cityName}" punti panoramici vista belvedere`,
-      `"${cityName}" esperienze uniche attività`,
-      // Zones/Neighborhoods
-      `"${cityName}" quartieri zone centro storico`,
+      // === ATTRACTIONS (6 queries) ===
+      `"${cityName}" ${region ? `"${region}"` : ''} cosa vedere attrazioni turistiche`,
+      `"${cityName}" siti archeologici musei monumenti storici`,
+      `"${cityName}" chiese basiliche luoghi sacri visitare`,
+      `"${cityName}" parchi giardini ville storiche`,
+      `"${cityName}" best attractions things to do`, // English for international coverage
+      `"${cityName}" must see landmarks tourist guide`,
+      
+      // === RESTAURANTS (5 queries) ===
+      `"${cityName}" ristoranti tipici cucina locale tradizionale`,
+      `"${cityName}" trattoria osteria dove mangiare bene`,
+      `"${cityName}" pizzeria migliore pizza napoletana`,
+      `"${cityName}" ristorante pesce mare frutti di mare`,
+      `"${cityName}" best restaurants local food TripAdvisor`,
+      
+      // === BARS & APERITIVO (4 queries) ===
+      `"${cityName}" bar aperitivo migliori cocktail`,
+      `"${cityName}" wine bar enoteca vino locale`,
+      `"${cityName}" caffè storico pasticceria dolci`,
+      `"${cityName}" rooftop bar terrazza drink`,
+      
+      // === NIGHTLIFE (3 queries) ===
+      `"${cityName}" discoteca club vita notturna locali serali`,
+      `"${cityName}" live music pub birreria serata`,
+      `"${cityName}" nightlife clubs bars dancing`,
+      
+      // === VIEWS & EXPERIENCES (4 queries) ===
+      `"${cityName}" punti panoramici vista belvedere tramonto`,
+      `"${cityName}" esperienze uniche attività tour guidati`,
+      `"${cityName}" escursioni trekking natura dintorni`,
+      `"${cityName}" best viewpoints scenic spots photography`,
+      
+      // === ZONES/NEIGHBORHOODS (3 queries) ===
+      `"${cityName}" quartieri zone centro storico passeggiare`,
+      `"${cityName}" vie dello shopping mercati locali`,
+      `"${cityName}" neighborhoods districts local areas guide`,
     ];
 
     const allSearchResults: string[] = [];
@@ -87,7 +108,7 @@ Deno.serve(async (req) => {
           },
           body: JSON.stringify({
             query,
-            limit: 3, // Fewer results per query but more queries
+            limit: 5, // Increased from 3 to 5 results per query
             lang: 'it',
             country: 'IT',
             scrapeOptions: {
@@ -130,8 +151,8 @@ ${truncatedContent}
       );
     }
 
-    // Step 2: Use AI to extract structured place suggestions
-    const combinedContent = allSearchResults.slice(0, 15).join('\n\n');
+    // Step 2: Use AI to extract structured place suggestions (process more results)
+    const combinedContent = allSearchResults.slice(0, 25).join('\n\n'); // Increased from 15 to 25
     
     const systemPrompt = `Sei un curatore locale esperto di ${cityName}. Il tuo compito è estrarre luoghi SPECIFICI che si trovano FISICAMENTE dentro ${cityName} (${region || ''}, ${country || 'Italia'}).
 
