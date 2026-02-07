@@ -57,14 +57,8 @@ export function StepFood({ preferences, onUpdate }: StepFoodProps) {
               key={cuisine.id}
               type="button"
               onClick={() => toggleCuisine(cuisine.id)}
-              onPointerDown={(e) => {
-                // Mobile Safari reliability: ensure tap registers even during scroll/animation
-                e.preventDefault();
-                toggleCuisine(cuisine.id);
-              }}
               className={`
-                p-4 rounded-2xl text-left transition-all duration-200 cursor-pointer relative z-10
-                pointer-events-auto select-none touch-manipulation
+                p-4 rounded-2xl text-left transition-all duration-200 cursor-pointer
                 ${preferences.cuisinePreferences.includes(cuisine.id)
                   ? 'bg-card ring-2 ring-primary shadow-card'
                   : 'bg-card hover:shadow-soft'
