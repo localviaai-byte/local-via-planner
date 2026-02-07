@@ -460,26 +460,86 @@ MASSIMO ${maxSuggestions} suggerimenti totali, privilegia la qualità sulla quan
 
     console.log(`[Job ${jobId}] Extracted ${suggestions.length} high-confidence suggestions`);
 
-    // Update progress before TripAdvisor enrichment
+    // CRITICAL: Save suggestions and mark job as completed BEFORE TripAdvisor enrichment
+    // This prevents the job from getting stuck if the worker shuts down during enrichment
+    
+    // First, save all suggestions to the database
+    if (suggestions.length > 0) {
+      // Check for existing suggestions to avoid duplicates
+      const { data: existingPlaces } = await supabase
+        .from('places')
+        .select('name')
+        .eq('city_id', cityId);
+      
+      const { data: existingSuggestions } = await supabase
+        .from('place_suggestions')
+        .select('name')
+        .eq('city_id', cityId);
+      
+      const existingNames = new Set([
+        ...(existingPlaces || []).map(p => p.name.toLowerCase()),
+        ...(existingSuggestions || []).map(s => s.name.toLowerCase()),
+      ]);
+      
+      const newSuggestions = suggestions.filter(s => !existingNames.has(s.name.toLowerCase()));
+      
+      if (newSuggestions.length > 0) {
+        const { error: insertError } = await supabase
+          .from('place_suggestions')
+          .insert(newSuggestions.map(s => ({
+            city_id: cityId,
+            name: s.name,
+            place_type: s.place_type,
+            address: s.address || null,
+            zone: s.zone || null,
+            description: s.description || null,
+            why_people_go: s.why_people_go || [],
+            best_times: s.best_times || [],
+            confidence: s.confidence,
+            status: 'pending',
+          })));
+        
+        if (insertError) {
+          console.error(`[Job ${jobId}] Error saving suggestions:`, insertError);
+        } else {
+          console.log(`[Job ${jobId}] Saved ${newSuggestions.length} new suggestions to database`);
+        }
+      }
+    }
+
+    // Mark job as completed IMMEDIATELY - don't wait for TripAdvisor enrichment
     await supabase
       .from('discovery_jobs')
-      .update({ progress: 92, updated_at: new Date().toISOString() })
+      .update({ 
+        status: 'completed', 
+        progress: 100,
+        result: { 
+          suggestions,
+          sourcesCount: allSearchResults.length,
+          cityId,
+          newCount: suggestions.length
+        },
+        updated_at: new Date().toISOString()
+      })
       .eq('id', jobId);
 
-    // Enrich with TripAdvisor data (for non-zone places)
+    console.log(`[Job ${jobId}] Discovery completed successfully with ${suggestions.length} suggestions`);
+    
+    // TripAdvisor enrichment happens AFTER job is marked complete (best effort, non-blocking)
+    // This way if the worker shuts down, the job is still complete
     const apifyApiKey = Deno.env.get('APIFY_API_KEY');
     if (apifyApiKey && suggestions.length > 0) {
-      console.log(`[Job ${jobId}] Starting TripAdvisor enrichment for ${suggestions.length} places`);
+      console.log(`[Job ${jobId}] Starting background TripAdvisor enrichment for top places`);
       
-      // Take top 10 suggestions for TripAdvisor enrichment (to save API calls)
-      const placesToEnrich = suggestions.slice(0, 10).filter(s => s.place_type !== 'zone');
+      // Take top 5 suggestions for TripAdvisor enrichment (reduced from 10 to avoid timeouts)
+      const placesToEnrich = suggestions.slice(0, 5).filter(s => s.place_type !== 'zone');
       
       for (const place of placesToEnrich) {
         try {
           const searchQuery = `${place.name} ${cityName}`;
           const actorUrl = 'https://api.apify.com/v2/acts/maxcopell~tripadvisor/run-sync-get-dataset-items';
           
-          const response = await fetch(`${actorUrl}?token=${apifyApiKey}&timeout=30`, {
+          const response = await fetch(`${actorUrl}?token=${apifyApiKey}&timeout=20`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -495,11 +555,10 @@ MASSIMO ${maxSuggestions} suggerimenti totali, privilegia la qualità sulla quan
             if (results && results.length > 0) {
               const match = results[0];
               
-              // Find and update the suggestion
-              const suggestionIndex = suggestions.findIndex(s => s.name === place.name);
-              if (suggestionIndex >= 0) {
-                suggestions[suggestionIndex] = {
-                  ...suggestions[suggestionIndex],
+              // Update the suggestion in the database with TripAdvisor data
+              await supabase
+                .from('place_suggestions')
+                .update({
                   tripadvisor_id: match.locationId,
                   tripadvisor_ranking: match.rankingPosition,
                   tripadvisor_ranking_category: match.rankingCategory || match.category?.name,
@@ -508,38 +567,26 @@ MASSIMO ${maxSuggestions} suggerimenti totali, privilegia la qualità sulla quan
                   tripadvisor_price_level: match.priceLevel || match.priceRange,
                   tripadvisor_url: match.webUrl || match.url,
                   tripadvisor_image_url: match.image,
-                };
-                console.log(`[Job ${jobId}] Enriched "${place.name}" with TripAdvisor (rating: ${match.rating})`);
-              }
+                })
+                .eq('city_id', cityId)
+                .eq('name', place.name);
+              
+              console.log(`[Job ${jobId}] Enriched "${place.name}" with TripAdvisor (rating: ${match.rating})`);
             }
           }
           
           // Small delay between API calls
-          await new Promise(resolve => setTimeout(resolve, 500));
+          await new Promise(resolve => setTimeout(resolve, 300));
         } catch (e) {
           console.error(`[Job ${jobId}] TripAdvisor enrichment error for "${place.name}":`, e);
+          // Continue with other places - don't let one failure stop enrichment
         }
       }
+      
+      console.log(`[Job ${jobId}] TripAdvisor enrichment completed`);
     } else if (!apifyApiKey) {
       console.log(`[Job ${jobId}] Skipping TripAdvisor enrichment - APIFY_API_KEY not configured`);
     }
-
-    // Mark job as completed
-    await supabase
-      .from('discovery_jobs')
-      .update({ 
-        status: 'completed', 
-        progress: 100,
-        result: { 
-          suggestions,
-          sourcesCount: allSearchResults.length,
-          cityId 
-        },
-        updated_at: new Date().toISOString()
-      })
-      .eq('id', jobId);
-
-    console.log(`[Job ${jobId}] Discovery completed successfully`);
 
   } catch (error) {
     console.error(`[Job ${jobId}] Discovery error:`, error);
