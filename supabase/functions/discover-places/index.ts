@@ -16,13 +16,196 @@ interface SuggestedPlace {
   confidence: number;
 }
 
+interface DiscoveryOptions {
+  placeType?: string;
+  focusZone?: string;
+  searchRadius?: string;
+  intensity?: string;
+  maxQueries?: number;
+}
+
+// Generate search queries based on filters
+function generateSearchQueries(
+  cityName: string, 
+  region: string | undefined, 
+  options: DiscoveryOptions
+): string[] {
+  const focusArea = options.focusZone || '';
+  const placeType = options.placeType;
+  const intensity = options.intensity || 'normal';
+  const maxQueries = options.maxQueries || 15;
+  
+  const regionPart = region ? `"${region}"` : '';
+  const zonePart = focusArea ? `"${focusArea}"` : '';
+  
+  // Build location string
+  const locationBase = zonePart 
+    ? `"${cityName}" ${zonePart}` 
+    : `"${cityName}" ${regionPart}`;
+
+  const allQueries: string[] = [];
+
+  // ========================
+  // ATTRACTIONS QUERIES
+  // ========================
+  if (!placeType || placeType === 'attraction') {
+    allQueries.push(
+      `${locationBase} cosa vedere attrazioni turistiche`,
+      `${locationBase} siti archeologici musei monumenti storici`,
+      `${locationBase} chiese basiliche luoghi sacri visitare`,
+      `${locationBase} parchi giardini ville storiche`,
+      `${locationBase} best attractions things to do`,
+      `${locationBase} must see landmarks tourist guide`,
+      `${locationBase} luoghi segreti nascosti da scoprire`,
+      `${locationBase} patrimonio UNESCO monumenti`,
+    );
+    if (intensity === 'deep' || intensity === 'exhaustive') {
+      allQueries.push(
+        `${locationBase} attrazioni meno conosciute locali`,
+        `${locationBase} hidden gems off the beaten path`,
+        `${locationBase} luoghi instagrammabili foto spot`,
+        `${locationBase} castelli palazzi storici tour`,
+      );
+    }
+  }
+
+  // ========================
+  // RESTAURANTS QUERIES
+  // ========================
+  if (!placeType || placeType === 'restaurant') {
+    allQueries.push(
+      `${locationBase} ristoranti tipici cucina locale tradizionale`,
+      `${locationBase} trattoria osteria dove mangiare bene`,
+      `${locationBase} pizzeria migliore pizza`,
+      `${locationBase} ristorante pesce mare frutti di mare`,
+      `${locationBase} best restaurants local food TripAdvisor`,
+      `${locationBase} ristoranti romantici cena speciale`,
+    );
+    if (intensity === 'deep' || intensity === 'exhaustive') {
+      allQueries.push(
+        `${locationBase} street food cibo di strada specialità`,
+        `${locationBase} ristoranti economici buoni pranzo`,
+        `${locationBase} ristorante stellato gourmet fine dining`,
+        `${locationBase} trattoria autentica locals only`,
+        `${locationBase} dove mangiano i locali ristoranti nascosti`,
+      );
+    }
+    if (intensity === 'exhaustive') {
+      allQueries.push(
+        `${locationBase} migliori ristoranti 2024 2025 nuovi`,
+        `${locationBase} brunch colazione migliore`,
+        `${locationBase} ristoranti vegetariani vegani`,
+      );
+    }
+  }
+
+  // ========================
+  // BARS & CAFES QUERIES
+  // ========================
+  if (!placeType || placeType === 'bar') {
+    allQueries.push(
+      `${locationBase} bar aperitivo migliori cocktail`,
+      `${locationBase} wine bar enoteca vino locale`,
+      `${locationBase} caffè storico pasticceria dolci`,
+      `${locationBase} rooftop bar terrazza drink`,
+      `${locationBase} cocktail bar speakeasy`,
+    );
+    if (intensity === 'deep' || intensity === 'exhaustive') {
+      allQueries.push(
+        `${locationBase} aperitivo dove andare locals`,
+        `${locationBase} bar con musica live serata`,
+        `${locationBase} pub birreria craft beer`,
+        `${locationBase} lounge bar elegante`,
+      );
+    }
+    if (intensity === 'exhaustive') {
+      allQueries.push(
+        `${locationBase} bar notturni dopo cena`,
+        `${locationBase} caffetteria specialty coffee`,
+      );
+    }
+  }
+
+  // ========================
+  // NIGHTLIFE QUERIES
+  // ========================
+  if (!placeType || placeType === 'club') {
+    allQueries.push(
+      `${locationBase} discoteca club vita notturna locali serali`,
+      `${locationBase} live music pub birreria serata`,
+      `${locationBase} nightlife clubs bars dancing`,
+    );
+    if (intensity === 'deep' || intensity === 'exhaustive') {
+      allQueries.push(
+        `${locationBase} locali notturni dove ballare`,
+        `${locationBase} discoteche migliori weekend`,
+        `${locationBase} jazz club musica dal vivo`,
+      );
+    }
+  }
+
+  // ========================
+  // VIEWS & EXPERIENCES QUERIES
+  // ========================
+  if (!placeType || placeType === 'view') {
+    allQueries.push(
+      `${locationBase} punti panoramici vista belvedere tramonto`,
+      `${locationBase} best viewpoints scenic spots photography`,
+      `${locationBase} terrazze panoramiche vista città`,
+    );
+    if (intensity === 'deep' || intensity === 'exhaustive') {
+      allQueries.push(
+        `${locationBase} sunset spots migliori tramonti`,
+        `${locationBase} foto panoramiche dove scattare`,
+      );
+    }
+  }
+
+  if (!placeType || placeType === 'experience') {
+    allQueries.push(
+      `${locationBase} esperienze uniche attività tour guidati`,
+      `${locationBase} escursioni trekking natura dintorni`,
+      `${locationBase} cooking class corso cucina esperienza`,
+    );
+    if (intensity === 'deep' || intensity === 'exhaustive') {
+      allQueries.push(
+        `${locationBase} tour enogastronomici degustazioni`,
+        `${locationBase} attività all'aperto avventura`,
+        `${locationBase} workshop laboratori artigianali`,
+      );
+    }
+  }
+
+  // ========================
+  // ZONES/NEIGHBORHOODS QUERIES
+  // ========================
+  if (!placeType || placeType === 'zone') {
+    allQueries.push(
+      `${locationBase} quartieri zone centro storico passeggiare`,
+      `${locationBase} vie dello shopping mercati locali`,
+      `${locationBase} neighborhoods districts local areas guide`,
+    );
+    if (intensity === 'deep' || intensity === 'exhaustive') {
+      allQueries.push(
+        `${locationBase} zone caratteristiche atmosfera`,
+        `${locationBase} quartieri emergenti nuovi`,
+        `${locationBase} aree pedonali passeggio`,
+      );
+    }
+  }
+
+  // Shuffle and limit
+  const shuffled = allQueries.sort(() => Math.random() - 0.5);
+  return shuffled.slice(0, maxQueries);
+}
+
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    const { cityName, cityId, region, country } = await req.json();
+    const { cityName, cityId, region, country, options = {} } = await req.json();
 
     if (!cityName) {
       return new Response(
@@ -50,52 +233,30 @@ Deno.serve(async (req) => {
       );
     }
 
-    const fullLocation = region ? `${cityName}, ${region}, ${country || 'Italia'}` : `${cityName}, ${country || 'Italia'}`;
+    const discoveryOptions: DiscoveryOptions = {
+      placeType: options.placeType,
+      focusZone: options.focusZone,
+      searchRadius: options.searchRadius || 'city',
+      intensity: options.intensity || 'normal',
+      maxQueries: options.maxQueries || 15,
+    };
+
+    const fullLocation = options.focusZone 
+      ? `${options.focusZone}, ${cityName}` 
+      : region 
+        ? `${cityName}, ${region}, ${country || 'Italia'}` 
+        : `${cityName}, ${country || 'Italia'}`;
     
     console.log(`Starting discovery for: ${fullLocation}`);
+    console.log(`Options:`, JSON.stringify(discoveryOptions));
 
-    // Step 1: Search for places using Firecrawl with more specific queries
-    // Double the search queries for broader coverage while keeping city specificity
-    const searchQueries = [
-      // === ATTRACTIONS (6 queries) ===
-      `"${cityName}" ${region ? `"${region}"` : ''} cosa vedere attrazioni turistiche`,
-      `"${cityName}" siti archeologici musei monumenti storici`,
-      `"${cityName}" chiese basiliche luoghi sacri visitare`,
-      `"${cityName}" parchi giardini ville storiche`,
-      `"${cityName}" best attractions things to do`, // English for international coverage
-      `"${cityName}" must see landmarks tourist guide`,
-      
-      // === RESTAURANTS (5 queries) ===
-      `"${cityName}" ristoranti tipici cucina locale tradizionale`,
-      `"${cityName}" trattoria osteria dove mangiare bene`,
-      `"${cityName}" pizzeria migliore pizza napoletana`,
-      `"${cityName}" ristorante pesce mare frutti di mare`,
-      `"${cityName}" best restaurants local food TripAdvisor`,
-      
-      // === BARS & APERITIVO (4 queries) ===
-      `"${cityName}" bar aperitivo migliori cocktail`,
-      `"${cityName}" wine bar enoteca vino locale`,
-      `"${cityName}" caffè storico pasticceria dolci`,
-      `"${cityName}" rooftop bar terrazza drink`,
-      
-      // === NIGHTLIFE (3 queries) ===
-      `"${cityName}" discoteca club vita notturna locali serali`,
-      `"${cityName}" live music pub birreria serata`,
-      `"${cityName}" nightlife clubs bars dancing`,
-      
-      // === VIEWS & EXPERIENCES (4 queries) ===
-      `"${cityName}" punti panoramici vista belvedere tramonto`,
-      `"${cityName}" esperienze uniche attività tour guidati`,
-      `"${cityName}" escursioni trekking natura dintorni`,
-      `"${cityName}" best viewpoints scenic spots photography`,
-      
-      // === ZONES/NEIGHBORHOODS (3 queries) ===
-      `"${cityName}" quartieri zone centro storico passeggiare`,
-      `"${cityName}" vie dello shopping mercati locali`,
-      `"${cityName}" neighborhoods districts local areas guide`,
-    ];
+    // Generate queries based on filters
+    const searchQueries = generateSearchQueries(cityName, region, discoveryOptions);
+    console.log(`Generated ${searchQueries.length} search queries`);
 
     const allSearchResults: string[] = [];
+    const resultsPerQuery = discoveryOptions.intensity === 'exhaustive' ? 8 : 
+                            discoveryOptions.intensity === 'deep' ? 6 : 5;
 
     for (const query of searchQueries) {
       try {
@@ -108,7 +269,7 @@ Deno.serve(async (req) => {
           },
           body: JSON.stringify({
             query,
-            limit: 5, // Increased from 3 to 5 results per query
+            limit: resultsPerQuery,
             lang: 'it',
             country: 'IT',
             scrapeOptions: {
@@ -123,8 +284,8 @@ Deno.serve(async (req) => {
           if (searchData.data && Array.isArray(searchData.data)) {
             for (const result of searchData.data) {
               if (result.markdown) {
-                // Limit content length to avoid token limits
-                const truncatedContent = result.markdown.substring(0, 1500);
+                // Increased content length for better extraction
+                const truncatedContent = result.markdown.substring(0, 2000);
                 allSearchResults.push(`
 === Source: ${result.title || result.url} ===
 ${truncatedContent}
@@ -132,6 +293,8 @@ ${truncatedContent}
               }
             }
           }
+        } else {
+          console.error(`Search failed for query: ${query}`, await searchResponse.text());
         }
       } catch (e) {
         console.error(`Search error for "${query}":`, e);
@@ -145,37 +308,55 @@ ${truncatedContent}
         JSON.stringify({ 
           success: true, 
           suggestions: [],
-          message: 'Nessun risultato trovato. Prova con un\'altra città.' 
+          message: 'Nessun risultato trovato. Prova con altre opzioni di ricerca.' 
         }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    // Step 2: Use AI to extract structured place suggestions (process more results)
-    const combinedContent = allSearchResults.slice(0, 25).join('\n\n'); // Increased from 15 to 25
+    // Process more results for better extraction
+    const maxResults = discoveryOptions.intensity === 'exhaustive' ? 40 : 
+                       discoveryOptions.intensity === 'deep' ? 30 : 25;
+    const combinedContent = allSearchResults.slice(0, maxResults).join('\n\n');
+    
+    // Build AI prompt based on filters
+    const placeTypeFilter = discoveryOptions.placeType 
+      ? `IMPORTANTE: Cerca SOLO luoghi di tipo "${discoveryOptions.placeType}".` 
+      : '';
+    
+    const zoneFilter = discoveryOptions.focusZone
+      ? `IMPORTANTE: Concentrati SOLO su luoghi nella zona "${discoveryOptions.focusZone}" di ${cityName}.`
+      : '';
+
+    const maxSuggestions = discoveryOptions.intensity === 'exhaustive' ? 35 : 
+                           discoveryOptions.intensity === 'deep' ? 25 : 20;
     
     const systemPrompt = `Sei un curatore locale esperto di ${cityName}. Il tuo compito è estrarre luoghi SPECIFICI che si trovano FISICAMENTE dentro ${cityName} (${region || ''}, ${country || 'Italia'}).
 
+${placeTypeFilter}
+${zoneFilter}
+
 REGOLE CRITICHE DI FILTRAGGIO:
-1. SOLO luoghi che sono DENTRO ${cityName} - NON includere luoghi in città vicine (es: se cerchi Pompei, NON includere Napoli, Ercolano, Sorrento, etc.)
+1. SOLO luoghi che sono DENTRO ${cityName} - NON includere luoghi in città vicine
 2. Il nome del luogo deve essere un POSTO SPECIFICO, non una categoria generica
 3. Ignora catene internazionali (McDonald's, Starbucks, etc.)
 4. Se non sei SICURO che il luogo sia a ${cityName}, NON includerlo (confidence = 0)
+5. NON duplicare luoghi con nomi simili
 
-DIVERSITÀ RICHIESTA - Devi trovare luoghi per OGNI categoria:
-- 2-3 "attraction" (musei, siti archeologici, monumenti)
-- 2-3 "restaurant" (ristoranti, trattorie, pizzerie)
-- 2-3 "bar" (bar, wine bar, cocktail bar)
-- 1-2 "club" (discoteche, locali notturni) - se esistono
-- 1-2 "experience" (tour, attività, esperienze)
-- 1-2 "view" (punti panoramici, belvedere)
-- 1-2 "zone" (quartieri, aree pedonali, zone caratteristiche)
+DIVERSITÀ RICHIESTA (se non filtrato per tipo):
+- "attraction" (musei, siti archeologici, monumenti)
+- "restaurant" (ristoranti, trattorie, pizzerie)
+- "bar" (bar, wine bar, cocktail bar, caffè)
+- "club" (discoteche, locali notturni)
+- "experience" (tour, attività, esperienze)
+- "view" (punti panoramici, belvedere)
+- "zone" (quartieri, aree pedonali, zone caratteristiche)
 
 Per ogni luogo fornisci:
 - name: nome ESATTO del luogo (es: "Ristorante Da Mario", "Scavi di Pompei")
 - place_type: DEVE corrispondere al tipo reale del luogo
 - address: via/piazza se disponibile (deve essere a ${cityName}!)
-- zone: quartiere/zona DENTRO ${cityName}
+- zone: quartiere/zona DENTRO ${cityName}${discoveryOptions.focusZone ? ` (preferibilmente "${discoveryOptions.focusZone}")` : ''}
 - description: max 80 caratteri
 - why_people_go: 1-3 motivi (es: ["Mangiare bene", "Vista mare"])
 - best_times: quando andare (es: ["pranzo", "cena", "aperitivo"])
@@ -185,7 +366,7 @@ Per ogni luogo fornisci:
   - 0.5-0.7 = possibile ma da verificare
   - sotto 0.5 = NON INCLUDERE
 
-MASSIMO 20 suggerimenti totali, privilegia la qualità sulla quantità.`;
+MASSIMO ${maxSuggestions} suggerimenti totali, privilegia la qualità sulla quantità.`;
 
     const aiResponse = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
       method: 'POST',
@@ -197,7 +378,7 @@ MASSIMO 20 suggerimenti totali, privilegia la qualità sulla quantità.`;
         model: 'google/gemini-2.5-flash',
         messages: [
           { role: 'system', content: systemPrompt },
-          { role: 'user', content: `Analizza questi contenuti web ed estrai SOLO luoghi che sono FISICAMENTE dentro ${cityName}:\n\n${combinedContent}` }
+          { role: 'user', content: `Analizza questi contenuti web ed estrai SOLO luoghi che sono FISICAMENTE dentro ${cityName}${discoveryOptions.focusZone ? ` (zona: ${discoveryOptions.focusZone})` : ''}:\n\n${combinedContent}` }
         ],
         tools: [{
           type: 'function',
@@ -236,8 +417,6 @@ MASSIMO 20 suggerimenti totali, privilegia la qualità sulla quantità.`;
         tool_choice: { type: 'function', function: { name: 'extract_places' } }
       }),
     });
-
-    
 
     if (!aiResponse.ok) {
       const errorText = await aiResponse.text();

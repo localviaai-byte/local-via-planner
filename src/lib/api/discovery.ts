@@ -13,10 +13,20 @@ export interface SuggestedPlace {
   status?: 'pending' | 'accepted' | 'rejected';
 }
 
+export interface DiscoveryOptions {
+  placeType?: string;
+  focusZone?: string;
+  searchRadius?: string; // 'neighborhood' | 'zone' | 'city' | 'area'
+  intensity?: string; // 'light' | 'normal' | 'deep' | 'exhaustive'
+  maxQueries?: number;
+}
+
 export interface DiscoveryResponse {
   success: boolean;
   suggestions?: SuggestedPlace[];
   sourcesCount?: number;
+  newCount?: number;
+  skippedCount?: number;
   error?: string;
   message?: string;
 }
@@ -49,9 +59,35 @@ export async function getPendingSuggestions(cityId: string): Promise<SuggestedPl
   }));
 }
 
-// Save suggestions to DB
-export async function saveSuggestions(cityId: string, suggestions: SuggestedPlace[]): Promise<void> {
-  const rows = suggestions.map(s => ({
+// Save suggestions to DB (with deduplication)
+export async function saveSuggestions(cityId: string, suggestions: SuggestedPlace[]): Promise<{ saved: number; skipped: number }> {
+  // Get all existing suggestions for this city (any status)
+  const { data: existing } = await supabase
+    .from('place_suggestions')
+    .select('name')
+    .eq('city_id', cityId);
+
+  const existingNames = new Set((existing || []).map(e => e.name.toLowerCase().trim()));
+
+  // Also check existing places in the places table
+  const { data: existingPlaces } = await supabase
+    .from('places')
+    .select('name')
+    .eq('city_id', cityId);
+
+  const existingPlaceNames = new Set((existingPlaces || []).map(p => p.name.toLowerCase().trim()));
+
+  // Filter out duplicates
+  const newSuggestions = suggestions.filter(s => {
+    const normalizedName = s.name.toLowerCase().trim();
+    return !existingNames.has(normalizedName) && !existingPlaceNames.has(normalizedName);
+  });
+
+  if (newSuggestions.length === 0) {
+    return { saved: 0, skipped: suggestions.length };
+  }
+
+  const rows = newSuggestions.map(s => ({
     city_id: cityId,
     name: s.name,
     place_type: s.place_type,
@@ -70,6 +106,8 @@ export async function saveSuggestions(cityId: string, suggestions: SuggestedPlac
     console.error('Error saving suggestions:', error);
     throw error;
   }
+
+  return { saved: newSuggestions.length, skipped: suggestions.length - newSuggestions.length };
 }
 
 // Update suggestion status
@@ -117,10 +155,23 @@ export async function discoverPlaces(
   cityName: string, 
   cityId: string,
   region?: string,
-  country?: string
+  country?: string,
+  options?: DiscoveryOptions
 ): Promise<DiscoveryResponse> {
   const { data, error } = await supabase.functions.invoke('discover-places', {
-    body: { cityName, cityId, region, country },
+    body: { 
+      cityName, 
+      cityId, 
+      region, 
+      country,
+      options: {
+        placeType: options?.placeType,
+        focusZone: options?.focusZone,
+        searchRadius: options?.searchRadius || 'city',
+        intensity: options?.intensity || 'normal',
+        maxQueries: options?.maxQueries || 15,
+      }
+    },
   });
 
   if (error) {
@@ -130,10 +181,16 @@ export async function discoverPlaces(
 
   const response = data as DiscoveryResponse;
 
-  // Save suggestions to DB if any found
+  // Save suggestions to DB if any found (with deduplication)
   if (response.success && response.suggestions && response.suggestions.length > 0) {
     try {
-      await saveSuggestions(cityId, response.suggestions);
+      const { saved, skipped } = await saveSuggestions(cityId, response.suggestions);
+      response.newCount = saved;
+      response.skippedCount = skipped;
+      
+      if (saved === 0 && skipped > 0) {
+        response.message = `Tutti i ${skipped} luoghi trovati erano già presenti`;
+      }
     } catch (saveError) {
       console.error('Error persisting suggestions:', saveError);
       // Continue anyway - we have the data in memory

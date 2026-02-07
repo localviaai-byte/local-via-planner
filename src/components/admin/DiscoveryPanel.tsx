@@ -3,7 +3,16 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
-import { Wand2, Loader2, X, CheckCircle2 } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { 
+  Select, 
+  SelectContent, 
+  SelectItem, 
+  SelectTrigger, 
+  SelectValue 
+} from '@/components/ui/select';
+import { Wand2, Loader2, X, CheckCircle2, MapPin, Filter, ChevronDown, ChevronUp } from 'lucide-react';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
@@ -26,6 +35,24 @@ interface DiscoveryPanelProps {
 
 type DiscoveryStatus = 'idle' | 'loading' | 'searching' | 'processing' | 'done' | 'error';
 
+const PLACE_TYPES = [
+  { value: 'all', label: 'Tutti i tipi' },
+  { value: 'attraction', label: 'Attrazioni' },
+  { value: 'restaurant', label: 'Ristoranti' },
+  { value: 'bar', label: 'Bar & Caffè' },
+  { value: 'club', label: 'Club & Locali notturni' },
+  { value: 'experience', label: 'Esperienze' },
+  { value: 'view', label: 'Punti panoramici' },
+  { value: 'zone', label: 'Zone/Quartieri' },
+] as const;
+
+const SEARCH_INTENSITY = [
+  { value: 'light', label: 'Leggera (più veloce)', queries: 8 },
+  { value: 'normal', label: 'Normale', queries: 15 },
+  { value: 'deep', label: 'Profonda', queries: 25 },
+  { value: 'exhaustive', label: 'Esaustiva (più lenta)', queries: 40 },
+] as const;
+
 export function DiscoveryPanel({ cityId, cityName, region, country }: DiscoveryPanelProps) {
   const { user } = useAuth();
   const queryClient = useQueryClient();
@@ -35,6 +62,13 @@ export function DiscoveryPanel({ cityId, cityName, region, country }: DiscoveryP
   const [stats, setStats] = useState({ accepted: 0, rejected: 0 });
   const [savingPlace, setSavingPlace] = useState<string | null>(null);
   const [isExpanded, setIsExpanded] = useState(false);
+  const [showFilters, setShowFilters] = useState(false);
+  
+  // Filter settings
+  const [selectedPlaceType, setSelectedPlaceType] = useState<string>('all');
+  const [searchIntensity, setSearchIntensity] = useState<string>('normal');
+  const [focusZone, setFocusZone] = useState<string>('');
+  const [searchRadius, setSearchRadius] = useState<string>('city'); // city, zone, neighborhood
 
   // Load existing pending suggestions on mount
   useEffect(() => {
@@ -70,21 +104,40 @@ export function DiscoveryPanel({ cityId, cityName, region, country }: DiscoveryP
 
     try {
       setStatus('processing');
-      const result = await discoverPlaces(cityName, cityId, region || undefined, country || undefined);
+      
+      const intensityConfig = SEARCH_INTENSITY.find(i => i.value === searchIntensity);
+      
+      const result = await discoverPlaces(
+        cityName, 
+        cityId, 
+        region || undefined, 
+        country || undefined,
+        {
+          placeType: selectedPlaceType === 'all' ? undefined : selectedPlaceType,
+          focusZone: focusZone.trim() || undefined,
+          searchRadius,
+          intensity: searchIntensity,
+          maxQueries: intensityConfig?.queries || 15,
+        }
+      );
 
       if (!result.success) {
         throw new Error(result.error || 'Discovery failed');
       }
 
-      if (result.suggestions && result.suggestions.length > 0) {
-        // Reload from DB to get IDs
-        const pending = await getPendingSuggestions(cityId);
-        setSuggestions(pending);
-        setStatus('done');
+      // Reload from DB to get IDs (includes deduplication)
+      const pending = await getPendingSuggestions(cityId);
+      setSuggestions(pending);
+      const newStats = await getSuggestionStats(cityId);
+      setStats(newStats);
+      setStatus('done');
+      
+      if (result.newCount !== undefined && result.newCount > 0) {
+        toast.success(`Trovati ${result.newCount} nuovi luoghi da ${result.sourcesCount || 0} fonti!`);
+      } else if (result.suggestions && result.suggestions.length > 0) {
         toast.success(`Trovati ${result.suggestions.length} luoghi da ${result.sourcesCount || 0} fonti!`);
       } else {
-        setStatus('done');
-        toast.info(result.message || 'Nessun luogo trovato');
+        toast.info(result.message || 'Nessun nuovo luogo trovato');
       }
     } catch (error) {
       console.error('Discovery error:', error);
@@ -180,7 +233,7 @@ export function DiscoveryPanel({ cityId, cityName, region, country }: DiscoveryP
         <Button
           variant="outline"
           className="w-full border-dashed border-2 border-gold/50 bg-gold/5 hover:bg-gold/10 text-gold"
-          onClick={startDiscovery}
+          onClick={() => setIsExpanded(true)}
           disabled={status === 'searching' || status === 'processing'}
         >
           {status === 'searching' || status === 'processing' ? (
@@ -228,6 +281,120 @@ export function DiscoveryPanel({ cityId, cityName, region, country }: DiscoveryP
         </CardHeader>
         
         <CardContent className="space-y-4">
+          {/* Search filters */}
+          {status !== 'searching' && status !== 'processing' && (
+            <div className="space-y-3">
+              {/* Filter toggle */}
+              <Button
+                variant="ghost"
+                size="sm"
+                className="w-full justify-between text-muted-foreground hover:text-foreground"
+                onClick={() => setShowFilters(!showFilters)}
+              >
+                <span className="flex items-center gap-2">
+                  <Filter className="w-4 h-4" />
+                  Opzioni di ricerca
+                </span>
+                {showFilters ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+              </Button>
+              
+              <AnimatePresence>
+                {showFilters && (
+                  <motion.div
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: 'auto' }}
+                    exit={{ opacity: 0, height: 0 }}
+                    className="space-y-4 border-t border-border/50 pt-4"
+                  >
+                    {/* Place type filter */}
+                    <div className="space-y-2">
+                      <Label className="text-sm">Tipo di luogo</Label>
+                      <Select value={selectedPlaceType} onValueChange={setSelectedPlaceType}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Seleziona tipo" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {PLACE_TYPES.map(type => (
+                            <SelectItem key={type.value} value={type.value}>
+                              {type.label}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    {/* Focus zone input */}
+                    <div className="space-y-2">
+                      <Label className="text-sm flex items-center gap-2">
+                        <MapPin className="w-4 h-4" />
+                        Zona specifica (opzionale)
+                      </Label>
+                      <Input
+                        placeholder="es. Via Chiaia, Centro Storico, Lungomare..."
+                        value={focusZone}
+                        onChange={(e) => setFocusZone(e.target.value)}
+                        className="bg-background/50"
+                      />
+                      <p className="text-xs text-muted-foreground">
+                        Concentra la ricerca su una via, quartiere o zona specifica
+                      </p>
+                    </div>
+
+                    {/* Search radius */}
+                    <div className="space-y-2">
+                      <Label className="text-sm">Raggio di ricerca</Label>
+                      <Select value={searchRadius} onValueChange={setSearchRadius}>
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="neighborhood">Quartiere (più preciso)</SelectItem>
+                          <SelectItem value="zone">Zona</SelectItem>
+                          <SelectItem value="city">Tutta la città</SelectItem>
+                          <SelectItem value="area">Area metropolitana</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    {/* Search intensity */}
+                    <div className="space-y-2">
+                      <Label className="text-sm">Intensità ricerca</Label>
+                      <Select value={searchIntensity} onValueChange={setSearchIntensity}>
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {SEARCH_INTENSITY.map(intensity => (
+                            <SelectItem key={intensity.value} value={intensity.value}>
+                              {intensity.label}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <p className="text-xs text-muted-foreground">
+                        Ricerche più profonde trovano più luoghi ma richiedono più tempo
+                      </p>
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+
+          {/* Start button */}
+              <Button
+                className="w-full bg-gold hover:bg-gold/90 text-gold-foreground"
+                onClick={startDiscovery}
+              >
+                <Wand2 className="w-4 h-4 mr-2" />
+                Avvia ricerca
+                {selectedPlaceType !== 'all' && (
+                  <span className="ml-1 text-xs opacity-80">
+                    ({PLACE_TYPES.find(t => t.value === selectedPlaceType)?.label})
+                  </span>
+                )}
+              </Button>
+            </div>
+          )}
+
           {/* Status bar */}
           {status === 'searching' || status === 'processing' ? (
             <div className="space-y-2">
@@ -236,8 +403,11 @@ export function DiscoveryPanel({ cityId, cityName, region, country }: DiscoveryP
                 {status === 'searching' ? 'Cercando su web...' : 'Analizzando risultati con AI...'}
               </div>
               <Progress value={status === 'searching' ? 30 : 70} className="h-2" />
+              <p className="text-xs text-muted-foreground">
+                I risultati già trovati in precedenza verranno ignorati
+              </p>
             </div>
-          ) : status === 'done' ? (
+          ) : status === 'done' && (suggestions.length > 0 || stats.accepted > 0 || stats.rejected > 0) ? (
             <div className="flex items-center justify-between text-sm">
               <div className="flex items-center gap-4">
                 <span className="text-muted-foreground">
@@ -291,7 +461,7 @@ export function DiscoveryPanel({ cityId, cityName, region, country }: DiscoveryP
               <Button 
                 variant="outline" 
                 className="mt-4"
-                onClick={startDiscovery}
+                onClick={() => setShowFilters(true)}
               >
                 <Wand2 className="w-4 h-4 mr-2" />
                 Cerca ancora
