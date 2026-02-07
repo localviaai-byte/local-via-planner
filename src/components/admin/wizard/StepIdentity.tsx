@@ -4,6 +4,7 @@ import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { Sparkles, Loader2 } from 'lucide-react';
 import { useAIPrefill } from '@/hooks/useAIPrefill';
+import { ZoneSelector } from '@/components/admin/ZoneSelector';
 import type { PlaceFormData } from '@/types/database';
 
 interface StepIdentityProps {
@@ -40,6 +41,13 @@ export default function StepIdentity({
   };
 
   const canPrefill = formData.name.trim().length >= 2 && cityName.trim().length > 0;
+
+  const handleZoneSelect = (zoneId: string | null, zoneName: string) => {
+    onUpdate({ 
+      zone_id: zoneId, 
+      zone: zoneName 
+    });
+  };
 
   return (
     <motion.div
@@ -110,20 +118,29 @@ export default function StepIdentity({
         />
       </div>
 
-      {/* Zone */}
-      <div className="space-y-2">
-        <Label htmlFor="zone">Zona / Quartiere</Label>
-        <Input
-          id="zone"
-          value={formData.zone}
-          onChange={(e) => onUpdate({ zone: e.target.value })}
-          placeholder="Es: Centro Storico, Vomero, Trastevere..."
-          className="bg-card"
+      {/* Zone Selector - if city is selected */}
+      {formData.city_id ? (
+        <ZoneSelector
+          cityId={formData.city_id}
+          selectedZoneId={formData.zone_id}
+          selectedZoneName={formData.zone}
+          onSelect={handleZoneSelect}
         />
-        <p className="text-xs text-muted-foreground">
-          Il quartiere aiuta i viaggiatori a orientarsi
-        </p>
-      </div>
+      ) : (
+        <div className="space-y-2">
+          <Label htmlFor="zone">Zona / Quartiere</Label>
+          <Input
+            id="zone"
+            value={formData.zone}
+            onChange={(e) => onUpdate({ zone: e.target.value })}
+            placeholder="Es: Centro Storico, Vomero, Trastevere..."
+            className="bg-card"
+          />
+          <p className="text-xs text-muted-foreground">
+            Seleziona prima una città per vedere le zone disponibili
+          </p>
+        </div>
+      )}
 
       {/* Photo URL (simplified for now) */}
       <div className="space-y-2">
