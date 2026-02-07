@@ -29,6 +29,23 @@ export interface DiscoveryResponse {
   skippedCount?: number;
   error?: string;
   message?: string;
+  jobId?: string;
+}
+
+export interface DiscoveryJob {
+  id: string;
+  city_id: string;
+  status: 'processing' | 'completed' | 'failed';
+  progress: number;
+  options: DiscoveryOptions | null;
+  result: {
+    suggestions?: SuggestedPlace[];
+    sourcesCount?: number;
+    message?: string;
+  } | null;
+  error: string | null;
+  created_at: string;
+  updated_at: string;
 }
 
 // Fetch existing pending suggestions from DB
@@ -150,14 +167,63 @@ export async function getSuggestionStats(cityId: string): Promise<{ accepted: nu
   };
 }
 
+// Get discovery job status
+export async function getDiscoveryJob(jobId: string): Promise<DiscoveryJob | null> {
+  const { data, error } = await supabase
+    .from('discovery_jobs')
+    .select('*')
+    .eq('id', jobId)
+    .single();
+
+  if (error) {
+    console.error('Error fetching job:', error);
+    return null;
+  }
+
+  return data as DiscoveryJob;
+}
+
+// Poll for job completion
+export async function pollDiscoveryJob(
+  jobId: string, 
+  onProgress?: (progress: number) => void,
+  maxWaitMs: number = 180000 // 3 minutes max
+): Promise<DiscoveryJob> {
+  const startTime = Date.now();
+  const pollInterval = 2000; // 2 seconds
+
+  while (Date.now() - startTime < maxWaitMs) {
+    const job = await getDiscoveryJob(jobId);
+    
+    if (!job) {
+      throw new Error('Job not found');
+    }
+
+    if (onProgress) {
+      onProgress(job.progress);
+    }
+
+    if (job.status === 'completed' || job.status === 'failed') {
+      return job;
+    }
+
+    // Wait before next poll
+    await new Promise(resolve => setTimeout(resolve, pollInterval));
+  }
+
+  throw new Error('Job timed out');
+}
+
 // Run discovery and save results to DB
 export async function discoverPlaces(
   cityName: string, 
   cityId: string,
   region?: string,
   country?: string,
-  options?: DiscoveryOptions
+  options?: DiscoveryOptions,
+  onProgress?: (progress: number) => void
 ): Promise<DiscoveryResponse> {
+  // Start the discovery job
   const { data, error } = await supabase.functions.invoke('discover-places', {
     body: { 
       cityName, 
@@ -179,23 +245,59 @@ export async function discoverPlaces(
     return { success: false, error: error.message };
   }
 
-  const response = data as DiscoveryResponse;
+  const response = data as { success: boolean; jobId?: string; error?: string };
 
-  // Save suggestions to DB if any found (with deduplication)
-  if (response.success && response.suggestions && response.suggestions.length > 0) {
-    try {
-      const { saved, skipped } = await saveSuggestions(cityId, response.suggestions);
-      response.newCount = saved;
-      response.skippedCount = skipped;
-      
-      if (saved === 0 && skipped > 0) {
-        response.message = `Tutti i ${skipped} luoghi trovati erano già presenti`;
-      }
-    } catch (saveError) {
-      console.error('Error persisting suggestions:', saveError);
-      // Continue anyway - we have the data in memory
-    }
+  if (!response.success || !response.jobId) {
+    return { success: false, error: response.error || 'Failed to start discovery' };
   }
 
-  return response;
+  // Poll for completion
+  try {
+    const job = await pollDiscoveryJob(response.jobId, onProgress);
+
+    if (job.status === 'failed') {
+      return { success: false, error: job.error || 'Discovery failed' };
+    }
+
+    const result = job.result || { suggestions: [] };
+    const suggestions = result.suggestions || [];
+
+    // Save suggestions to DB if any found (with deduplication)
+    if (suggestions.length > 0) {
+      try {
+        const { saved, skipped } = await saveSuggestions(cityId, suggestions);
+        return {
+          success: true,
+          suggestions,
+          sourcesCount: result.sourcesCount,
+          newCount: saved,
+          skippedCount: skipped,
+          message: saved === 0 && skipped > 0 
+            ? `Tutti i ${skipped} luoghi trovati erano già presenti` 
+            : undefined,
+        };
+      } catch (saveError) {
+        console.error('Error persisting suggestions:', saveError);
+        // Return suggestions anyway
+        return {
+          success: true,
+          suggestions,
+          sourcesCount: result.sourcesCount,
+        };
+      }
+    }
+
+    return {
+      success: true,
+      suggestions: [],
+      message: result.message || 'Nessun risultato trovato',
+    };
+
+  } catch (pollError) {
+    console.error('Polling error:', pollError);
+    return { 
+      success: false, 
+      error: pollError instanceof Error ? pollError.message : 'Polling failed' 
+    };
+  }
 }

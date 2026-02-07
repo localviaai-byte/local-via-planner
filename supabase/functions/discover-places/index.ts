@@ -199,137 +199,126 @@ function generateSearchQueries(
   return shuffled.slice(0, maxQueries);
 }
 
-Deno.serve(async (req) => {
-  if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders });
-  }
-
+// Background processing function
+async function processDiscovery(
+  supabase: ReturnType<typeof createClient>,
+  jobId: string,
+  cityName: string,
+  cityId: string,
+  region: string | undefined,
+  country: string | undefined,
+  options: DiscoveryOptions
+) {
+  const firecrawlApiKey = Deno.env.get('FIRECRAWL_API_KEY');
+  const lovableApiKey = Deno.env.get('LOVABLE_API_KEY');
+  
   try {
-    const { cityName, cityId, region, country, options = {} } = await req.json();
-
-    if (!cityName) {
-      return new Response(
-        JSON.stringify({ success: false, error: 'City name is required' }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
-
-    const firecrawlApiKey = Deno.env.get('FIRECRAWL_API_KEY');
-    const lovableApiKey = Deno.env.get('LOVABLE_API_KEY');
-    
-    if (!firecrawlApiKey) {
-      console.error('FIRECRAWL_API_KEY not configured');
-      return new Response(
-        JSON.stringify({ success: false, error: 'Firecrawl connector not configured' }),
-        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
-
-    if (!lovableApiKey) {
-      console.error('LOVABLE_API_KEY not configured');
-      return new Response(
-        JSON.stringify({ success: false, error: 'Lovable AI not configured' }),
-        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
-
-    const discoveryOptions: DiscoveryOptions = {
-      placeType: options.placeType,
-      focusZone: options.focusZone,
-      searchRadius: options.searchRadius || 'city',
-      intensity: options.intensity || 'normal',
-      maxQueries: options.maxQueries || 15,
-    };
-
     const fullLocation = options.focusZone 
       ? `${options.focusZone}, ${cityName}` 
       : region 
         ? `${cityName}, ${region}, ${country || 'Italia'}` 
         : `${cityName}, ${country || 'Italia'}`;
     
-    console.log(`Starting discovery for: ${fullLocation}`);
-    console.log(`Options:`, JSON.stringify(discoveryOptions));
+    console.log(`[Job ${jobId}] Starting discovery for: ${fullLocation}`);
 
     // Generate queries based on filters
-    const searchQueries = generateSearchQueries(cityName, region, discoveryOptions);
-    console.log(`Generated ${searchQueries.length} search queries`);
+    const searchQueries = generateSearchQueries(cityName, region, options);
+    console.log(`[Job ${jobId}] Generated ${searchQueries.length} search queries`);
 
     const allSearchResults: string[] = [];
-    const resultsPerQuery = discoveryOptions.intensity === 'exhaustive' ? 8 : 
-                            discoveryOptions.intensity === 'deep' ? 6 : 5;
+    const resultsPerQuery = options.intensity === 'exhaustive' ? 8 : 
+                            options.intensity === 'deep' ? 6 : 5;
 
-    for (const query of searchQueries) {
-      try {
-        console.log(`Searching: ${query}`);
-        const searchResponse = await fetch('https://api.firecrawl.dev/v1/search', {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${firecrawlApiKey}`,
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            query,
-            limit: resultsPerQuery,
-            lang: 'it',
-            country: 'IT',
-            scrapeOptions: {
-              formats: ['markdown'],
-              onlyMainContent: true,
+    // Process queries in batches of 5 for better performance
+    const batchSize = 5;
+    for (let i = 0; i < searchQueries.length; i += batchSize) {
+      const batch = searchQueries.slice(i, i + batchSize);
+      const progress = Math.round(((i + batch.length) / searchQueries.length) * 50);
+      
+      // Update progress
+      await supabase
+        .from('discovery_jobs')
+        .update({ progress, updated_at: new Date().toISOString() })
+        .eq('id', jobId);
+
+      // Process batch in parallel
+      const batchPromises = batch.map(async (query) => {
+        try {
+          console.log(`[Job ${jobId}] Searching: ${query}`);
+          const searchResponse = await fetch('https://api.firecrawl.dev/v1/search', {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${firecrawlApiKey}`,
+              'Content-Type': 'application/json',
             },
-          }),
-        });
+            body: JSON.stringify({
+              query,
+              limit: resultsPerQuery,
+              lang: 'it',
+              country: 'IT',
+              scrapeOptions: {
+                formats: ['markdown'],
+                onlyMainContent: true,
+              },
+            }),
+          });
 
-        if (searchResponse.ok) {
-          const searchData = await searchResponse.json();
-          if (searchData.data && Array.isArray(searchData.data)) {
-            for (const result of searchData.data) {
-              if (result.markdown) {
-                // Increased content length for better extraction
-                const truncatedContent = result.markdown.substring(0, 2000);
-                allSearchResults.push(`
-=== Source: ${result.title || result.url} ===
-${truncatedContent}
-`);
-              }
+          if (searchResponse.ok) {
+            const searchData = await searchResponse.json();
+            if (searchData.data && Array.isArray(searchData.data)) {
+              return searchData.data
+                .filter((result: any) => result.markdown)
+                .map((result: any) => `=== Source: ${result.title || result.url} ===\n${result.markdown.substring(0, 2000)}`);
             }
+          } else {
+            console.error(`[Job ${jobId}] Search failed for query: ${query}`);
           }
-        } else {
-          console.error(`Search failed for query: ${query}`, await searchResponse.text());
+        } catch (e) {
+          console.error(`[Job ${jobId}] Search error for "${query}":`, e);
         }
-      } catch (e) {
-        console.error(`Search error for "${query}":`, e);
-      }
+        return [];
+      });
+
+      const batchResults = await Promise.all(batchPromises);
+      batchResults.forEach(results => allSearchResults.push(...results));
     }
 
-    console.log(`Collected ${allSearchResults.length} search results`);
+    console.log(`[Job ${jobId}] Collected ${allSearchResults.length} search results`);
 
     if (allSearchResults.length === 0) {
-      return new Response(
-        JSON.stringify({ 
-          success: true, 
-          suggestions: [],
-          message: 'Nessun risultato trovato. Prova con altre opzioni di ricerca.' 
-        }),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+      await supabase
+        .from('discovery_jobs')
+        .update({ 
+          status: 'completed', 
+          progress: 100,
+          result: { suggestions: [], message: 'Nessun risultato trovato' },
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', jobId);
+      return;
     }
 
-    // Process more results for better extraction
-    const maxResults = discoveryOptions.intensity === 'exhaustive' ? 40 : 
-                       discoveryOptions.intensity === 'deep' ? 30 : 25;
+    // Update progress before AI processing
+    await supabase
+      .from('discovery_jobs')
+      .update({ progress: 60, updated_at: new Date().toISOString() })
+      .eq('id', jobId);
+
+    // Process with AI
+    const maxResults = options.intensity === 'exhaustive' ? 40 : 
+                       options.intensity === 'deep' ? 30 : 25;
     const combinedContent = allSearchResults.slice(0, maxResults).join('\n\n');
     
-    // Build AI prompt based on filters
-    const placeTypeFilter = discoveryOptions.placeType 
-      ? `IMPORTANTE: Cerca SOLO luoghi di tipo "${discoveryOptions.placeType}".` 
+    const placeTypeFilter = options.placeType 
+      ? `IMPORTANTE: Cerca SOLO luoghi di tipo "${options.placeType}".` 
       : '';
     
-    const zoneFilter = discoveryOptions.focusZone
-      ? `IMPORTANTE: Concentrati SOLO su luoghi nella zona "${discoveryOptions.focusZone}" di ${cityName}.`
+    const zoneFilter = options.focusZone
+      ? `IMPORTANTE: Concentrati SOLO su luoghi nella zona "${options.focusZone}" di ${cityName}.`
       : '';
 
-    const maxSuggestions = discoveryOptions.intensity === 'exhaustive' ? 35 : 
-                           discoveryOptions.intensity === 'deep' ? 25 : 20;
+    const maxSuggestions = options.intensity === 'exhaustive' ? 35 : 
+                           options.intensity === 'deep' ? 25 : 20;
     
     const systemPrompt = `Sei un curatore locale esperto di ${cityName}. Il tuo compito è estrarre luoghi SPECIFICI che si trovano FISICAMENTE dentro ${cityName} (${region || ''}, ${country || 'Italia'}).
 
@@ -356,7 +345,7 @@ Per ogni luogo fornisci:
 - name: nome ESATTO del luogo (es: "Ristorante Da Mario", "Scavi di Pompei")
 - place_type: DEVE corrispondere al tipo reale del luogo
 - address: via/piazza se disponibile (deve essere a ${cityName}!)
-- zone: quartiere/zona DENTRO ${cityName}${discoveryOptions.focusZone ? ` (preferibilmente "${discoveryOptions.focusZone}")` : ''}
+- zone: quartiere/zona DENTRO ${cityName}${options.focusZone ? ` (preferibilmente "${options.focusZone}")` : ''}
 - description: max 80 caratteri
 - why_people_go: 1-3 motivi (es: ["Mangiare bene", "Vista mare"])
 - best_times: quando andare (es: ["pranzo", "cena", "aperitivo"])
@@ -378,7 +367,7 @@ MASSIMO ${maxSuggestions} suggerimenti totali, privilegia la qualità sulla quan
         model: 'google/gemini-2.5-flash',
         messages: [
           { role: 'system', content: systemPrompt },
-          { role: 'user', content: `Analizza questi contenuti web ed estrai SOLO luoghi che sono FISICAMENTE dentro ${cityName}${discoveryOptions.focusZone ? ` (zona: ${discoveryOptions.focusZone})` : ''}:\n\n${combinedContent}` }
+          { role: 'user', content: `Analizza questi contenuti web ed estrai SOLO luoghi che sono FISICAMENTE dentro ${cityName}${options.focusZone ? ` (zona: ${options.focusZone})` : ''}:\n\n${combinedContent}` }
         ],
         tools: [{
           type: 'function',
@@ -418,25 +407,29 @@ MASSIMO ${maxSuggestions} suggerimenti totali, privilegia la qualità sulla quan
       }),
     });
 
+    // Update progress
+    await supabase
+      .from('discovery_jobs')
+      .update({ progress: 90, updated_at: new Date().toISOString() })
+      .eq('id', jobId);
+
     if (!aiResponse.ok) {
       const errorText = await aiResponse.text();
-      console.error('AI error:', aiResponse.status, errorText);
+      console.error(`[Job ${jobId}] AI error:`, aiResponse.status, errorText);
       
-      if (aiResponse.status === 429) {
-        return new Response(
-          JSON.stringify({ success: false, error: 'Rate limit exceeded. Riprova tra qualche minuto.' }),
-          { status: 429, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-        );
-      }
-      
-      return new Response(
-        JSON.stringify({ success: false, error: 'Errore nell\'elaborazione AI' }),
-        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+      await supabase
+        .from('discovery_jobs')
+        .update({ 
+          status: 'failed', 
+          error: aiResponse.status === 429 ? 'Rate limit exceeded' : 'Errore nell\'elaborazione AI',
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', jobId);
+      return;
     }
 
     const aiData = await aiResponse.json();
-    console.log('AI response received');
+    console.log(`[Job ${jobId}] AI response received`);
 
     let suggestions: SuggestedPlace[] = [];
     
@@ -447,7 +440,7 @@ MASSIMO ${maxSuggestions} suggerimenti totali, privilegia la qualità sulla quan
         suggestions = parsed.places || [];
       }
     } catch (e) {
-      console.error('Error parsing AI response:', e);
+      console.error(`[Job ${jobId}] Error parsing AI response:`, e);
     }
 
     // Filter by confidence and deduplicate
@@ -456,14 +449,121 @@ MASSIMO ${maxSuggestions} suggerimenti totali, privilegia la qualità sulla quan
       .filter((s, i, arr) => arr.findIndex(x => x.name.toLowerCase() === s.name.toLowerCase()) === i)
       .sort((a, b) => b.confidence - a.confidence);
 
-    console.log(`Extracted ${suggestions.length} high-confidence suggestions`);
+    console.log(`[Job ${jobId}] Extracted ${suggestions.length} high-confidence suggestions`);
 
+    // Mark job as completed
+    await supabase
+      .from('discovery_jobs')
+      .update({ 
+        status: 'completed', 
+        progress: 100,
+        result: { 
+          suggestions,
+          sourcesCount: allSearchResults.length,
+          cityId 
+        },
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', jobId);
+
+    console.log(`[Job ${jobId}] Discovery completed successfully`);
+
+  } catch (error) {
+    console.error(`[Job ${jobId}] Discovery error:`, error);
+    await supabase
+      .from('discovery_jobs')
+      .update({ 
+        status: 'failed', 
+        error: error instanceof Error ? error.message : 'Discovery failed',
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', jobId);
+  }
+}
+
+Deno.serve(async (req) => {
+  if (req.method === 'OPTIONS') {
+    return new Response(null, { headers: corsHeaders });
+  }
+
+  try {
+    const { cityName, cityId, region, country, options = {} } = await req.json();
+
+    if (!cityName) {
+      return new Response(
+        JSON.stringify({ success: false, error: 'City name is required' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    const firecrawlApiKey = Deno.env.get('FIRECRAWL_API_KEY');
+    const lovableApiKey = Deno.env.get('LOVABLE_API_KEY');
+    
+    if (!firecrawlApiKey) {
+      console.error('FIRECRAWL_API_KEY not configured');
+      return new Response(
+        JSON.stringify({ success: false, error: 'Firecrawl connector not configured' }),
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    if (!lovableApiKey) {
+      console.error('LOVABLE_API_KEY not configured');
+      return new Response(
+        JSON.stringify({ success: false, error: 'Lovable AI not configured' }),
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // Create Supabase client with service role
+    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+    const supabase = createClient(supabaseUrl, supabaseServiceKey);
+
+    const discoveryOptions: DiscoveryOptions = {
+      placeType: options.placeType,
+      focusZone: options.focusZone,
+      searchRadius: options.searchRadius || 'city',
+      intensity: options.intensity || 'normal',
+      maxQueries: options.maxQueries || 15,
+    };
+
+    console.log(`Starting discovery for: ${cityName}`);
+    console.log(`Options:`, JSON.stringify(discoveryOptions));
+
+    // Create job record immediately
+    const { data: job, error: jobError } = await supabase
+      .from('discovery_jobs')
+      .insert({ 
+        city_id: cityId, 
+        status: 'processing', 
+        progress: 0,
+        options: discoveryOptions
+      })
+      .select()
+      .single();
+
+    if (jobError || !job) {
+      console.error('Failed to create job:', jobError);
+      return new Response(
+        JSON.stringify({ success: false, error: 'Failed to create discovery job' }),
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    console.log(`Created job: ${job.id}`);
+
+    // Start background processing (non-blocking)
+    EdgeRuntime.waitUntil(
+      processDiscovery(supabase, job.id, cityName, cityId, region, country, discoveryOptions)
+    );
+
+    // Return immediately with job ID
     return new Response(
       JSON.stringify({ 
         success: true, 
-        suggestions,
-        sourcesCount: allSearchResults.length,
-        cityId 
+        jobId: job.id,
+        message: 'Discovery started in background'
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
