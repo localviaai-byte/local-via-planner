@@ -189,6 +189,26 @@ export function useUpdateCity() {
   });
 }
 
+// Delete a city
+export function useDeleteCity() {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: async (cityId: string) => {
+      const { error } = await supabase
+        .from('cities')
+        .delete()
+        .eq('id', cityId);
+      
+      if (error) throw error;
+      return cityId;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['cities-with-stats'] });
+    }
+  });
+}
+
 // Zone creation payload - only required fields
 interface CreateZonePayload {
   city_id: string;
