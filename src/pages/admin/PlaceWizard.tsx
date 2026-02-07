@@ -113,7 +113,8 @@ export default function PlaceWizard() {
   const createPlace = useCreatePlace();
   const updatePlace = useUpdatePlace();
   
-  // Detect if we're on contributor routes
+  // Role checks
+  const isAdmin = role === 'admin';
   const isContributorRoute = location.pathname.startsWith('/contributor');
   
   // Contributor's assigned city (fetched if no cityId in route)
@@ -136,6 +137,8 @@ export default function PlaceWizard() {
     city_id: effectiveCityId || '',
   });
   const [isFormInitialized, setIsFormInitialized] = useState(false);
+  
+  const isLastStep = currentStep === STEPS.length - 1;
 
   // Fetch assigned city for contributors when no cityId in route
   useEffect(() => {
@@ -210,7 +213,7 @@ export default function PlaceWizard() {
     }
   };
 
-  const handleNext = async () => {
+  const handleNext = async (approveDirectly: boolean = false) => {
     if (currentStep < STEPS.length - 1) {
       setCurrentStep(prev => prev + 1);
     } else {
@@ -223,28 +226,34 @@ export default function PlaceWizard() {
       try {
         if (isEditMode && placeId) {
           // Update existing place
-          await updatePlace.mutateAsync({
+          const updateData = {
             id: placeId,
             ...formData,
-          });
+            // If admin wants to approve, set status to approved
+            ...(approveDirectly && isAdmin ? { status: 'approved' as const } : {}),
+          };
+          await updatePlace.mutateAsync(updateData);
           await logUpdate('place', placeId, { 
             name: formData.name, 
             place_type: formData.place_type,
             city_id: formData.city_id,
+            approved: approveDirectly,
           });
-          toast.success('Luogo aggiornato con successo!');
+          toast.success(approveDirectly ? 'Luogo salvato e approvato!' : 'Luogo aggiornato con successo!');
         } else {
-          // Create new place
+          // Create new place with optional approval
           const newPlace = await createPlace.mutateAsync({
             ...formData,
             created_by: user.id,
+            ...(approveDirectly && isAdmin ? { status: 'approved' as const } : {}),
           });
           await logCreate('place', newPlace.id, { 
             name: newPlace.name, 
             place_type: newPlace.place_type,
             city_id: newPlace.city_id,
+            approved: approveDirectly,
           });
-          toast.success('Luogo salvato con successo!');
+          toast.success(approveDirectly ? 'Luogo creato e approvato!' : 'Luogo salvato come bozza!');
         }
         // Navigate back based on route type
         if (isContributorRoute) {
@@ -407,18 +416,40 @@ export default function PlaceWizard() {
 
       {/* Footer */}
       <div className="fixed bottom-0 left-0 right-0 bg-card border-t border-border p-4 pb-safe-bottom">
-        <Button
-          onClick={handleNext}
-          disabled={!canProceed() || isSaving}
-          className="w-full"
-        >
-          {isSaving
-            ? 'Salvataggio...'
-            : currentStep === STEPS.length - 1
-              ? (isEditMode ? 'Salva modifiche' : 'Salva luogo')
-              : 'Continua'
-          }
-        </Button>
+        {isLastStep && isAdmin ? (
+          // Admin on last step: show two buttons
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              onClick={() => handleNext(false)}
+              disabled={!canProceed() || isSaving}
+              className="flex-1"
+            >
+              {isSaving ? 'Salvataggio...' : 'Salva bozza'}
+            </Button>
+            <Button
+              onClick={() => handleNext(true)}
+              disabled={!canProceed() || isSaving}
+              className="flex-1 bg-olive hover:bg-olive/90"
+            >
+              {isSaving ? 'Salvataggio...' : '✓ Salva e Approva'}
+            </Button>
+          </div>
+        ) : (
+          // Regular flow
+          <Button
+            onClick={() => handleNext(false)}
+            disabled={!canProceed() || isSaving}
+            className="w-full"
+          >
+            {isSaving
+              ? 'Salvataggio...'
+              : isLastStep
+                ? (isEditMode ? 'Salva modifiche' : 'Salva luogo')
+                : 'Continua'
+            }
+          </Button>
+        )}
       </div>
     </div>
   );
