@@ -14,6 +14,15 @@ interface SuggestedPlace {
   why_people_go?: string[];
   best_times?: string[];
   confidence: number;
+  // TripAdvisor enrichment fields
+  tripadvisor_id?: string;
+  tripadvisor_ranking?: number;
+  tripadvisor_ranking_category?: string;
+  tripadvisor_rating?: number;
+  tripadvisor_reviews_count?: number;
+  tripadvisor_price_level?: string;
+  tripadvisor_url?: string;
+  tripadvisor_image_url?: string;
 }
 
 interface DiscoveryOptions {
@@ -450,6 +459,70 @@ MASSIMO ${maxSuggestions} suggerimenti totali, privilegia la qualità sulla quan
       .sort((a, b) => b.confidence - a.confidence);
 
     console.log(`[Job ${jobId}] Extracted ${suggestions.length} high-confidence suggestions`);
+
+    // Update progress before TripAdvisor enrichment
+    await supabase
+      .from('discovery_jobs')
+      .update({ progress: 92, updated_at: new Date().toISOString() })
+      .eq('id', jobId);
+
+    // Enrich with TripAdvisor data (for non-zone places)
+    const apifyApiKey = Deno.env.get('APIFY_API_KEY');
+    if (apifyApiKey && suggestions.length > 0) {
+      console.log(`[Job ${jobId}] Starting TripAdvisor enrichment for ${suggestions.length} places`);
+      
+      // Take top 10 suggestions for TripAdvisor enrichment (to save API calls)
+      const placesToEnrich = suggestions.slice(0, 10).filter(s => s.place_type !== 'zone');
+      
+      for (const place of placesToEnrich) {
+        try {
+          const searchQuery = `${place.name} ${cityName}`;
+          const actorUrl = 'https://api.apify.com/v2/acts/maxcopell~tripadvisor/run-sync-get-dataset-items';
+          
+          const response = await fetch(`${actorUrl}?token=${apifyApiKey}&timeout=30`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              query: searchQuery,
+              maxItemsPerQuery: 3,
+              language: 'it',
+              currency: 'EUR',
+            }),
+          });
+
+          if (response.ok) {
+            const results = await response.json();
+            if (results && results.length > 0) {
+              const match = results[0];
+              
+              // Find and update the suggestion
+              const suggestionIndex = suggestions.findIndex(s => s.name === place.name);
+              if (suggestionIndex >= 0) {
+                suggestions[suggestionIndex] = {
+                  ...suggestions[suggestionIndex],
+                  tripadvisor_id: match.locationId,
+                  tripadvisor_ranking: match.rankingPosition,
+                  tripadvisor_ranking_category: match.rankingCategory || match.category?.name,
+                  tripadvisor_rating: match.rating,
+                  tripadvisor_reviews_count: match.numberOfReviews || match.reviewsCount,
+                  tripadvisor_price_level: match.priceLevel || match.priceRange,
+                  tripadvisor_url: match.webUrl || match.url,
+                  tripadvisor_image_url: match.image,
+                };
+                console.log(`[Job ${jobId}] Enriched "${place.name}" with TripAdvisor (rating: ${match.rating})`);
+              }
+            }
+          }
+          
+          // Small delay between API calls
+          await new Promise(resolve => setTimeout(resolve, 500));
+        } catch (e) {
+          console.error(`[Job ${jobId}] TripAdvisor enrichment error for "${place.name}":`, e);
+        }
+      }
+    } else if (!apifyApiKey) {
+      console.log(`[Job ${jobId}] Skipping TripAdvisor enrichment - APIFY_API_KEY not configured`);
+    }
 
     // Mark job as completed
     await supabase

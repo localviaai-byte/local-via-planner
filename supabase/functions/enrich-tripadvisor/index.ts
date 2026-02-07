@@ -5,7 +5,7 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-interface TripAdvisorResult {
+export interface TripAdvisorResult {
   tripadvisor_id?: string;
   tripadvisor_ranking?: number;
   tripadvisor_ranking_category?: string;
@@ -16,19 +16,138 @@ interface TripAdvisorResult {
   tripadvisor_image_url?: string;
 }
 
-interface ApifySearchResult {
+interface ApifyResult {
   locationId?: string;
   name?: string;
   url?: string;
-  ranking?: string;
+  webUrl?: string;
+  rankingPosition?: number;
+  rankingDenominator?: number;
+  rankingCategory?: string;
   rating?: number;
+  numberOfReviews?: number;
   reviewsCount?: number;
   priceLevel?: string;
-  primaryPhoto?: {
-    photoSizes?: Array<{ url: string; width: number; height: number }>;
-  };
-  thumbnail?: string;
+  priceRange?: string;
   image?: string;
+  thumbnail?: { photo?: { photoSizeDynamic?: { urlTemplate?: string } } };
+  category?: { name?: string };
+}
+
+// Search TripAdvisor for a single place
+export async function searchTripAdvisor(
+  placeName: string,
+  cityName: string,
+  placeType: string,
+  apifyApiKey: string
+): Promise<TripAdvisorResult | null> {
+  const searchQuery = `${placeName} ${cityName}`;
+  
+  console.log(`Searching TripAdvisor for: "${searchQuery}"`);
+
+  // Use the correct actor: maxcopell/tripadvisor
+  const actorUrl = 'https://api.apify.com/v2/acts/maxcopell~tripadvisor/run-sync-get-dataset-items';
+  
+  const actorInput = {
+    query: searchQuery,
+    maxItemsPerQuery: 3,
+    language: 'it',
+    currency: 'EUR',
+  };
+
+  try {
+    const response = await fetch(`${actorUrl}?token=${apifyApiKey}&timeout=30`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(actorInput),
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('Apify API error:', response.status, errorText);
+      return null;
+    }
+
+    const results: ApifyResult[] = await response.json();
+    
+    if (!results || results.length === 0) {
+      console.log('No TripAdvisor results found');
+      return null;
+    }
+
+    // Find best match by name similarity
+    const normalizedPlaceName = placeName.toLowerCase().trim();
+    let bestMatch = results[0];
+    
+    for (const result of results) {
+      if (result.name) {
+        const normalizedResultName = result.name.toLowerCase().trim();
+        if (normalizedResultName === normalizedPlaceName || 
+            normalizedResultName.includes(normalizedPlaceName) ||
+            normalizedPlaceName.includes(normalizedResultName)) {
+          bestMatch = result;
+          break;
+        }
+      }
+    }
+
+    console.log(`Best match: ${bestMatch.name} (rating: ${bestMatch.rating})`);
+
+    // Get image URL
+    let imageUrl: string | undefined = bestMatch.image;
+    if (!imageUrl && bestMatch.thumbnail?.photo?.photoSizeDynamic?.urlTemplate) {
+      imageUrl = bestMatch.thumbnail.photo.photoSizeDynamic.urlTemplate.replace('{width}', '800').replace('{height}', '600');
+    }
+
+    return {
+      tripadvisor_id: bestMatch.locationId,
+      tripadvisor_ranking: bestMatch.rankingPosition,
+      tripadvisor_ranking_category: bestMatch.rankingCategory || bestMatch.category?.name,
+      tripadvisor_rating: bestMatch.rating,
+      tripadvisor_reviews_count: bestMatch.numberOfReviews || bestMatch.reviewsCount,
+      tripadvisor_price_level: bestMatch.priceLevel || bestMatch.priceRange,
+      tripadvisor_url: bestMatch.webUrl || bestMatch.url,
+      tripadvisor_image_url: imageUrl,
+    };
+  } catch (error) {
+    console.error('TripAdvisor search error:', error);
+    return null;
+  }
+}
+
+// Batch enrich multiple places
+export async function batchEnrichTripAdvisor(
+  places: Array<{ name: string; place_type: string }>,
+  cityName: string,
+  apifyApiKey: string
+): Promise<Map<string, TripAdvisorResult>> {
+  const results = new Map<string, TripAdvisorResult>();
+  
+  // Process in batches of 3 to avoid rate limits
+  const batchSize = 3;
+  for (let i = 0; i < places.length; i += batchSize) {
+    const batch = places.slice(i, i + batchSize);
+    
+    const batchPromises = batch.map(async (place) => {
+      // Skip zones - they don't have TripAdvisor pages
+      if (place.place_type === 'zone') return null;
+      
+      const result = await searchTripAdvisor(place.name, cityName, place.place_type, apifyApiKey);
+      if (result) {
+        results.set(place.name, result);
+      }
+      return result;
+    });
+    
+    await Promise.all(batchPromises);
+    
+    // Small delay between batches
+    if (i + batchSize < places.length) {
+      await new Promise(resolve => setTimeout(resolve, 1000));
+    }
+  }
+  
+  return results;
 }
 
 Deno.serve(async (req) => {
@@ -37,14 +156,7 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const { placeName, cityName, placeType, placeId } = await req.json();
-
-    if (!placeName || !cityName) {
-      return new Response(
-        JSON.stringify({ success: false, error: 'placeName and cityName are required' }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
+    const { placeName, cityName, placeType, placeId, batchPlaces } = await req.json();
 
     const apifyApiKey = Deno.env.get('APIFY_API_KEY');
     if (!apifyApiKey) {
@@ -55,69 +167,39 @@ Deno.serve(async (req) => {
       );
     }
 
-    console.log(`Searching TripAdvisor for: "${placeName}" in ${cityName}`);
-
-    // Map place types to TripAdvisor categories
-    const categoryMap: Record<string, string> = {
-      'restaurant': 'restaurants',
-      'bar': 'restaurants', // TripAdvisor groups bars with restaurants
-      'attraction': 'attractions',
-      'experience': 'attractions',
-      'view': 'attractions',
-      'club': 'restaurants',
-    };
-    
-    const searchCategory = categoryMap[placeType] || 'attractions';
-    const searchQuery = `${placeName} ${cityName}`;
-
-    // Call Apify TripAdvisor Scraper Actor
-    // Actor ID: maxcopell/tripadvisor-scraper
-    const actorUrl = 'https://api.apify.com/v2/acts/maxcopell~tripadvisor/run-sync-get-dataset-items';
-    
-    const actorInput = {
-      startUrls: [],
-      searchQuery: searchQuery,
-      searchLocation: cityName,
-      maxItems: 5,
-      language: 'it',
-      currency: 'EUR',
-      includeReviews: false,
-      includeTags: false,
-      includeNearby: false,
-      includeAttractions: searchCategory === 'attractions',
-      includeRestaurants: searchCategory === 'restaurants',
-      includeHotels: false,
-    };
-
-    console.log('Calling Apify actor with input:', JSON.stringify(actorInput));
-
-    const apifyResponse = await fetch(`${actorUrl}?token=${apifyApiKey}`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(actorInput),
-    });
-
-    if (!apifyResponse.ok) {
-      const errorText = await apifyResponse.text();
-      console.error('Apify API error:', apifyResponse.status, errorText);
+    // Batch mode - enrich multiple places at once
+    if (batchPlaces && Array.isArray(batchPlaces)) {
+      console.log(`Batch enriching ${batchPlaces.length} places for ${cityName}`);
       
-      // Return success with empty data - don't fail the whole operation
+      const resultsMap = await batchEnrichTripAdvisor(batchPlaces, cityName, apifyApiKey);
+      
+      // Convert Map to object for JSON response
+      const resultsObject: Record<string, TripAdvisorResult> = {};
+      resultsMap.forEach((value, key) => {
+        resultsObject[key] = value;
+      });
+      
       return new Response(
         JSON.stringify({ 
           success: true, 
-          data: null,
-          message: 'TripAdvisor search returned no results'
+          results: resultsObject,
+          enrichedCount: resultsMap.size 
         }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    const results: ApifySearchResult[] = await apifyResponse.json();
-    console.log(`Received ${results.length} results from Apify`);
+    // Single place mode
+    if (!placeName || !cityName) {
+      return new Response(
+        JSON.stringify({ success: false, error: 'placeName and cityName are required' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
 
-    if (!results || results.length === 0) {
+    const enrichedData = await searchTripAdvisor(placeName, cityName, placeType || 'attraction', apifyApiKey);
+
+    if (!enrichedData) {
       return new Response(
         JSON.stringify({ 
           success: true, 
@@ -128,60 +210,6 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Find the best match - normalize names for comparison
-    const normalizedPlaceName = placeName.toLowerCase().trim();
-    let bestMatch = results[0];
-    
-    for (const result of results) {
-      if (result.name) {
-        const normalizedResultName = result.name.toLowerCase().trim();
-        // Check for exact or partial match
-        if (normalizedResultName === normalizedPlaceName || 
-            normalizedResultName.includes(normalizedPlaceName) ||
-            normalizedPlaceName.includes(normalizedResultName)) {
-          bestMatch = result;
-          break;
-        }
-      }
-    }
-
-    console.log('Best match:', bestMatch.name);
-
-    // Parse ranking (e.g., "#12 of 150 Restaurants in Pompei")
-    let rankingNumber: number | undefined;
-    let rankingCategory: string | undefined;
-    
-    if (bestMatch.ranking) {
-      const rankMatch = bestMatch.ranking.match(/#(\d+)\s+(?:of|su|di)\s+\d+\s+(.+)/i);
-      if (rankMatch) {
-        rankingNumber = parseInt(rankMatch[1], 10);
-        rankingCategory = rankMatch[2].trim();
-      }
-    }
-
-    // Get the best image URL
-    let imageUrl: string | undefined;
-    if (bestMatch.primaryPhoto?.photoSizes && bestMatch.primaryPhoto.photoSizes.length > 0) {
-      // Get the largest image
-      const sortedPhotos = bestMatch.primaryPhoto.photoSizes.sort((a, b) => b.width - a.width);
-      imageUrl = sortedPhotos[0].url;
-    } else if (bestMatch.thumbnail) {
-      imageUrl = bestMatch.thumbnail;
-    } else if (bestMatch.image) {
-      imageUrl = bestMatch.image;
-    }
-
-    const enrichedData: TripAdvisorResult = {
-      tripadvisor_id: bestMatch.locationId,
-      tripadvisor_ranking: rankingNumber,
-      tripadvisor_ranking_category: rankingCategory,
-      tripadvisor_rating: bestMatch.rating,
-      tripadvisor_reviews_count: bestMatch.reviewsCount,
-      tripadvisor_price_level: bestMatch.priceLevel,
-      tripadvisor_url: bestMatch.url,
-      tripadvisor_image_url: imageUrl,
-    };
-
     // If placeId is provided, update the place directly
     if (placeId) {
       const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
@@ -191,8 +219,7 @@ Deno.serve(async (req) => {
       const updateData = {
         ...enrichedData,
         tripadvisor_enriched_at: new Date().toISOString(),
-        // Also update photo if we got one and place doesn't have one
-        ...(imageUrl ? { photo_url: imageUrl } : {}),
+        ...(enrichedData.tripadvisor_image_url ? { photo_url: enrichedData.tripadvisor_image_url } : {}),
       };
 
       const { error: updateError } = await supabase
@@ -210,8 +237,7 @@ Deno.serve(async (req) => {
     return new Response(
       JSON.stringify({ 
         success: true, 
-        data: enrichedData,
-        matchedName: bestMatch.name
+        data: enrichedData
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
