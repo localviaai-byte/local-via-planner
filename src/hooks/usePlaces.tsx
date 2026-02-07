@@ -76,7 +76,7 @@ export function useCreatePlace() {
   const queryClient = useQueryClient();
   
   return useMutation({
-    mutationFn: async (formData: PlaceFormData & { created_by: string }) => {
+    mutationFn: async (formData: PlaceFormData & { created_by: string; status?: 'draft' | 'approved' }) => {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const insertData: any = {
         city_id: formData.city_id,
@@ -104,7 +104,7 @@ export function useCreatePlace() {
         local_warning: formData.local_warning || null,
         local_one_liner: formData.local_one_liner,
         created_by: formData.created_by,
-        status: 'draft',
+        status: formData.status || 'draft',
         // New fields from schema upgrade
         mood_primary: formData.mood_primary || null,
         mood_secondary: formData.mood_secondary || null,
@@ -117,6 +117,9 @@ export function useCreatePlace() {
         mental_effort: formData.mental_effort || null,
         suggested_stay: formData.suggested_stay || null,
         dead_times_note: formData.dead_times_note || null,
+        // Restaurant-specific
+        cuisine_type: formData.cuisine_type || null,
+        price_range: formData.price_range || null,
       };
       
       const { data, error } = await supabase
