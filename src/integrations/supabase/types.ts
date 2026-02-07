@@ -822,6 +822,15 @@ export type Database = {
           target_audience: Database["public"]["Enums"]["target_audience"] | null
           time_to_spend: string | null
           tourist_trap: boolean
+          tripadvisor_enriched_at: string | null
+          tripadvisor_id: string | null
+          tripadvisor_image_url: string | null
+          tripadvisor_price_level: string | null
+          tripadvisor_ranking: number | null
+          tripadvisor_ranking_category: string | null
+          tripadvisor_rating: number | null
+          tripadvisor_reviews_count: number | null
+          tripadvisor_url: string | null
           updated_at: string
           updated_by: string | null
           vibe_calm_to_energetic: number | null
@@ -896,6 +905,15 @@ export type Database = {
             | null
           time_to_spend?: string | null
           tourist_trap?: boolean
+          tripadvisor_enriched_at?: string | null
+          tripadvisor_id?: string | null
+          tripadvisor_image_url?: string | null
+          tripadvisor_price_level?: string | null
+          tripadvisor_ranking?: number | null
+          tripadvisor_ranking_category?: string | null
+          tripadvisor_rating?: number | null
+          tripadvisor_reviews_count?: number | null
+          tripadvisor_url?: string | null
           updated_at?: string
           updated_by?: string | null
           vibe_calm_to_energetic?: number | null
@@ -970,6 +988,15 @@ export type Database = {
             | null
           time_to_spend?: string | null
           tourist_trap?: boolean
+          tripadvisor_enriched_at?: string | null
+          tripadvisor_id?: string | null
+          tripadvisor_image_url?: string | null
+          tripadvisor_price_level?: string | null
+          tripadvisor_ranking?: number | null
+          tripadvisor_ranking_category?: string | null
+          tripadvisor_rating?: number | null
+          tripadvisor_reviews_count?: number | null
+          tripadvisor_url?: string | null
           updated_at?: string
           updated_by?: string | null
           vibe_calm_to_energetic?: number | null

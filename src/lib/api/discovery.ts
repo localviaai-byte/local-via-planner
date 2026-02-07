@@ -13,6 +13,17 @@ export interface SuggestedPlace {
   status?: 'pending' | 'accepted' | 'rejected';
 }
 
+export interface TripAdvisorData {
+  tripadvisor_id?: string;
+  tripadvisor_ranking?: number;
+  tripadvisor_ranking_category?: string;
+  tripadvisor_rating?: number;
+  tripadvisor_reviews_count?: number;
+  tripadvisor_price_level?: string;
+  tripadvisor_url?: string;
+  tripadvisor_image_url?: string;
+}
+
 export interface DiscoveryOptions {
   placeType?: string;
   focusZone?: string;
@@ -146,6 +157,30 @@ export async function updateSuggestionStatus(
   if (error) {
     console.error('Error updating suggestion:', error);
     throw error;
+  }
+}
+
+// Enrich a place with TripAdvisor data
+export async function enrichWithTripAdvisor(
+  placeName: string,
+  cityName: string,
+  placeType: string,
+  placeId?: string
+): Promise<{ success: boolean; data?: TripAdvisorData; error?: string }> {
+  try {
+    const { data, error } = await supabase.functions.invoke('enrich-tripadvisor', {
+      body: { placeName, cityName, placeType, placeId },
+    });
+
+    if (error) {
+      console.error('TripAdvisor enrichment error:', error);
+      return { success: false, error: error.message };
+    }
+
+    return data;
+  } catch (e) {
+    console.error('TripAdvisor enrichment failed:', e);
+    return { success: false, error: e instanceof Error ? e.message : 'Unknown error' };
   }
 }
 
