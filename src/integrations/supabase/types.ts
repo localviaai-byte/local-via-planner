@@ -384,6 +384,50 @@ export type Database = {
           },
         ]
       }
+      discovery_jobs: {
+        Row: {
+          city_id: string
+          created_at: string
+          error: string | null
+          id: string
+          options: Json | null
+          progress: number | null
+          result: Json | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          city_id: string
+          created_at?: string
+          error?: string | null
+          id?: string
+          options?: Json | null
+          progress?: number | null
+          result?: Json | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          city_id?: string
+          created_at?: string
+          error?: string | null
+          id?: string
+          options?: Json | null
+          progress?: number | null
+          result?: Json | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "discovery_jobs_city_id_fkey"
+            columns: ["city_id"]
+            isOneToOne: false
+            referencedRelation: "cities"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       place_coverage: {
         Row: {
           base_city_id: string

@@ -63,6 +63,7 @@ export function DiscoveryPanel({ cityId, cityName, region, country }: DiscoveryP
   const [savingPlace, setSavingPlace] = useState<string | null>(null);
   const [isExpanded, setIsExpanded] = useState(false);
   const [showFilters, setShowFilters] = useState(false);
+  const [progress, setProgress] = useState(0);
   
   // Filter settings
   const [selectedPlaceType, setSelectedPlaceType] = useState<string>('all');
@@ -101,10 +102,9 @@ export function DiscoveryPanel({ cityId, cityName, region, country }: DiscoveryP
   const startDiscovery = async () => {
     setStatus('searching');
     setIsExpanded(true);
+    setProgress(0);
 
     try {
-      setStatus('processing');
-      
       const intensityConfig = SEARCH_INTENSITY.find(i => i.value === searchIntensity);
       
       const result = await discoverPlaces(
@@ -118,6 +118,15 @@ export function DiscoveryPanel({ cityId, cityName, region, country }: DiscoveryP
           searchRadius,
           intensity: searchIntensity,
           maxQueries: intensityConfig?.queries || 15,
+        },
+        (jobProgress) => {
+          setProgress(jobProgress);
+          // Update status based on progress
+          if (jobProgress < 50) {
+            setStatus('searching');
+          } else {
+            setStatus('processing');
+          }
         }
       );
 
@@ -131,6 +140,7 @@ export function DiscoveryPanel({ cityId, cityName, region, country }: DiscoveryP
       const newStats = await getSuggestionStats(cityId);
       setStats(newStats);
       setStatus('done');
+      setProgress(100);
       
       if (result.newCount !== undefined && result.newCount > 0) {
         toast.success(`Trovati ${result.newCount} nuovi luoghi da ${result.sourcesCount || 0} fonti!`);
@@ -400,11 +410,11 @@ export function DiscoveryPanel({ cityId, cityName, region, country }: DiscoveryP
             <div className="space-y-2">
               <div className="flex items-center gap-2 text-sm text-muted-foreground">
                 <Loader2 className="w-4 h-4 animate-spin" />
-                {status === 'searching' ? 'Cercando su web...' : 'Analizzando risultati con AI...'}
+                {progress < 50 ? 'Cercando su web...' : 'Analizzando risultati con AI...'}
               </div>
-              <Progress value={status === 'searching' ? 30 : 70} className="h-2" />
+              <Progress value={progress} className="h-2" />
               <p className="text-xs text-muted-foreground">
-                I risultati già trovati in precedenza verranno ignorati
+                {progress}% - I risultati già trovati in precedenza verranno ignorati
               </p>
             </div>
           ) : status === 'done' && (suggestions.length > 0 || stats.accepted > 0 || stats.rejected > 0) ? (
