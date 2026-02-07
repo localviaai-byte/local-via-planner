@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Sparkles, Loader2 } from 'lucide-react';
 import { useAIPrefill } from '@/hooks/useAIPrefill';
 import { ZoneSelector } from '@/components/admin/ZoneSelector';
+import { PRICE_RANGE_OPTIONS } from '@/types/database';
 import type { PlaceFormData } from '@/types/database';
 
 interface StepIdentityProps {
@@ -25,6 +26,7 @@ export default function StepIdentity({
   cityLongitude
 }: StepIdentityProps) {
   const { prefillPlace, isLoading } = useAIPrefill();
+  const isRestaurant = formData.place_type === 'restaurant';
 
   const handleAIPrefill = async () => {
     const updates = await prefillPlace(
@@ -139,6 +141,44 @@ export default function StepIdentity({
           <p className="text-xs text-muted-foreground">
             Seleziona prima una città per vedere le zone disponibili
           </p>
+        </div>
+      )}
+
+      {/* Restaurant-specific fields */}
+      {isRestaurant && (
+        <div className="space-y-4 pt-2 border-t border-border/50">
+          <p className="text-sm font-medium text-muted-foreground">🍽️ Info ristorante</p>
+          
+          {/* Cuisine Type */}
+          <div className="space-y-2">
+            <Label htmlFor="cuisine">Tipo di cucina</Label>
+            <Input
+              id="cuisine"
+              value={formData.cuisine_type || ''}
+              onChange={(e) => onUpdate({ cuisine_type: e.target.value })}
+              placeholder="Es: Napoletana, Fusion, Pesce, Pizza..."
+              className="bg-card"
+            />
+          </div>
+          
+          {/* Price Range */}
+          <div className="space-y-2">
+            <Label>Fascia di prezzo</Label>
+            <div className="grid grid-cols-4 gap-2">
+              {PRICE_RANGE_OPTIONS.map((option) => (
+                <Button
+                  key={option.id}
+                  type="button"
+                  variant={formData.price_range === option.id ? 'default' : 'outline'}
+                  className="flex flex-col h-auto py-3"
+                  onClick={() => onUpdate({ price_range: option.id as PlaceFormData['price_range'] })}
+                >
+                  <span className="text-lg">{option.label}</span>
+                  <span className="text-[10px] opacity-70">{option.description}</span>
+                </Button>
+              ))}
+            </div>
+          </div>
         </div>
       )}
 
