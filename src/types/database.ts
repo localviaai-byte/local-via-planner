@@ -566,6 +566,17 @@ export interface Place {
   reviewed_by: string | null;
   reviewed_at: string | null;
   review_notes: string | null;
+  
+  // TripAdvisor enrichment
+  tripadvisor_id: string | null;
+  tripadvisor_rating: number | null;
+  tripadvisor_reviews_count: number | null;
+  tripadvisor_ranking: number | null;
+  tripadvisor_ranking_category: string | null;
+  tripadvisor_price_level: string | null;
+  tripadvisor_url: string | null;
+  tripadvisor_image_url: string | null;
+  tripadvisor_enriched_at: string | null;
 }
 
 // =====================================================

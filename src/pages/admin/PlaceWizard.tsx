@@ -21,6 +21,7 @@ import StepEffort from '@/components/admin/wizard/StepEffort';
 import StepTiming from '@/components/admin/wizard/StepTiming';
 import StepWarning from '@/components/admin/wizard/StepWarning';
 import StepOneLiner from '@/components/admin/wizard/StepOneLiner';
+import { TripAdvisorBadge } from '@/components/admin/wizard/TripAdvisorBadge';
 
 import type { PlaceFormData, Place } from '@/types/database';
 import { DEFAULT_PLACE_FORM_DATA } from '@/types/database';
@@ -377,6 +378,20 @@ export default function PlaceWizard() {
 
       {/* Content */}
       <main className="flex-1 overflow-y-auto pb-24">
+        {/* TripAdvisor Badge - show when editing a place with TripAdvisor data */}
+        {isEditMode && existingPlace && currentStep === 1 && (
+          <div className="px-4 pt-4">
+            <TripAdvisorBadge
+              rating={existingPlace.tripadvisor_rating}
+              reviewsCount={existingPlace.tripadvisor_reviews_count}
+              ranking={existingPlace.tripadvisor_ranking}
+              rankingCategory={existingPlace.tripadvisor_ranking_category}
+              url={existingPlace.tripadvisor_url}
+              enrichedAt={existingPlace.tripadvisor_enriched_at}
+            />
+          </div>
+        )}
+        
         <AnimatePresence mode="wait">
           <motion.div
             key={currentStep}
