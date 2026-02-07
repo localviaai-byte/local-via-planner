@@ -2,7 +2,7 @@ import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Check, X, Sparkles } from 'lucide-react';
+import { Check, X, Sparkles, Star, ExternalLink } from 'lucide-react';
 import { PLACE_TYPE_OPTIONS } from '@/types/database';
 import type { SuggestedPlace } from '@/lib/api/discovery';
 
@@ -16,6 +16,7 @@ interface SuggestedPlaceCardProps {
 export function SuggestedPlaceCard({ place, onAccept, onReject, isLoading }: SuggestedPlaceCardProps) {
   const typeConfig = PLACE_TYPE_OPTIONS.find(t => t.id === place.place_type);
   const confidencePercent = Math.round(place.confidence * 100);
+  const hasTripAdvisor = place.tripadvisor_rating || place.tripadvisor_ranking;
   
   return (
     <motion.div
@@ -26,14 +27,22 @@ export function SuggestedPlaceCard({ place, onAccept, onReject, isLoading }: Sug
       <Card className="border-2 border-dashed border-gold/50 bg-gold/5">
         <CardContent className="p-4">
           <div className="flex items-start gap-3">
-            {/* Type icon */}
-            <div className="w-12 h-12 rounded-xl bg-gold/20 flex items-center justify-center text-2xl shrink-0">
-              {typeConfig?.icon || '📍'}
+            {/* Type icon or TripAdvisor image */}
+            <div className="w-12 h-12 rounded-xl bg-gold/20 flex items-center justify-center text-2xl shrink-0 overflow-hidden">
+              {place.tripadvisor_image_url ? (
+                <img 
+                  src={place.tripadvisor_image_url} 
+                  alt={place.name}
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                typeConfig?.icon || '📍'
+              )}
             </div>
             
             {/* Content */}
             <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-2 mb-1">
+              <div className="flex items-center gap-2 mb-1 flex-wrap">
                 <h4 className="font-semibold truncate">{place.name}</h4>
                 <Badge variant="outline" className="text-xs shrink-0">
                   <Sparkles className="w-3 h-3 mr-1" />
@@ -51,6 +60,50 @@ export function SuggestedPlaceCard({ place, onAccept, onReject, isLoading }: Sug
                   </Badge>
                 )}
               </div>
+              
+              {/* TripAdvisor data */}
+              {hasTripAdvisor && (
+                <div className="flex flex-wrap items-center gap-2 mb-2 p-2 bg-background/50 rounded-lg border border-border/50">
+                  {place.tripadvisor_rating && (
+                    <div className="flex items-center gap-1 text-sm">
+                      <Star className="w-4 h-4 fill-amber-400 text-amber-400" />
+                      <span className="font-semibold">{place.tripadvisor_rating}</span>
+                      {place.tripadvisor_reviews_count && (
+                        <span className="text-muted-foreground text-xs">
+                          ({place.tripadvisor_reviews_count.toLocaleString()})
+                        </span>
+                      )}
+                    </div>
+                  )}
+                  {place.tripadvisor_ranking && (
+                    <Badge variant="outline" className="text-xs bg-emerald-500/10 text-emerald-700 border-emerald-500/30">
+                      #{place.tripadvisor_ranking}
+                      {place.tripadvisor_ranking_category && (
+                        <span className="ml-1 opacity-70">
+                          {place.tripadvisor_ranking_category.slice(0, 20)}
+                        </span>
+                      )}
+                    </Badge>
+                  )}
+                  {place.tripadvisor_price_level && (
+                    <span className="text-xs text-muted-foreground">
+                      {place.tripadvisor_price_level}
+                    </span>
+                  )}
+                  {place.tripadvisor_url && (
+                    <a 
+                      href={place.tripadvisor_url} 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      className="text-xs text-primary hover:underline flex items-center gap-1"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      <ExternalLink className="w-3 h-3" />
+                      TripAdvisor
+                    </a>
+                  )}
+                </div>
+              )}
               
               {place.description && (
                 <p className="text-sm text-muted-foreground line-clamp-2 mb-2">

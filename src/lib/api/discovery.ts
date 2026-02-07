@@ -11,6 +11,15 @@ export interface SuggestedPlace {
   best_times?: string[];
   confidence: number;
   status?: 'pending' | 'accepted' | 'rejected';
+  // TripAdvisor enrichment
+  tripadvisor_id?: string;
+  tripadvisor_ranking?: number;
+  tripadvisor_ranking_category?: string;
+  tripadvisor_rating?: number;
+  tripadvisor_reviews_count?: number;
+  tripadvisor_price_level?: string;
+  tripadvisor_url?: string;
+  tripadvisor_image_url?: string;
 }
 
 export interface TripAdvisorData {
