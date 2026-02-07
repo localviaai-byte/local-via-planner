@@ -16,6 +16,7 @@ import ContributorsPage from "./pages/admin/ContributorsPage";
 import UsersPage from "./pages/admin/UsersPage";
 import CityWizard from "./pages/admin/CityWizard";
 import CityDetail from "./pages/admin/CityDetail";
+import CityEdit from "./pages/admin/CityEdit";
 import PlaceWizard from "./pages/admin/PlaceWizard";
 import AcceptInvite from "./pages/admin/AcceptInvite";
 import ContributorDashboard from "./pages/admin/ContributorDashboard";
@@ -211,6 +212,14 @@ const App = () => (
               element={
                 <AdminRoute>
                   <CityDetail />
+                </AdminRoute>
+              }
+            />
+            <Route
+              path="/admin/cities/:cityId/edit"
+              element={
+                <AdminRoute>
+                  <CityEdit />
                 </AdminRoute>
               }
             />
