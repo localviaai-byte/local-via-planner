@@ -22,6 +22,7 @@ import {
   getPendingSuggestions, 
   updateSuggestionStatus,
   getSuggestionStats,
+  enrichWithTripAdvisor,
   type SuggestedPlace 
 } from '@/lib/api/discovery';
 import { SuggestedPlaceCard } from './SuggestedPlaceCard';
@@ -189,6 +190,22 @@ export function DiscoveryPanel({ cityId, cityName, region, country }: DiscoveryP
 
       // Update suggestion status in DB
       await updateSuggestionStatus(place.id, 'accepted', newPlace?.id);
+
+      // Trigger TripAdvisor enrichment in background (don't await)
+      if (newPlace?.id && place.place_type !== 'zone') {
+        enrichWithTripAdvisor(place.name, cityName, place.place_type, newPlace.id)
+          .then(result => {
+            if (result.success && result.data) {
+              console.log(`TripAdvisor enrichment for "${place.name}":`, result.data);
+              if (result.data.tripadvisor_rating) {
+                toast.success(`"${place.name}" arricchito con dati TripAdvisor (⭐ ${result.data.tripadvisor_rating})`, {
+                  duration: 3000,
+                });
+              }
+            }
+          })
+          .catch(err => console.error('TripAdvisor enrichment failed:', err));
+      }
 
       setSuggestions(prev => prev.filter(p => p.id !== place.id));
       setStats(prev => ({ ...prev, accepted: prev.accepted + 1 }));

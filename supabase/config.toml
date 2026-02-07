@@ -5,3 +5,6 @@ verify_jwt = false
 
 [functions.discover-places]
 verify_jwt = false
+
+[functions.enrich-tripadvisor]
+verify_jwt = false
