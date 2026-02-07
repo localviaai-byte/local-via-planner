@@ -55,8 +55,9 @@ const SEARCH_INTENSITY = [
 ] as const;
 
 export function DiscoveryPanel({ cityId, cityName, region, country }: DiscoveryPanelProps) {
-  const { user } = useAuth();
+  const { user, role } = useAuth();
   const queryClient = useQueryClient();
+  const isAdmin = role === 'admin';
   
   const [status, setStatus] = useState<DiscoveryStatus>('loading');
   const [suggestions, setSuggestions] = useState<SuggestedPlace[]>([]);
@@ -171,7 +172,10 @@ export function DiscoveryPanel({ cityId, cityName, region, country }: DiscoveryP
     setSavingPlace(place.name);
 
     try {
-      // Create a draft place from the suggestion
+      // Create a place from the suggestion
+      // Admin: create as approved; Others: create as draft
+      const placeStatus = isAdmin ? 'approved' : 'draft';
+      
       const { data: newPlace, error } = await supabase.from('places').insert({
         city_id: cityId,
         name: place.name,
@@ -180,7 +184,7 @@ export function DiscoveryPanel({ cityId, cityName, region, country }: DiscoveryP
         zone: place.zone || null,
         why_people_go: place.why_people_go || [],
         best_times: place.best_times || [],
-        status: 'draft',
+        status: placeStatus,
         created_by: user.id,
         local_one_liner: place.description || null,
         notes_internal: `Auto-discovered with ${Math.round(place.confidence * 100)}% confidence`,
@@ -210,7 +214,7 @@ export function DiscoveryPanel({ cityId, cityName, region, country }: DiscoveryP
       setSuggestions(prev => prev.filter(p => p.id !== place.id));
       setStats(prev => ({ ...prev, accepted: prev.accepted + 1 }));
       queryClient.invalidateQueries({ queryKey: ['city-places', cityId] });
-      toast.success(`"${place.name}" aggiunto come bozza`);
+      toast.success(`"${place.name}" ${isAdmin ? 'approvato' : 'aggiunto come bozza'}`);
     } catch (error) {
       console.error('Error saving place:', error);
       toast.error('Errore nel salvataggio');
