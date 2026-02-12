@@ -1,7 +1,13 @@
+import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { MapPin, Calendar, Users, Train } from 'lucide-react';
-import { cities, maxTravelOptions, type TripPreferences } from '@/lib/mockData';
+import { MapPin, Calendar, Users, Train, Sun } from 'lucide-react';
+import { cities, maxTravelOptions, type TripPreferences, type TravelPeriodType, type Season } from '@/lib/mockData';
 import { Button } from '@/components/ui/button';
+import { format } from 'date-fns';
+import { it } from 'date-fns/locale';
+import { Calendar as CalendarComponent } from '@/components/ui/calendar';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { cn } from '@/lib/utils';
 import {
   Select,
   SelectContent,
@@ -116,7 +122,7 @@ export function StepDestination({ preferences, onUpdate }: StepDestinationProps)
         )}
       </div>
 
-      {/* Duration - more compact */}
+      {/* Duration */}
       <div className="space-y-3">
         <label className="flex items-center gap-2 text-xs font-medium text-muted-foreground uppercase tracking-wide">
           <Calendar className="w-3.5 h-3.5" />
@@ -135,6 +141,150 @@ export function StepDestination({ preferences, onUpdate }: StepDestinationProps)
             </Button>
           ))}
         </div>
+      </div>
+
+      {/* Travel Period */}
+      <div className="space-y-3">
+        <label className="flex items-center gap-2 text-xs font-medium text-muted-foreground uppercase tracking-wide">
+          <Sun className="w-3.5 h-3.5" />
+          Quando pensi di andare?
+        </label>
+        
+        {/* Period type selector */}
+        <div className="grid grid-cols-3 gap-1.5">
+          {([
+            { value: 'season' as TravelPeriodType, label: 'Stagione', icon: '🌤️' },
+            { value: 'month' as TravelPeriodType, label: 'Mese', icon: '📅' },
+            { value: 'dates' as TravelPeriodType, label: 'Date precise', icon: '📌' },
+          ]).map((opt) => (
+            <Button
+              key={opt.value}
+              type="button"
+              variant={preferences.travelPeriod?.type === opt.value ? 'default' : 'outline'}
+              onClick={() => onUpdate({ 
+                travelPeriod: opt.value === preferences.travelPeriod?.type 
+                  ? { type: 'none' } 
+                  : { type: opt.value } 
+              })}
+              className="h-auto py-2 flex flex-col gap-0.5 px-1"
+            >
+              <span className="text-base">{opt.icon}</span>
+              <span className="text-[10px] leading-tight">{opt.label}</span>
+            </Button>
+          ))}
+        </div>
+
+        {/* Season picker */}
+        {preferences.travelPeriod?.type === 'season' && (
+          <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} className="grid grid-cols-4 gap-1.5">
+            {([
+              { value: 'spring' as Season, label: 'Primavera', icon: '🌸' },
+              { value: 'summer' as Season, label: 'Estate', icon: '☀️' },
+              { value: 'autumn' as Season, label: 'Autunno', icon: '🍂' },
+              { value: 'winter' as Season, label: 'Inverno', icon: '❄️' },
+            ]).map((s) => (
+              <Button
+                key={s.value}
+                type="button"
+                variant={preferences.travelPeriod?.season === s.value ? 'default' : 'outline'}
+                onClick={() => onUpdate({ travelPeriod: { type: 'season', season: s.value } })}
+                className="h-auto py-2.5 flex flex-col gap-0.5 px-1"
+              >
+                <span className="text-lg">{s.icon}</span>
+                <span className="text-[10px] leading-tight">{s.label}</span>
+              </Button>
+            ))}
+          </motion.div>
+        )}
+
+        {/* Month picker */}
+        {preferences.travelPeriod?.type === 'month' && (
+          <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} className="grid grid-cols-4 gap-1.5">
+            {Array.from({ length: 12 }, (_, i) => {
+              const monthName = format(new Date(2025, i, 1), 'MMM', { locale: it });
+              return (
+                <Button
+                  key={i}
+                  type="button"
+                  variant={preferences.travelPeriod?.month === i ? 'default' : 'outline'}
+                  onClick={() => onUpdate({ travelPeriod: { type: 'month', month: i } })}
+                  className="h-9 text-xs capitalize px-1"
+                >
+                  {monthName}
+                </Button>
+              );
+            })}
+          </motion.div>
+        )}
+
+        {/* Date picker */}
+        {preferences.travelPeriod?.type === 'dates' && (
+          <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} className="flex gap-2">
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button variant="outline" className={cn("flex-1 justify-start text-left text-sm", !preferences.travelPeriod?.dates?.start && "text-muted-foreground")}>
+                  {preferences.travelPeriod?.dates?.start 
+                    ? format(preferences.travelPeriod.dates.start, 'dd MMM yyyy', { locale: it })
+                    : 'Da...'}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0" align="start">
+                <CalendarComponent
+                  mode="single"
+                  selected={preferences.travelPeriod?.dates?.start}
+                  onSelect={(date) => {
+                    if (date) {
+                      const current = preferences.travelPeriod?.dates;
+                      onUpdate({ travelPeriod: { 
+                        type: 'dates', 
+                        dates: { start: date, end: current?.end || date } 
+                      }});
+                    }
+                  }}
+                  disabled={(date) => date < new Date()}
+                  className="p-3 pointer-events-auto"
+                />
+              </PopoverContent>
+            </Popover>
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button variant="outline" className={cn("flex-1 justify-start text-left text-sm", !preferences.travelPeriod?.dates?.end && "text-muted-foreground")}>
+                  {preferences.travelPeriod?.dates?.end 
+                    ? format(preferences.travelPeriod.dates.end, 'dd MMM yyyy', { locale: it })
+                    : 'A...'}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0" align="end">
+                <CalendarComponent
+                  mode="single"
+                  selected={preferences.travelPeriod?.dates?.end}
+                  onSelect={(date) => {
+                    if (date) {
+                      const current = preferences.travelPeriod?.dates;
+                      onUpdate({ travelPeriod: { 
+                        type: 'dates', 
+                        dates: { start: current?.start || date, end: date } 
+                      }});
+                    }
+                  }}
+                  disabled={(date) => date < (preferences.travelPeriod?.dates?.start || new Date())}
+                  className="p-3 pointer-events-auto"
+                />
+              </PopoverContent>
+            </Popover>
+          </motion.div>
+        )}
+
+        {/* "Non lo so ancora" option */}
+        {preferences.travelPeriod?.type !== 'none' && (
+          <button
+            type="button"
+            onClick={() => onUpdate({ travelPeriod: { type: 'none' } })}
+            className="text-xs text-muted-foreground underline underline-offset-2 hover:text-foreground transition-colors"
+          >
+            Non lo so ancora
+          </button>
+        )}
       </div>
 
       {/* Travel Composition - more compact */}
