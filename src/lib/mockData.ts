@@ -69,11 +69,22 @@ export interface ItineraryDay {
   summary: string;
 }
 
+export type TravelPeriodType = 'none' | 'season' | 'month' | 'dates';
+export type Season = 'spring' | 'summer' | 'autumn' | 'winter';
+
+export interface TravelPeriod {
+  type: TravelPeriodType;
+  season?: Season;
+  month?: number; // 0-11
+  dates?: { start: Date; end: Date };
+}
+
 export interface TripPreferences {
   city: string;
   nearbyAreas: boolean;
   maxTravelMinutes: 0 | 30 | 60 | 90; // 0 = no travel, 30/60/90 = max travel time
   dates: { start: Date; end: Date } | null;
+  travelPeriod: TravelPeriod;
   numDays: number;
   travelers: {
     adults: number;
@@ -448,6 +459,7 @@ export const defaultPreferences: TripPreferences = {
   nearbyAreas: false,
   maxTravelMinutes: 0,
   dates: null,
+  travelPeriod: { type: 'none' },
   numDays: 2,
   travelers: { adults: 2, children: 0, seniors: 0 },
   travelWith: 'couple',
