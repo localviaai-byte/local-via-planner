@@ -70,6 +70,22 @@ const Index = () => {
     }
   };
 
+  const handleRegenerateWith = async (tweaks: Partial<TripPreferences>) => {
+    if (preferences) {
+      const newPrefs = { ...preferences, ...tweaks };
+      setPreferences(newPrefs);
+      setAppState('generating');
+      const result = await generate(newPrefs);
+      
+      if (result) {
+        setGeneratedData(result);
+        setAppState('itinerary');
+      } else {
+        setAppState('error');
+      }
+    }
+  };
+
   return (
     <AnimatePresence mode="wait">
       {appState === 'landing' && (
@@ -178,6 +194,7 @@ const Index = () => {
                 generatedData={generatedData}
                 onBack={handleBackToWizard}
                 onRegenerate={handleRegenerate}
+                onRegenerateWith={handleRegenerateWith}
               />
             </TripPlanProvider>
           </SelectedProductsProvider>

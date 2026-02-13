@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect, useCallback } from 'react';
+import { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   ArrowLeft, 
@@ -12,7 +12,14 @@ import {
   Footprints,
   Package,
   Check,
-  Loader2
+  Loader2,
+  UtensilsCrossed,
+  Moon,
+  Sun,
+  Users,
+  Heart,
+  Eye,
+  Zap
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { TimelineSlotReal } from './TimelineSlotReal';
@@ -34,9 +41,10 @@ interface ItineraryViewerProps {
   generatedData: GeneratedItinerary;
   onBack: () => void;
   onRegenerate: () => void;
+  onRegenerateWith?: (tweaks: Partial<TripPreferences>) => void;
 }
 
-export function ItineraryViewer({ preferences, generatedData, onBack, onRegenerate }: ItineraryViewerProps) {
+export function ItineraryViewer({ preferences, generatedData, onBack, onRegenerate, onRegenerateWith }: ItineraryViewerProps) {
   const [activeDay, setActiveDay] = useState(0);
   const [showDayTransition, setShowDayTransition] = useState(false);
   const [showSaveSheet, setShowSaveSheet] = useState(false);
@@ -162,12 +170,42 @@ export function ItineraryViewer({ preferences, generatedData, onBack, onRegenera
     }, 800);
   };
 
-  const quickActions = [
-    { icon: RotateCcw, label: 'Rigenera', action: onRegenerate },
-    { icon: Footprints, label: 'Meno camminate', action: () => {} },
-    { icon: Coffee, label: 'Più relax', action: () => {} },
-    { icon: Sparkles, label: 'Più cultura', action: () => {} },
-  ];
+  const handleQuickTweak = useCallback((tweaks: Partial<TripPreferences>) => {
+    if (onRegenerateWith) {
+      onRegenerateWith(tweaks);
+    } else {
+      onRegenerate();
+    }
+  }, [onRegenerateWith, onRegenerate]);
+
+  const quickActions = useMemo(() => {
+    const actions: { icon: typeof RotateCcw; label: string; action: () => void }[] = [
+      { icon: RotateCcw, label: 'Rigenera', action: onRegenerate },
+      { icon: Footprints, label: 'Meno camminate', action: () => handleQuickTweak({ rhythm: Math.max(1, preferences.rhythm - 1) }) },
+      { icon: Coffee, label: 'Più relax', action: () => handleQuickTweak({ rhythm: Math.max(1, preferences.rhythm - 1), lunchStyle: 'long' }) },
+      { icon: Sparkles, label: 'Più cultura', action: () => handleQuickTweak({ interests: [...new Set([...preferences.interests, 'culture', 'history', 'art'])] }) },
+      { icon: UtensilsCrossed, label: 'Più cibo locale', action: () => handleQuickTweak({ interests: [...new Set([...preferences.interests, 'food', 'local_cuisine'])] }) },
+      { icon: Zap, label: 'Più intenso', action: () => handleQuickTweak({ rhythm: Math.min(5, preferences.rhythm + 1) }) },
+    ];
+
+    if (preferences.startTime !== 'early') {
+      actions.push({ icon: Sun, label: 'Parti presto', action: () => handleQuickTweak({ startTime: 'early' }) });
+    }
+    if (preferences.startTime !== 'late') {
+      actions.push({ icon: Moon, label: 'Parti tardi', action: () => handleQuickTweak({ startTime: 'late' }) });
+    }
+    if (preferences.travelWith === 'couple') {
+      actions.push({ icon: Heart, label: 'Più romantico', action: () => handleQuickTweak({ interests: [...new Set([...preferences.interests, 'romantic'])] }) });
+    }
+    if (!preferences.interests.includes('panoramic')) {
+      actions.push({ icon: Eye, label: 'Più panorami', action: () => handleQuickTweak({ interests: [...new Set([...preferences.interests, 'panoramic', 'scenic'])] }) });
+    }
+    if (preferences.guidedTours !== 'guided') {
+      actions.push({ icon: Users, label: 'Con guida', action: () => handleQuickTweak({ guidedTours: 'guided' }) });
+    }
+
+    return actions;
+  }, [preferences, onRegenerate, handleQuickTweak]);
 
   // Count total products available
   const totalProducts = itineraryData.reduce((acc, day) => 
