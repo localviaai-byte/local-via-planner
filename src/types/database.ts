@@ -820,6 +820,7 @@ export interface PlaceFormData {
   food_primary: FoodPrimary | null;
   food_secondary: FoodSecondary[];
   format_experience: FormatExperience | null;
+  dietary_options: string[];
   
   // Bar
   bar_time: 'aperitivo' | 'after_dinner' | 'both' | null;
@@ -894,6 +895,7 @@ export const DEFAULT_PLACE_FORM_DATA: PlaceFormData = {
   food_primary: null,
   food_secondary: [],
   format_experience: null,
+  dietary_options: [],
   bar_time: null,
   standing_ok: true,
   drink_focus: null,

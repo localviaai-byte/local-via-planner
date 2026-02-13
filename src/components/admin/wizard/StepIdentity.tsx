@@ -2,6 +2,7 @@ import { motion } from 'framer-motion';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Sparkles, Loader2 } from 'lucide-react';
 import { useAIPrefill } from '@/hooks/useAIPrefill';
 import { ZoneSelector } from '@/components/admin/ZoneSelector';
@@ -15,6 +16,7 @@ import {
   type FormatExperience,
 } from '@/types/database';
 import type { PlaceFormData } from '@/types/database';
+import { dietaryRestrictions } from '@/lib/mockData';
 
 interface StepIdentityProps {
   formData: PlaceFormData;
@@ -67,6 +69,15 @@ export default function StepIdentity({
       onUpdate({ food_secondary: current.filter(s => s !== id) as FoodSecondary[] });
     } else {
       onUpdate({ food_secondary: [...current, id as FoodSecondary] });
+    }
+  };
+
+  const toggleDietaryOption = (id: string) => {
+    const current = [...(formData.dietary_options || [])];
+    if (current.includes(id)) {
+      onUpdate({ dietary_options: current.filter(d => d !== id) });
+    } else {
+      onUpdate({ dietary_options: [...current, id] });
     }
   };
 
@@ -257,6 +268,28 @@ export default function StepIdentity({
                   <span className="text-lg">{option.label}</span>
                   <span className="text-[10px] opacity-70">{option.description}</span>
                 </Button>
+              ))}
+            </div>
+          </div>
+
+          {/* Dietary Options */}
+          <div className="space-y-2">
+            <Label>Esigenze alimentari supportate</Label>
+            <div className="space-y-2">
+              {dietaryRestrictions.map((restriction) => (
+                <button
+                  key={restriction.id}
+                  type="button"
+                  onClick={() => toggleDietaryOption(restriction.id)}
+                  className="flex w-full items-center gap-3 p-3 bg-card rounded-2xl cursor-pointer transition-all hover:shadow-soft text-left"
+                >
+                  <Checkbox
+                    checked={(formData.dietary_options || []).includes(restriction.id)}
+                    onClick={(e) => e.stopPropagation()}
+                    onCheckedChange={() => toggleDietaryOption(restriction.id)}
+                  />
+                  <span className="text-sm font-medium text-foreground">{restriction.label}</span>
+                </button>
               ))}
             </div>
           </div>

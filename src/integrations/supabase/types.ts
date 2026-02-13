@@ -776,6 +776,7 @@ export type Database = {
           crowd_level: string | null
           cuisine_type: string | null
           dead_times_note: string | null
+          dietary_options: string[] | null
           dress_code: string | null
           drink_focus: string | null
           duration_minutes: number | null
@@ -860,6 +861,7 @@ export type Database = {
           crowd_level?: string | null
           cuisine_type?: string | null
           dead_times_note?: string | null
+          dietary_options?: string[] | null
           dress_code?: string | null
           drink_focus?: string | null
           duration_minutes?: number | null
@@ -946,6 +948,7 @@ export type Database = {
           crowd_level?: string | null
           cuisine_type?: string | null
           dead_times_note?: string | null
+          dietary_options?: string[] | null
           dress_code?: string | null
           drink_focus?: string | null
           duration_minutes?: number | null

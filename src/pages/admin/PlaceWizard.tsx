@@ -89,6 +89,7 @@ function placeToFormData(place: Place): PlaceFormData {
     shared_tables: place.shared_tables ?? false,
     food_primary: (place as any).food_primary || null,
     food_secondary: (place as any).food_secondary || [],
+    dietary_options: (place as any).dietary_options || [],
     format_experience: (place as any).format_experience || null,
     bar_time: place.bar_time,
     standing_ok: place.standing_ok ?? true,
