@@ -780,6 +780,9 @@ export type Database = {
           drink_focus: string | null
           duration_minutes: number | null
           flirt_friendly: boolean | null
+          food_primary: string | null
+          food_secondary: string[] | null
+          format_experience: string | null
           gender_balance: Database["public"]["Enums"]["gender_balance"] | null
           google_place_id: string | null
           group_friendly: boolean | null
@@ -861,6 +864,9 @@ export type Database = {
           drink_focus?: string | null
           duration_minutes?: number | null
           flirt_friendly?: boolean | null
+          food_primary?: string | null
+          food_secondary?: string[] | null
+          format_experience?: string | null
           gender_balance?: Database["public"]["Enums"]["gender_balance"] | null
           google_place_id?: string | null
           group_friendly?: boolean | null
@@ -944,6 +950,9 @@ export type Database = {
           drink_focus?: string | null
           duration_minutes?: number | null
           flirt_friendly?: boolean | null
+          food_primary?: string | null
+          food_secondary?: string[] | null
+          format_experience?: string | null
           gender_balance?: Database["public"]["Enums"]["gender_balance"] | null
           google_place_id?: string | null
           group_friendly?: boolean | null

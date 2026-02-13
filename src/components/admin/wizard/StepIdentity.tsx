@@ -5,7 +5,15 @@ import { Button } from '@/components/ui/button';
 import { Sparkles, Loader2 } from 'lucide-react';
 import { useAIPrefill } from '@/hooks/useAIPrefill';
 import { ZoneSelector } from '@/components/admin/ZoneSelector';
-import { PRICE_RANGE_OPTIONS } from '@/types/database';
+import { 
+  PRICE_RANGE_OPTIONS, 
+  FOOD_PRIMARY_OPTIONS, 
+  FOOD_SECONDARY_OPTIONS, 
+  FORMAT_EXPERIENCE_OPTIONS,
+  type FoodPrimary,
+  type FoodSecondary,
+  type FormatExperience,
+} from '@/types/database';
 import type { PlaceFormData } from '@/types/database';
 
 interface StepIdentityProps {
@@ -27,6 +35,8 @@ export default function StepIdentity({
 }: StepIdentityProps) {
   const { prefillPlace, isLoading } = useAIPrefill();
   const isRestaurant = formData.place_type === 'restaurant';
+  const isBar = formData.place_type === 'bar';
+  const isFoodPlace = isRestaurant || isBar;
 
   const handleAIPrefill = async () => {
     const updates = await prefillPlace(
@@ -49,6 +59,15 @@ export default function StepIdentity({
       zone_id: zoneId, 
       zone: zoneName 
     });
+  };
+
+  const toggleFoodSecondary = (id: string) => {
+    const current = [...(formData.food_secondary || [])];
+    if (current.includes(id as FoodSecondary)) {
+      onUpdate({ food_secondary: current.filter(s => s !== id) as FoodSecondary[] });
+    } else {
+      onUpdate({ food_secondary: [...current, id as FoodSecondary] });
+    }
   };
 
   return (
@@ -120,7 +139,7 @@ export default function StepIdentity({
         />
       </div>
 
-      {/* Zone Selector - if city is selected */}
+      {/* Zone Selector */}
       {formData.city_id ? (
         <ZoneSelector
           cityId={formData.city_id}
@@ -144,21 +163,83 @@ export default function StepIdentity({
         </div>
       )}
 
-      {/* Restaurant-specific fields */}
-      {isRestaurant && (
-        <div className="space-y-4 pt-2 border-t border-border/50">
-          <p className="text-sm font-medium text-muted-foreground">🍽️ Info ristorante</p>
+      {/* Food/Drink specific structured fields */}
+      {isFoodPlace && (
+        <div className="space-y-5 pt-2 border-t border-border/50">
+          <p className="text-sm font-medium text-muted-foreground">
+            {isRestaurant ? '🍽️ Info ristorante' : '🍷 Info locale'}
+          </p>
           
-          {/* Cuisine Type */}
+          {/* Food Primary (single select) */}
           <div className="space-y-2">
-            <Label htmlFor="cuisine">Tipo di cucina</Label>
-            <Input
-              id="cuisine"
-              value={formData.cuisine_type || ''}
-              onChange={(e) => onUpdate({ cuisine_type: e.target.value })}
-              placeholder="Es: Napoletana, Fusion, Pesce, Pizza..."
-              className="bg-card"
-            />
+            <Label>Cucina principale *</Label>
+            <div className="grid grid-cols-2 gap-2">
+              {FOOD_PRIMARY_OPTIONS.map((opt) => (
+                <button
+                  key={opt.id}
+                  type="button"
+                  onClick={() => onUpdate({ food_primary: opt.id as FoodPrimary })}
+                  className={`
+                    p-3 rounded-2xl text-left transition-all duration-200 cursor-pointer flex items-center gap-2
+                    ${formData.food_primary === opt.id
+                      ? 'bg-card ring-2 ring-primary shadow-card'
+                      : 'bg-card hover:shadow-soft'
+                    }
+                  `}
+                >
+                  <span>{opt.icon}</span>
+                  <span className="text-sm font-medium text-foreground">{opt.label}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Food Secondary (multi select) */}
+          <div className="space-y-2">
+            <Label>Specializzazione (facoltativo)</Label>
+            <div className="flex flex-wrap gap-2">
+              {FOOD_SECONDARY_OPTIONS.map((opt) => (
+                <button
+                  key={opt.id}
+                  type="button"
+                  onClick={() => toggleFoodSecondary(opt.id)}
+                  className={`
+                    px-3 py-2 rounded-full text-sm transition-all cursor-pointer flex items-center gap-1
+                    ${(formData.food_secondary || []).includes(opt.id as FoodSecondary)
+                      ? 'bg-primary text-primary-foreground'
+                      : 'bg-card text-foreground hover:shadow-soft'
+                    }
+                  `}
+                >
+                  <span>{opt.icon}</span>
+                  <span>{opt.label}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Format / Experience (single select) */}
+          <div className="space-y-2">
+            <Label>Formato / Esperienza</Label>
+            <div className="grid grid-cols-2 gap-2">
+              {FORMAT_EXPERIENCE_OPTIONS.map((opt) => (
+                <button
+                  key={opt.id}
+                  type="button"
+                  onClick={() => onUpdate({ format_experience: opt.id as FormatExperience })}
+                  className={`
+                    p-3 rounded-2xl text-left transition-all duration-200 cursor-pointer flex items-center gap-2
+                    ${formData.format_experience === opt.id
+                      ? 'bg-card ring-2 ring-primary shadow-card'
+                      : 'bg-card hover:shadow-soft'
+                    }
+                  `}
+                >
+                  <span>{opt.icon}</span>
+                  <span className="text-sm font-medium text-foreground">{opt.label}</span>
+                </button>
+              ))}
+            </div>
           </div>
           
           {/* Price Range */}
@@ -182,7 +263,7 @@ export default function StepIdentity({
         </div>
       )}
 
-      {/* Photo URL (simplified for now) */}
+      {/* Photo URL */}
       <div className="space-y-2">
         <Label htmlFor="photo">Foto (URL)</Label>
         <Input
