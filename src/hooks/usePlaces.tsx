@@ -169,11 +169,12 @@ export function useUpdatePlace() {
   
   return useMutation({
     mutationFn: async ({ id, ...formData }: Partial<PlaceFormData> & { id: string }) => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const updateData: any = { ...formData };
+      
       const { data, error } = await supabase
         .from('places')
-        .update({
-          ...formData,
-        })
+        .update(updateData)
         .eq('id', id)
         .select()
         .single();
