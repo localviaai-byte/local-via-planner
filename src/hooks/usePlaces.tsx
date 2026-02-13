@@ -134,16 +134,27 @@ export function useCreatePlace() {
       if (error) throw error;
       return data as Place;
     },
-    onSuccess: (data) => {
+    onSuccess: async (data) => {
       queryClient.invalidateQueries({ queryKey: ['contributor-places'] });
       queryClient.invalidateQueries({ queryKey: ['city-places', data.city_id] });
       
       // Auto-enrich with TripAdvisor in background (skip zones)
       if (data.place_type !== 'zone' && !data.tripadvisor_url) {
+        // Fetch city name for TripAdvisor search
+        let cityName = '';
+        try {
+          const { data: city } = await supabase
+            .from('cities')
+            .select('name')
+            .eq('id', data.city_id)
+            .single();
+          cityName = city?.name || '';
+        } catch {}
+
         supabase.functions.invoke('enrich-tripadvisor', {
           body: { 
             placeName: data.name, 
-            cityName: '',
+            cityName,
             placeType: data.place_type,
             placeId: data.id 
           },
