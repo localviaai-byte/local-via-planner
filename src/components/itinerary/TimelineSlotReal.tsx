@@ -10,10 +10,12 @@ import {
   ChevronDown,
   Users,
   Check,
-  Plus
+  Plus,
+  Info
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ProductDetailSheet } from './ProductDetailSheet';
+import { PlaceDetailSheet } from './PlaceDetailSheet';
 import { type GeneratedSlot, type ProductSuggestion } from '@/hooks/useGenerateItinerary';
 import { toast } from 'sonner';
 
@@ -40,6 +42,7 @@ export function TimelineSlotReal({
   const [selectedProduct, setSelectedProduct] = useState<ProductSuggestion | null>(null);
   const [isAddingProduct, setIsAddingProduct] = useState(false);
   const [addedProducts, setAddedProducts] = useState<Set<string>>(new Set());
+  const [showPlaceDetail, setShowPlaceDetail] = useState(false);
 
   const getSlotIcon = () => {
     if (slot.type === 'meal') return '🍽️';
@@ -311,6 +314,13 @@ export function TimelineSlotReal({
             {/* Actions */}
             <div className="flex border-t border-border divide-x divide-border">
               <button
+                onClick={() => setShowPlaceDetail(true)}
+                className="flex-1 py-3 text-sm font-medium text-muted-foreground hover:text-primary hover:bg-secondary/50 transition-colors flex items-center justify-center gap-2"
+              >
+                <Info className="w-4 h-4" />
+                Scopri di più
+              </button>
+              <button
                 onClick={onReplace}
                 className="flex-1 py-3 text-sm font-medium text-muted-foreground hover:text-primary hover:bg-secondary/50 transition-colors flex items-center justify-center gap-2"
               >
@@ -366,6 +376,15 @@ export function TimelineSlotReal({
           </div>
         )}
       </div>
+
+      {/* Place Detail Sheet */}
+      {place && (
+        <PlaceDetailSheet
+          place={{ ...place, time: slot.startTime }}
+          isOpen={showPlaceDetail}
+          onClose={() => setShowPlaceDetail(false)}
+        />
+      )}
 
       {/* Product Detail Bottom Sheet */}
       <ProductDetailSheet

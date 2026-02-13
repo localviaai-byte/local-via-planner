@@ -7,6 +7,7 @@ import {
   SheetTitle,
 } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
+import { PlaceDetailSheet } from './PlaceDetailSheet';
 import {
   Clock,
   MapPin,
@@ -17,7 +18,7 @@ import {
   ChevronLeft,
   ChevronRight,
 } from 'lucide-react';
-import { type GeneratedItinerary, type GeneratedSlot } from '@/hooks/useGenerateItinerary';
+import { type GeneratedItinerary, type GeneratedSlot, type ItineraryPlace } from '@/hooks/useGenerateItinerary';
 
 interface CalendarSheetProps {
   isOpen: boolean;
@@ -35,7 +36,7 @@ export function CalendarSheet({
   onDayChange,
 }: CalendarSheetProps) {
   const { itinerary } = generatedData;
-  
+  const [selectedPlace, setSelectedPlace] = useState<(ItineraryPlace & { time?: string }) | null>(null);
   // Safely get current day with bounds check
   const safeActiveDay = Math.max(0, Math.min(activeDay, itinerary.length - 1));
   const currentDay = itinerary[safeActiveDay];
@@ -243,11 +244,16 @@ export function CalendarSheet({
                         transition={{ delay: index * 0.05 }}
                         className={`absolute left-4 right-0 rounded-xl border ${typeInfo.color} ${
                           isUpgrade ? 'ring-2 ring-primary/20 ring-offset-2' : ''
-                        }`}
+                        } ${slot.place ? 'cursor-pointer active:scale-[0.98] transition-transform' : ''}`}
                         style={{
                           top: style.top,
                           height: style.height,
                           minHeight: 48,
+                        }}
+                        onClick={() => {
+                          if (slot.place) {
+                            setSelectedPlace({ ...slot.place, time: slot.startTime });
+                          }
                         }}
                       >
                         <div className="p-3 h-full flex flex-col">
@@ -282,6 +288,9 @@ export function CalendarSheet({
                                 </p>
                               )}
                             </div>
+                            {slot.place && (
+                              <ChevronRight className="w-4 h-4 text-muted-foreground/50 flex-shrink-0 mt-0.5" />
+                            )}
                           </div>
 
                           {/* Walking Duration (if present) */}
@@ -345,6 +354,13 @@ export function CalendarSheet({
           </div>
         </div>
       </SheetContent>
+
+      {/* Place Detail Sheet */}
+      <PlaceDetailSheet
+        place={selectedPlace}
+        isOpen={!!selectedPlace}
+        onClose={() => setSelectedPlace(null)}
+      />
     </Sheet>
   );
 }
