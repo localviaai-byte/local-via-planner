@@ -6,8 +6,10 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { useCitiesWithStats } from '@/hooks/useCities';
+import { Switch } from '@/components/ui/switch';
+import { useCitiesWithStats, useUpdateCity } from '@/hooks/useCities';
 import { useAuth } from '@/hooks/useAuth';
+import { toast } from 'sonner';
 import type { CityStatus } from '@/types/database';
 
 const STATUS_CONFIG: Record<CityStatus, { label: string; color: string }> = {
@@ -22,6 +24,7 @@ interface CityCardProps {
     name: string;
     region: string | null;
     status: CityStatus;
+    is_active: boolean;
     cover_image_url: string | null;
     stats: {
       attractions: number;
@@ -34,9 +37,10 @@ interface CityCardProps {
     };
   };
   onClick: () => void;
+  onToggleActive: (id: string, active: boolean) => void;
 }
 
-function CityCard({ city, onClick }: CityCardProps) {
+function CityCard({ city, onClick, onToggleActive }: CityCardProps) {
   const statusConfig = STATUS_CONFIG[city.status] || STATUS_CONFIG.empty;
   
   return (
@@ -59,12 +63,26 @@ function CityCard({ city, onClick }: CityCardProps) {
               className="w-full h-full object-cover"
             />
           )}
-          <div className="absolute inset-0 bg-gradient-overlay opacity-40" />
-          <Badge className={`absolute top-3 right-3 ${statusConfig.color}`}>
-            {statusConfig.label}
-          </Badge>
+           <div className="absolute inset-0 bg-gradient-overlay opacity-40" />
+          <div className="absolute top-3 right-3 flex items-center gap-2">
+            <Badge className={`${statusConfig.color}`}>
+              {statusConfig.label}
+            </Badge>
+            <div
+              onClick={(e) => e.stopPropagation()}
+              className="bg-background/80 backdrop-blur-sm rounded-full px-2 py-1 flex items-center gap-1.5"
+            >
+              <span className="text-[10px] font-medium text-foreground">
+                {city.is_active ? 'Visibile' : 'Nascosta'}
+              </span>
+              <Switch
+                checked={city.is_active}
+                onCheckedChange={(checked) => onToggleActive(city.id, checked)}
+                className="scale-75 origin-right"
+              />
+            </div>
+          </div>
         </div>
-        
         <CardContent className="p-4">
           <div className="flex items-start justify-between mb-3">
             <div>
@@ -107,7 +125,18 @@ export function CitiesSection() {
   const navigate = useNavigate();
   const { isAdmin } = useAuth();
   const { data: cities, isLoading } = useCitiesWithStats();
+  const updateCity = useUpdateCity();
   const [searchQuery, setSearchQuery] = useState('');
+
+  const handleToggleActive = (cityId: string, active: boolean) => {
+    updateCity.mutate(
+      { cityId, updates: { is_active: active } },
+      {
+        onSuccess: () => toast.success(active ? 'Città visibile' : 'Città nascosta'),
+        onError: () => toast.error('Errore nel cambio visibilità'),
+      }
+    );
+  };
   
   // Filter cities based on search
   const filteredCities = cities?.filter(city => 
@@ -156,6 +185,7 @@ export function CitiesSection() {
               key={city.id}
               city={city}
               onClick={() => navigate(`/admin/cities/${city.id}`)}
+              onToggleActive={handleToggleActive}
             />
           ))}
         </div>

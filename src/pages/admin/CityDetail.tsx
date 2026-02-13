@@ -1,7 +1,7 @@
 import { useParams, useNavigate } from 'react-router-dom';
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { ArrowLeft, Plus, Settings, MapPin, ChevronRight, RefreshCw, ExternalLink, Trash2 } from 'lucide-react';
+import { ArrowLeft, Plus, Settings, MapPin, ChevronRight, RefreshCw, ExternalLink, Trash2, Eye, EyeOff } from 'lucide-react';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -16,6 +16,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Switch } from '@/components/ui/switch';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useCity, useCityZones } from '@/hooks/useCities';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
@@ -113,6 +114,19 @@ export default function CityDetail() {
     } catch (e) {
       console.error(e);
       toast.error('Errore nell\'eliminazione');
+    }
+  };
+
+  const handleToggleVisibility = async (placeId: string, placeName: string, visible: boolean) => {
+    try {
+      const newStatus = visible ? 'approved' : 'archived';
+      const { error } = await supabase.from('places').update({ status: newStatus }).eq('id', placeId);
+      if (error) throw error;
+      toast.success(visible ? `"${placeName}" visibile` : `"${placeName}" nascosto`);
+      queryClient.invalidateQueries({ queryKey: ['city-places', cityId] });
+    } catch (e) {
+      console.error(e);
+      toast.error('Errore nel cambio visibilità');
     }
   };
 
@@ -284,6 +298,7 @@ export default function CityDetail() {
                 place={place} 
                 onClick={() => navigate(`/admin/places/${place.id}`)}
                 onDelete={handleDeletePlace}
+                onToggleVisibility={handleToggleVisibility}
               />
             ))
           ) : (
@@ -304,6 +319,7 @@ export default function CityDetail() {
                   place={place} 
                   onClick={() => navigate(`/admin/places/${place.id}`)}
                   onDelete={handleDeletePlace}
+                  onToggleVisibility={handleToggleVisibility}
                 />
               ))
             ) : (
@@ -364,9 +380,10 @@ interface PlaceRowProps {
   };
   onClick: () => void;
   onDelete: (id: string, name: string) => void;
+  onToggleVisibility: (id: string, name: string, visible: boolean) => void;
 }
 
-function PlaceRow({ place, onClick, onDelete }: PlaceRowProps) {
+function PlaceRow({ place, onClick, onDelete, onToggleVisibility }: PlaceRowProps) {
   const typeConfig = PLACE_TYPE_OPTIONS.find(t => t.id === place.place_type);
   const statusConfig = STATUS_CONFIG[place.status];
   
@@ -393,7 +410,14 @@ function PlaceRow({ place, onClick, onDelete }: PlaceRowProps) {
               )}
             </div>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1.5">
+            <div onClick={(e) => e.stopPropagation()} className="flex items-center gap-1" title={place.status === 'archived' ? 'Nascosto' : 'Visibile'}>
+              <Switch
+                checked={place.status !== 'archived'}
+                onCheckedChange={(checked) => onToggleVisibility(place.id, place.name, checked)}
+                className="scale-75"
+              />
+            </div>
             {place.tripadvisor_url && (
               <a
                 href={place.tripadvisor_url}
