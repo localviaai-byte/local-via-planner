@@ -6,6 +6,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Sparkles, Loader2 } from 'lucide-react';
 import { useAIPrefill } from '@/hooks/useAIPrefill';
 import { ZoneSelector } from '@/components/admin/ZoneSelector';
+import { MapPinPicker } from '@/components/admin/wizard/MapPinPicker';
 import { 
   PRICE_RANGE_OPTIONS, 
   FOOD_PRIMARY_OPTIONS, 
@@ -149,6 +150,17 @@ export default function StepIdentity({
           className="bg-card"
         />
       </div>
+
+      {/* Map Pin Picker */}
+      <MapPinPicker
+        latitude={formData.latitude ?? null}
+        longitude={formData.longitude ?? null}
+        onChange={(lat, lng) => onUpdate({ latitude: lat, longitude: lng })}
+        placeName={formData.name}
+        cityName={cityName}
+        cityLatitude={cityLatitude}
+        cityLongitude={cityLongitude}
+      />
 
       {/* Zone Selector */}
       {formData.city_id ? (
