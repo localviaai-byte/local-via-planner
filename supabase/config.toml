@@ -14,3 +14,6 @@ verify_jwt = false
 
 [functions.enrich-photos]
 verify_jwt = false
+
+[functions.geocode-place]
+verify_jwt = false

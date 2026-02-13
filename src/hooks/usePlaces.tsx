@@ -142,13 +142,19 @@ export function useCreatePlace() {
       if (data.place_type !== 'zone' && !data.tripadvisor_url) {
         // Fetch city name for TripAdvisor search
         let cityName = '';
+        let cityRegion = '';
+        let cityLatitude: number | null = null;
+        let cityLongitude: number | null = null;
         try {
           const { data: city } = await supabase
             .from('cities')
-            .select('name')
+            .select('name, region, latitude, longitude')
             .eq('id', data.city_id)
             .single();
           cityName = city?.name || '';
+          cityRegion = city?.region || '';
+          cityLatitude = city?.latitude ? Number(city.latitude) : null;
+          cityLongitude = city?.longitude ? Number(city.longitude) : null;
         } catch {}
 
         supabase.functions.invoke('enrich-tripadvisor', {
@@ -169,6 +175,26 @@ export function useCreatePlace() {
         supabase.functions.invoke('enrich-photos', {
           body: { placeId: data.id },
         }).catch(console.error);
+
+        // Auto-geocode if coordinates are missing
+        if (!data.latitude || !data.longitude) {
+          supabase.functions.invoke('geocode-place', {
+            body: {
+              placeName: data.name,
+              address: data.address || undefined,
+              cityName,
+              cityLatitude,
+              cityLongitude,
+              region: cityRegion,
+              placeId: data.id,
+            },
+          }).then(res => {
+            if (res.data?.success && res.data?.latitude) {
+              queryClient.invalidateQueries({ queryKey: ['city-places', data.city_id] });
+              queryClient.invalidateQueries({ queryKey: ['place', data.id] });
+            }
+          }).catch(console.error);
+        }
       }
     },
   });
@@ -193,9 +219,38 @@ export function useUpdatePlace() {
       if (error) throw error;
       return data as Place;
     },
-    onSuccess: (data) => {
+    onSuccess: async (data) => {
       queryClient.invalidateQueries({ queryKey: ['contributor-places'] });
       queryClient.invalidateQueries({ queryKey: ['place', data.id] });
+      queryClient.invalidateQueries({ queryKey: ['city-places', data.city_id] });
+
+      // Auto-geocode on approval if coordinates are missing
+      if (data.status === 'approved' && data.place_type !== 'zone' && (!data.latitude || !data.longitude)) {
+        try {
+          const { data: city } = await supabase
+            .from('cities')
+            .select('name, region, latitude, longitude')
+            .eq('id', data.city_id)
+            .single();
+
+          supabase.functions.invoke('geocode-place', {
+            body: {
+              placeName: data.name,
+              address: data.address || undefined,
+              cityName: city?.name || '',
+              cityLatitude: city?.latitude ? Number(city.latitude) : null,
+              cityLongitude: city?.longitude ? Number(city.longitude) : null,
+              region: city?.region || '',
+              placeId: data.id,
+            },
+          }).then(res => {
+            if (res.data?.success && res.data?.latitude) {
+              queryClient.invalidateQueries({ queryKey: ['city-places', data.city_id] });
+              queryClient.invalidateQueries({ queryKey: ['place', data.id] });
+            }
+          }).catch(console.error);
+        } catch {}
+      }
     },
   });
 }
