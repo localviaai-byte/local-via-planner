@@ -1,6 +1,6 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { UtensilsCrossed, ChevronDown } from 'lucide-react';
+import { UtensilsCrossed, ChevronDown, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { 
@@ -10,6 +10,7 @@ import {
   USER_BUDGET_OPTIONS,
 } from '@/types/database';
 import { dietaryRestrictions, type TripPreferences } from '@/lib/mockData';
+import { useAvailableFoodOptions } from '@/hooks/useAvailableFoodOptions';
 
 interface StepFoodProps {
   preferences: TripPreferences;
@@ -18,8 +19,20 @@ interface StepFoodProps {
 
 export function StepFood({ preferences, onUpdate }: StepFoodProps) {
   const [showSecondary, setShowSecondary] = useState(false);
+  const { data: availableOptions, isLoading: isLoadingOptions } = useAvailableFoodOptions(preferences.city);
 
   const isMultiDay = preferences.numDays > 1;
+
+  // Filter options to only show what's available in the DB
+  const filteredPrimaryOptions = useMemo(() => {
+    if (!availableOptions) return [];
+    return FOOD_PRIMARY_OPTIONS.filter(opt => availableOptions.foodPrimary.includes(opt.id));
+  }, [availableOptions]);
+
+  const filteredSecondaryOptions = useMemo(() => {
+    if (!availableOptions) return [];
+    return FOOD_SECONDARY_OPTIONS.filter(opt => availableOptions.foodSecondary.includes(opt.id));
+  }, [availableOptions]);
 
   const toggleFoodPrimary = (id: string) => {
     const current = [...(preferences.foodPrimary ?? [])];
@@ -85,8 +98,18 @@ export function StepFood({ preferences, onUpdate }: StepFoodProps) {
 
       {/* Food Primary */}
       <div className="space-y-4">
+        {isLoadingOptions ? (
+          <div className="flex items-center justify-center py-8 text-muted-foreground gap-2">
+            <Loader2 className="w-4 h-4 animate-spin" />
+            <span className="text-sm">Carico le opzioni disponibili...</span>
+          </div>
+        ) : filteredPrimaryOptions.length === 0 ? (
+          <p className="text-sm text-muted-foreground text-center py-4">
+            Nessuna opzione food disponibile per questa destinazione
+          </p>
+        ) : (
         <div className="grid grid-cols-2 gap-3">
-          {FOOD_PRIMARY_OPTIONS.map((food) => (
+          {filteredPrimaryOptions.map((food) => (
             <button
               key={food.id}
               type="button"
@@ -104,6 +127,7 @@ export function StepFood({ preferences, onUpdate }: StepFoodProps) {
             </button>
           ))}
         </div>
+        )}
       </div>
 
       {/* Food Secondary - conditional */}
@@ -125,13 +149,13 @@ export function StepFood({ preferences, onUpdate }: StepFoodProps) {
               <ChevronDown className={`w-4 h-4 transition-transform ${showSecondary ? 'rotate-180' : ''}`} />
             </button>
             
-            {showSecondary && (
+            {showSecondary && filteredSecondaryOptions.length > 0 && (
               <motion.div
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 className="flex flex-wrap gap-2"
               >
-                {FOOD_SECONDARY_OPTIONS.map((opt) => (
+                {filteredSecondaryOptions.map((opt) => (
                   <button
                     key={opt.id}
                     type="button"
@@ -149,6 +173,9 @@ export function StepFood({ preferences, onUpdate }: StepFoodProps) {
                   </button>
                 ))}
               </motion.div>
+            )}
+            {showSecondary && filteredSecondaryOptions.length === 0 && (
+              <p className="text-xs text-muted-foreground">Nessuna specializzazione disponibile</p>
             )}
           </motion.div>
         )}
