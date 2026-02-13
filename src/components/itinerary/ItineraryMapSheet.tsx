@@ -1,11 +1,13 @@
-import { useRef, useEffect, useState, useMemo } from 'react';
+import { useRef, useEffect, useState, useMemo, useCallback } from 'react';
 import mapboxgl from 'mapbox-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
 import { Loader2, MapPin, Navigation, AlertCircle } from 'lucide-react';
 import { useMapboxToken } from '@/hooks/useMapboxToken';
-import { type GeneratedItinerary } from '@/hooks/useGenerateItinerary';
+import { type GeneratedItinerary, type ItineraryPlace } from '@/hooks/useGenerateItinerary';
+import { PlacePreviewSheet } from './PlacePreviewSheet';
+import { PlaceDetailSheet } from './PlaceDetailSheet';
 
 interface MapPoint {
   id: string;
@@ -16,6 +18,7 @@ interface MapPoint {
   slotIndex: number;
   dayIndex: number;
   time: string;
+  place: ItineraryPlace;
 }
 
 interface ItineraryMapSheetProps {
@@ -114,6 +117,10 @@ export function ItineraryMapSheet({
   const map = useRef<mapboxgl.Map | null>(null);
   const markersRef = useRef<mapboxgl.Marker[]>([]);
 
+  // Place preview/detail state
+  const [selectedPlace, setSelectedPlace] = useState<(ItineraryPlace & { time?: string; slotType?: string }) | null>(null);
+  const [showPlaceDetail, setShowPlaceDetail] = useState(false);
+
   // Prevent resize loops / flicker (Sheet animations + Mapbox resize can trigger frequent observers)
   const resizeRafRef = useRef<number | null>(null);
   const lastResizeAtRef = useRef<number>(0);
@@ -147,6 +154,7 @@ export function ItineraryMapSheet({
   // Handle day change - update both local and parent state
   const handleDayChange = (dayIndex: number) => {
     setLocalActiveDay(dayIndex);
+    setSelectedPlace(null);
     onDayChange(dayIndex);
   };
 
@@ -201,6 +209,7 @@ export function ItineraryMapSheet({
             slotIndex,
             dayIndex: localActiveDay,
             time: slot.startTime,
+            place: slot.place,
           });
           slotIndex++;
         }
@@ -387,24 +396,14 @@ export function ItineraryMapSheet({
         `;
         el.innerHTML = `${point.slotIndex}`;
 
-        const popup = new mapboxgl.Popup({ 
-          offset: 25,
-          closeButton: true,
-          closeOnClick: false,
-          className: 'custom-popup'
-        }).setHTML(`
-          <div style="padding: 12px; min-width: 180px; font-family: system-ui, sans-serif;">
-            <div style="font-weight: 600; margin-bottom: 6px; font-size: 15px;">${point.name}</div>
-            <div style="font-size: 13px; color: #666; display: flex; align-items: center; gap: 6px;">
-              <span style="display: inline-block; width: 10px; height: 10px; background: ${color}; border-radius: 50%;"></span>
-              ${point.time} · ${point.type}
-            </div>
-          </div>
-        `);
+        // Click opens our custom preview instead of a Mapbox popup
+        el.addEventListener('click', (e) => {
+          e.stopPropagation();
+          setSelectedPlace({ ...point.place, time: point.time });
+        });
 
         const marker = new mapboxgl.Marker({ element: el, anchor: 'center' })
           .setLngLat([point.lng, point.lat])
-          .setPopup(popup)
           .addTo(m);
 
         markersRef.current.push(marker);
@@ -524,8 +523,18 @@ export function ItineraryMapSheet({
             <div ref={setMapContainerEl} className="absolute inset-0" style={{ width: '100%', height: '100%' }} />
           )}
 
-          {/* Walking Times Summary */}
-          {mapLoaded && dayPoints.length > 0 && (
+          {/* Place Preview (shown when marker is clicked) */}
+          <PlacePreviewSheet
+            place={selectedPlace}
+            isOpen={!!selectedPlace}
+            onClose={() => setSelectedPlace(null)}
+            onViewDetail={() => {
+              setShowPlaceDetail(true);
+            }}
+          />
+
+          {/* Walking Times Summary - hide when preview is open */}
+          {mapLoaded && dayPoints.length > 0 && !selectedPlace && (
             <div className="absolute bottom-4 left-4 right-4 bg-background/95 backdrop-blur rounded-xl p-4 shadow-lg border">
               <div className="flex items-center justify-between mb-3">
                 <div className="flex items-center gap-2">
@@ -586,6 +595,15 @@ export function ItineraryMapSheet({
             </div>
           )}
         </div>
+
+        {/* Place Detail Sheet */}
+        <PlaceDetailSheet
+          place={selectedPlace}
+          isOpen={showPlaceDetail}
+          onClose={() => {
+            setShowPlaceDetail(false);
+          }}
+        />
       </SheetContent>
     </Sheet>
   );
