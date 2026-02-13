@@ -18,9 +18,15 @@ interface TripPreferences {
   rhythm: number;
   startTime: string;
   lunchStyle: string;
+  // New structured food preferences
+  foodPrimary: string[];
+  foodSecondary: string[];
+  atmospherePreferences: string[];
+  foodBudget: 'budget' | 'moderate' | 'expensive' | 'luxury';
+  dietaryRestrictions: string[];
+  // Legacy
   cuisinePreferences: string[];
   budget: number;
-  dietaryRestrictions: string[];
   activityStyle: string;
   guidedTours: 'autonomous' | 'guided' | 'unknown';
   walkingTolerance: string;
@@ -131,6 +137,7 @@ serve(async (req) => {
         id, name, place_type, zone, zone_id, address, 
         local_one_liner, local_warning, duration_minutes,
         price_range, cuisine_type, meal_time, bar_time,
+        food_primary, food_secondary, format_experience, dietary_options,
         photo_url, indoor_outdoor, crowd_level,
         best_times, best_days, ideal_for,
         vibe_touristy_to_local, social_level,
@@ -181,6 +188,15 @@ serve(async (req) => {
     }
 
     // Prepare data for AI
+    // Map foodBudget to price_range for filtering
+    const budgetToPrice: Record<string, string[]> = {
+      budget: ['budget'],
+      moderate: ['budget', 'moderate'],
+      expensive: ['budget', 'moderate', 'expensive'],
+      luxury: ['budget', 'moderate', 'expensive', 'luxury'],
+    };
+    const allowedPriceRanges = budgetToPrice[preferences.foodBudget] || ['budget', 'moderate', 'expensive', 'luxury'];
+
     const placesForAI = places.map(p => ({
       id: p.id,
       name: p.name,
@@ -191,6 +207,8 @@ serve(async (req) => {
       duration: p.duration_minutes || 60,
       price: p.price_range,
       cuisine: p.cuisine_type,
+      food_primary: p.food_primary,
+      food_secondary: p.food_secondary,
       meal_time: p.meal_time,
       best_times: p.best_times,
       ideal_for: p.ideal_for,
@@ -200,6 +218,7 @@ serve(async (req) => {
       crowd: p.crowd_level,
       mood: p.mood_primary,
       why: p.why_people_go,
+      budget_match: !p.price_range || allowedPriceRanges.includes(p.price_range),
     }));
 
     const productsForAI = (products || []).map(p => ({
@@ -221,6 +240,15 @@ serve(async (req) => {
       tip: z.local_tip,
     }));
 
+    // Build budget label for prompt
+    const budgetLabels: Record<string, string> = {
+      budget: '€ (economico)',
+      moderate: '€€ (medio)',
+      expensive: '€€€ (curato)',
+      luxury: '€€€€ (esperienza premium)',
+    };
+    const foodBudgetLabel = budgetLabels[preferences.foodBudget] || '€€ (medio)';
+
     // Build comprehensive prompt
     const systemPrompt = `Sei un esperto planner di viaggi locale italiano che crea itinerari personalizzati.
 Hai accesso a un database curato di luoghi, ristoranti, bar e esperienze verificati da local contributors.
@@ -228,14 +256,17 @@ Hai accesso a un database curato di luoghi, ristoranti, bar e esperienze verific
 REGOLE CRITICHE:
 1. Usa SOLO i luoghi dal database fornito - non inventare posti
 2. Rispetta il ritmo scelto: ${preferences.rhythm <= 2 ? 'Calmo - max 2 attività/giorno' : preferences.rhythm <= 3 ? 'Moderato - 3-4 attività/giorno' : 'Intenso - 4-5 attività/giorno'}
-3. Considera le preferenze alimentari: budget ${preferences.budget}/3, cucine preferite: ${preferences.cuisinePreferences.join(', ') || 'qualsiasi'}
-4. Evita: ${preferences.avoid.join(', ') || 'niente di specifico'}
-5. Interessi principali: ${preferences.topInterests.join(', ') || preferences.interests.join(', ')}
-6. Chi viaggia: ${preferences.travelWith} - adatta il mood di conseguenza
-7. Tolleranza camminata: ${preferences.walkingTolerance}
-8. Orario inizio: ${preferences.startTime === 'early' ? '8:00-9:00' : preferences.startTime === 'normal' ? '9:30-10:00' : '11:00+'}
-9. Stile pranzo: ${preferences.lunchStyle === 'long' ? 'Lungo (90min)' : 'Veloce (45min)'}
-10. Visite guidate: ${preferences.guidedTours === 'guided' ? 'Preferisce tour guidati - suggerisci SEMPRE prodotti/esperienze guidate' : preferences.guidedTours === 'autonomous' ? 'Preferisce visitare in autonomia - suggerisci prodotti SOLO se molto rilevanti' : 'Non ha preferenze - suggerisci prodotti quando migliorano l\'esperienza'}
+3. BUDGET PASTI: ${foodBudgetLabel} — PREFERISCI FORTEMENTE luoghi con budget_match=true. Evita luoghi con budget_match=false a meno che non ci siano alternative.
+4. Preferenze cibo: ${(preferences.foodPrimary || []).join(', ') || 'qualsiasi'} ${(preferences.foodSecondary || []).length > 0 ? '(dettagli: ' + preferences.foodSecondary.join(', ') + ')' : ''}
+5. Atmosfera preferita: ${(preferences.atmospherePreferences || []).join(', ') || 'qualsiasi'}
+6. Evita: ${(preferences.avoid || []).join(', ') || 'niente di specifico'}
+7. Interessi principali: ${(preferences.topInterests || []).join(', ') || (preferences.interests || []).join(', ')}
+8. Chi viaggia: ${preferences.travelWith} - adatta il mood di conseguenza
+9. Tolleranza camminata: ${preferences.walkingTolerance}
+10. Orario inizio: ${preferences.startTime === 'early' ? '8:00-9:00' : preferences.startTime === 'normal' ? '9:30-10:00' : '11:00+'}
+11. Stile pranzo: ${preferences.lunchStyle === 'long' ? 'Lungo (90min)' : 'Veloce (45min)'}
+12. Visite guidate: ${preferences.guidedTours === 'guided' ? 'Preferisce tour guidati - suggerisci SEMPRE prodotti/esperienze guidate' : preferences.guidedTours === 'autonomous' ? 'Preferisce visitare in autonomia - suggerisci prodotti SOLO se molto rilevanti' : 'Non ha preferenze - suggerisci prodotti quando migliorano l\'esperienza'}
+13. Restrizioni alimentari: ${(preferences.dietaryRestrictions || []).join(', ') || 'nessuna'} — se presenti, scegli ristoranti che le supportano (campo dietary_options)
 
 Per ogni slot suggerisci prodotti/esperienze add-on seguendo le preferenze dell'utente.
 Usa il campo "local_one_liner" come base per le descrizioni - è il DNA del posto.`;
@@ -252,12 +283,13 @@ ZONE DELLA CITTÀ:
 ${JSON.stringify(zonesForAI, null, 2)}
 
 PREFERENZE VIAGGIATORE:
-- Interessi: ${preferences.interests.join(', ')}
-- Top priority: ${preferences.topInterests.join(', ')}
-- Budget pasti: ${preferences.budget}/3
+- Interessi: ${(preferences.interests || []).join(', ')}
+- Top priority: ${(preferences.topInterests || []).join(', ')}
+- Budget pasti: ${foodBudgetLabel}
+- Cibo preferito: ${(preferences.foodPrimary || []).join(', ') || 'qualsiasi'}
 - Ritmo: ${preferences.rhythm}/5
 - Viaggia: ${preferences.travelWith}
-- Restrizioni alimentari: ${preferences.dietaryRestrictions.join(', ') || 'nessuna'}
+- Restrizioni alimentari: ${(preferences.dietaryRestrictions || []).join(', ') || 'nessuna'}
 - Desideri speciali: ${preferences.wishes || 'nessuno'}
 
 Genera l'itinerario ottimale usando SOLO luoghi dal database, raggruppando per zone quando possibile per minimizzare spostamenti.
