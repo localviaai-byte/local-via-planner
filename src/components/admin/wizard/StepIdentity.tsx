@@ -180,10 +180,10 @@ export default function StepIdentity({
                   type="button"
                   onClick={() => onUpdate({ food_primary: opt.id as FoodPrimary })}
                   className={`
-                    p-3 rounded-2xl text-left transition-all duration-200 cursor-pointer flex items-center gap-2
+                    p-3 rounded-2xl text-left transition-all duration-200 cursor-pointer flex items-center gap-2 border-2
                     ${formData.food_primary === opt.id
-                      ? 'bg-card ring-2 ring-primary shadow-card'
-                      : 'bg-card hover:shadow-soft'
+                      ? 'bg-primary/15 border-primary shadow-md'
+                      : 'bg-card border-transparent hover:shadow-soft'
                     }
                   `}
                 >
@@ -228,10 +228,10 @@ export default function StepIdentity({
                   type="button"
                   onClick={() => onUpdate({ format_experience: opt.id as FormatExperience })}
                   className={`
-                    p-3 rounded-2xl text-left transition-all duration-200 cursor-pointer flex items-center gap-2
+                    p-3 rounded-2xl text-left transition-all duration-200 cursor-pointer flex items-center gap-2 border-2
                     ${formData.format_experience === opt.id
-                      ? 'bg-card ring-2 ring-primary shadow-card'
-                      : 'bg-card hover:shadow-soft'
+                      ? 'bg-primary/15 border-primary shadow-md'
+                      : 'bg-card border-transparent hover:shadow-soft'
                     }
                   `}
                 >
