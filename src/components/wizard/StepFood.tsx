@@ -92,10 +92,10 @@ export function StepFood({ preferences, onUpdate }: StepFoodProps) {
               type="button"
               onClick={() => toggleFoodPrimary(food.id)}
               className={`
-                p-4 rounded-2xl text-left transition-all duration-200 cursor-pointer flex items-center gap-3
+                p-4 rounded-2xl text-left transition-all duration-200 cursor-pointer flex items-center gap-3 border-2
                 ${(preferences.foodPrimary ?? []).includes(food.id)
-                  ? 'bg-card ring-2 ring-primary shadow-card'
-                  : 'bg-card hover:shadow-soft'
+                  ? 'bg-primary/15 border-primary shadow-md'
+                  : 'bg-card border-transparent hover:shadow-soft'
                 }
               `}
             >
@@ -166,10 +166,10 @@ export function StepFood({ preferences, onUpdate }: StepFoodProps) {
               type="button"
               onClick={() => toggleAtmosphere(atm.id)}
               className={`
-                p-4 rounded-2xl text-left transition-all duration-200 cursor-pointer flex items-center gap-3
+                p-4 rounded-2xl text-left transition-all duration-200 cursor-pointer flex items-center gap-3 border-2
                 ${(preferences.atmospherePreferences ?? []).includes(atm.id)
-                  ? 'bg-card ring-2 ring-primary shadow-card'
-                  : 'bg-card hover:shadow-soft'
+                  ? 'bg-primary/15 border-primary shadow-md'
+                  : 'bg-card border-transparent hover:shadow-soft'
                 }
               `}
             >
