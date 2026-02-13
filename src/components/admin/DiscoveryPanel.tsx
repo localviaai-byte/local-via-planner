@@ -209,6 +209,15 @@ export function DiscoveryPanel({ cityId, cityName, region, country }: DiscoveryP
             }
           })
           .catch(err => console.error('TripAdvisor enrichment failed:', err));
+
+        // Also trigger photo enrichment in background
+        supabase.functions.invoke('enrich-photos', {
+          body: { placeId: newPlace.id },
+        }).then(res => {
+          if (res.data?.success) {
+            console.log(`Photo enrichment started for "${place.name}"`);
+          }
+        }).catch(err => console.error('Photo enrichment failed:', err));
       }
 
       setSuggestions(prev => prev.filter(p => p.id !== place.id));
