@@ -19,6 +19,7 @@ const Index = () => {
   const { generate, isLoading, error } = useGenerateItinerary();
 
   const handleStartPlanning = () => {
+    window.scrollTo(0, 0);
     setAppState('wizard');
   };
 
@@ -51,6 +52,7 @@ const Index = () => {
   };
 
   const handleBackToWizard = () => {
+    window.scrollTo(0, 0);
     setAppState('wizard');
   };
 
