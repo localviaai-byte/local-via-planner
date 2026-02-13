@@ -59,16 +59,18 @@ export function StepDestination({ preferences, onUpdate }: StepDestinationProps)
               type="button"
               onClick={() => onUpdate({ city: city.id })}
               className={`
-                relative p-3 rounded-xl text-left transition-all duration-200
+                relative p-3 rounded-xl text-left transition-all duration-200 border-2
                 ${preferences.city === city.id
-                  ? 'bg-card ring-2 ring-primary shadow-card'
-                  : 'bg-card hover:shadow-soft'
+                  ? 'bg-primary/5 border-primary shadow-card'
+                  : 'bg-card border-transparent hover:shadow-soft'
                 }
               `}
               whileTap={{ scale: 0.98 }}
             >
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-lg bg-secondary flex items-center justify-center text-xl sm:text-2xl flex-shrink-0">
+                <div className={`w-10 h-10 sm:w-12 sm:h-12 rounded-lg flex items-center justify-center text-xl sm:text-2xl flex-shrink-0 transition-colors ${
+                  preferences.city === city.id ? 'bg-primary/15' : 'bg-secondary'
+                }`}>
                   {city.id === 'pompei' ? '🏛️' : city.id === 'napoli' ? '🌋' : '🌊'}
                 </div>
                 <div className="flex-1 min-w-0">
