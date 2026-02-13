@@ -8,3 +8,6 @@ verify_jwt = false
 
 [functions.enrich-tripadvisor]
 verify_jwt = false
+
+[functions.backfill-tripadvisor]
+verify_jwt = false

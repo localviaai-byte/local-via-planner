@@ -131,8 +131,26 @@ export function useCreatePlace() {
       if (error) throw error;
       return data as Place;
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['contributor-places'] });
+      queryClient.invalidateQueries({ queryKey: ['city-places', data.city_id] });
+      
+      // Auto-enrich with TripAdvisor in background (skip zones)
+      if (data.place_type !== 'zone' && !data.tripadvisor_url) {
+        supabase.functions.invoke('enrich-tripadvisor', {
+          body: { 
+            placeName: data.name, 
+            cityName: '', // will be resolved server-side
+            placeType: data.place_type,
+            placeId: data.id 
+          },
+        }).then(res => {
+          if (res.data?.success) {
+            queryClient.invalidateQueries({ queryKey: ['city-places', data.city_id] });
+            queryClient.invalidateQueries({ queryKey: ['place', data.id] });
+          }
+        }).catch(console.error);
+      }
     },
   });
 }
