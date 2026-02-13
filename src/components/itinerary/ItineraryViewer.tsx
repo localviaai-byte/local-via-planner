@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   ArrowLeft, 
@@ -21,10 +21,13 @@ import { SavePlanSheet } from './SavePlanSheet';
 import { ExtrasCheckoutSheet } from './ExtrasCheckoutSheet';
 import { ItineraryMapSheet } from './ItineraryMapSheet';
 import { CalendarSheet } from './CalendarSheet';
+import { ReplaceSlotSheet } from './ReplaceSlotSheet';
+import { MoveSlotSheet } from './MoveSlotSheet';
 import { useSelectedProducts } from '@/contexts/SelectedProductsContext';
 import { useTripPlan } from '@/contexts/TripPlanContext';
 import { type TripPreferences } from '@/lib/mockData';
-import { type GeneratedItinerary } from '@/hooks/useGenerateItinerary';
+import { type GeneratedItinerary, type GeneratedSlot, type GeneratedDay, type ItineraryPlace } from '@/hooks/useGenerateItinerary';
+import { toast } from 'sonner';
 
 interface ItineraryViewerProps {
   preferences: TripPreferences;
@@ -39,6 +42,9 @@ export function ItineraryViewer({ preferences, generatedData, onBack, onRegenera
   const [showSaveSheet, setShowSaveSheet] = useState(false);
   const [showMapSheet, setShowMapSheet] = useState(false);
   const [showCalendarSheet, setShowCalendarSheet] = useState(false);
+  const [itineraryData, setItineraryData] = useState<GeneratedDay[]>(generatedData.itinerary);
+  const [replaceTarget, setReplaceTarget] = useState<{ slot: GeneratedSlot; dayIndex: number } | null>(null);
+  const [moveTarget, setMoveTarget] = useState<{ slot: GeneratedSlot; dayIndex: number } | null>(null);
   const daySectionRefs = useRef<(HTMLDivElement | null)[]>([]);
   const isScrollingRef = useRef(false);
   
@@ -53,13 +59,56 @@ export function ItineraryViewer({ preferences, generatedData, onBack, onRegenera
     openCheckout 
   } = useTripPlan();
   
-  const { itinerary, city, meta } = generatedData;
+  const { itinerary: _originalItinerary, city, meta } = generatedData;
   const hasExtras = selectedProducts.length > 0;
   const isSaved = planStatus !== 'DRAFT';
 
+  // Replace handler
+  const handleReplace = useCallback((newPlace: ItineraryPlace) => {
+    if (!replaceTarget) return;
+    setItineraryData(prev => {
+      const updated = [...prev];
+      const day = { ...updated[replaceTarget.dayIndex] };
+      day.slots = day.slots.map(s =>
+        s.id === replaceTarget.slot.id
+          ? { ...s, place: newPlace, reason: `Hai scelto ${newPlace.name} al posto di ${replaceTarget.slot.place?.name}` }
+          : s
+      );
+      updated[replaceTarget.dayIndex] = day;
+      return updated;
+    });
+    toast.success(`Sostituito con ${newPlace.name}!`);
+  }, [replaceTarget]);
+
+  // Move (swap) handler
+  const handleMove = useCallback((targetDayIndex: number, targetSlotId: string) => {
+    if (!moveTarget) return;
+    setItineraryData(prev => {
+      const updated = prev.map(d => ({ ...d, slots: [...d.slots] }));
+      
+      const srcDay = updated[moveTarget.dayIndex];
+      const dstDay = updated[targetDayIndex];
+      
+      const srcIdx = srcDay.slots.findIndex(s => s.id === moveTarget.slot.id);
+      const dstIdx = dstDay.slots.findIndex(s => s.id === targetSlotId);
+      
+      if (srcIdx === -1 || dstIdx === -1) return prev;
+      
+      const srcSlot = srcDay.slots[srcIdx];
+      const dstSlot = dstDay.slots[dstIdx];
+      
+      // Swap places, keep time structure
+      srcDay.slots[srcIdx] = { ...srcSlot, place: dstSlot.place, reason: dstSlot.reason };
+      dstDay.slots[dstIdx] = { ...dstSlot, place: srcSlot.place, reason: srcSlot.reason };
+      
+      return updated;
+    });
+    toast.success('Tappe scambiate! 🔄');
+  }, [moveTarget]);
+
   // Intersection Observer for automatic day switching on scroll
   useEffect(() => {
-    if (itinerary.length <= 1) return;
+    if (itineraryData.length <= 1) return;
     // While the map sheet is open, don't let scroll observers override the selected day.
     // Same for the calendar sheet: switching days there should not be immediately overridden.
     if (showMapSheet || showCalendarSheet) return;
@@ -95,7 +144,7 @@ export function ItineraryViewer({ preferences, generatedData, onBack, onRegenera
     });
 
     return () => observer.disconnect();
-  }, [itinerary.length, activeDay, showMapSheet, showCalendarSheet]);
+  }, [itineraryData.length, activeDay, showMapSheet, showCalendarSheet]);
 
   // Scroll to day when tab is clicked
   const handleDayClick = (index: number) => {
@@ -121,7 +170,7 @@ export function ItineraryViewer({ preferences, generatedData, onBack, onRegenera
   ];
 
   // Count total products available
-  const totalProducts = itinerary.reduce((acc, day) => 
+  const totalProducts = itineraryData.reduce((acc, day) => 
     acc + day.slots.reduce((slotAcc, slot) => 
       slotAcc + (slot.productSuggestions?.length || 0), 0
     ), 0
@@ -163,7 +212,7 @@ export function ItineraryViewer({ preferences, generatedData, onBack, onRegenera
     <div className="min-h-screen bg-background">
       {/* Day Transition Indicator */}
       <AnimatePresence>
-        {showDayTransition && itinerary.length > 1 && (
+        {showDayTransition && itineraryData.length > 1 && (
           <motion.div
             initial={{ opacity: 0, y: -20, scale: 0.9 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
@@ -256,11 +305,11 @@ export function ItineraryViewer({ preferences, generatedData, onBack, onRegenera
       </div>
 
       {/* Day Tabs */}
-      {itinerary.length > 1 && (
+      {itineraryData.length > 1 && (
         <div className="sticky top-[168px] z-30 bg-background border-b border-border">
           <div className="container max-w-2xl">
             <div className="flex">
-              {itinerary.map((day, index) => (
+              {itineraryData.map((day, index) => (
                 <button
                   key={day.dayNumber}
                   onClick={() => handleDayClick(index)}
@@ -295,7 +344,7 @@ export function ItineraryViewer({ preferences, generatedData, onBack, onRegenera
 
       {/* Itinerary Content - All days rendered for scroll */}
       <main className="container max-w-2xl py-6 px-4">
-        {itinerary.map((day, dayIndex) => (
+        {itineraryData.map((day, dayIndex) => (
           <div
             key={day.dayNumber}
             ref={(el) => (daySectionRefs.current[dayIndex] = el)}
@@ -345,8 +394,8 @@ export function ItineraryViewer({ preferences, generatedData, onBack, onRegenera
                   key={slot.id}
                   slot={slot}
                   dayIndex={dayIndex}
-                  onReplace={() => {}}
-                  onMove={() => {}}
+                  onReplace={() => setReplaceTarget({ slot, dayIndex })}
+                  onMove={() => setMoveTarget({ slot, dayIndex })}
                   onAddProduct={(product, placeName) => {
                     addProduct(product, dayIndex, slot.place?.id, placeName);
                   }}
@@ -389,6 +438,25 @@ export function ItineraryViewer({ preferences, generatedData, onBack, onRegenera
         generatedData={generatedData}
         activeDay={activeDay}
         onDayChange={setActiveDay}
+      />
+
+      {/* Replace Slot Sheet */}
+      <ReplaceSlotSheet
+        isOpen={!!replaceTarget}
+        onOpenChange={(open) => !open && setReplaceTarget(null)}
+        slot={replaceTarget?.slot || null}
+        cityId={city.id}
+        onReplace={handleReplace}
+      />
+
+      {/* Move Slot Sheet */}
+      <MoveSlotSheet
+        isOpen={!!moveTarget}
+        onOpenChange={(open) => !open && setMoveTarget(null)}
+        slot={moveTarget?.slot || null}
+        currentDayIndex={moveTarget?.dayIndex || 0}
+        itinerary={itineraryData}
+        onMove={handleMove}
       />
 
       {/* Bottom CTA */}
