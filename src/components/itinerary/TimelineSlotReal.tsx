@@ -149,7 +149,7 @@ export function TimelineSlotReal({
         <span className="text-sm text-muted-foreground">
           {slot.endTime}
         </span>
-        {slot.walkingMinutes && slot.walkingMinutes > 0 && (
+        {typeof slot.walkingMinutes === 'number' && slot.walkingMinutes > 0 && (
           <span className="flex items-center gap-1 text-xs text-muted-foreground ml-auto">
             <Footprints className="w-3 h-3" />
             {slot.walkingMinutes} min
@@ -315,24 +315,24 @@ export function TimelineSlotReal({
             <div className="flex border-t border-border divide-x divide-border">
               <button
                 onClick={() => setShowPlaceDetail(true)}
-                className="flex-1 py-3 text-sm font-medium text-muted-foreground hover:text-primary hover:bg-secondary/50 transition-colors flex items-center justify-center gap-2"
+                className="flex-1 py-2.5 text-xs font-medium text-muted-foreground hover:text-primary hover:bg-secondary/50 transition-colors flex items-center justify-center gap-1.5"
               >
-                <Info className="w-4 h-4" />
-                Scopri di più
+                <Info className="w-3.5 h-3.5 shrink-0" />
+                <span className="truncate">Dettagli</span>
               </button>
               <button
                 onClick={onReplace}
-                className="flex-1 py-3 text-sm font-medium text-muted-foreground hover:text-primary hover:bg-secondary/50 transition-colors flex items-center justify-center gap-2"
+                className="flex-1 py-2.5 text-xs font-medium text-muted-foreground hover:text-primary hover:bg-secondary/50 transition-colors flex items-center justify-center gap-1.5"
               >
-                <RefreshCw className="w-4 h-4" />
-                Sostituisci
+                <RefreshCw className="w-3.5 h-3.5 shrink-0" />
+                <span className="truncate">Sostituisci</span>
               </button>
               <button
                 onClick={onMove}
-                className="flex-1 py-3 text-sm font-medium text-muted-foreground hover:text-primary hover:bg-secondary/50 transition-colors flex items-center justify-center gap-2"
+                className="flex-1 py-2.5 text-xs font-medium text-muted-foreground hover:text-primary hover:bg-secondary/50 transition-colors flex items-center justify-center gap-1.5"
               >
-                <ArrowUpDown className="w-4 h-4" />
-                Sposta
+                <ArrowUpDown className="w-3.5 h-3.5 shrink-0" />
+                <span className="truncate">Sposta</span>
               </button>
             </div>
 
