@@ -410,9 +410,85 @@ export const CROWD_LEVEL_OPTIONS = [
 // Price range options
 export const PRICE_RANGE_OPTIONS = [
   { id: 'budget', label: '€', description: 'Economico' },
-  { id: 'moderate', label: '€€', description: 'Prezzo medio' },
-  { id: 'expensive', label: '€€€', description: 'Costoso' },
-  { id: 'luxury', label: '€€€€', description: 'Lusso' },
+  { id: 'moderate', label: '€€', description: 'Medio' },
+  { id: 'expensive', label: '€€€', description: 'Curato' },
+  { id: 'luxury', label: '€€€€', description: 'Esperienza premium' },
+] as const;
+
+// =====================================================
+// STRUCTURED FOOD DIMENSIONS
+// =====================================================
+
+export type FoodPrimary = 
+  | 'carne' | 'pesce' | 'pizza' | 'pasta'
+  | 'vegetariano_vegano' | 'street_food' | 'internazionale' | 'dessert_caffe';
+
+export type FoodSecondary = 
+  | 'alla_brace' | 'crudo_mare' | 'sushi' | 'hamburger' | 'bistecca'
+  | 'cucina_tradizionale' | 'cucina_moderna' | 'degustazione' | 'tapas'
+  | 'bbq' | 'fritti' | 'cucina_regionale';
+
+export type FormatExperience = 
+  | 'trattoria' | 'ristorante_classico' | 'fine_dining' | 'pub'
+  | 'wine_bar' | 'street_food' | 'fast_casual'
+  | 'vista_panoramica' | 'romantico' | 'tavoli_condivisi';
+
+export const FOOD_PRIMARY_OPTIONS = [
+  { id: 'carne', label: 'Carne', icon: '🥩' },
+  { id: 'pesce', label: 'Pesce', icon: '🐟' },
+  { id: 'pizza', label: 'Pizza', icon: '🍕' },
+  { id: 'pasta', label: 'Pasta', icon: '🍝' },
+  { id: 'vegetariano_vegano', label: 'Vegetariano / Vegano', icon: '🥗' },
+  { id: 'street_food', label: 'Street Food', icon: '🌮' },
+  { id: 'internazionale', label: 'Internazionale', icon: '🌍' },
+  { id: 'dessert_caffe', label: 'Dessert / Caffè', icon: '☕' },
+] as const;
+
+export const FOOD_SECONDARY_OPTIONS = [
+  { id: 'alla_brace', label: 'Alla brace', icon: '🔥' },
+  { id: 'crudo_mare', label: 'Crudo di mare', icon: '🦐' },
+  { id: 'sushi', label: 'Sushi', icon: '🍣' },
+  { id: 'hamburger', label: 'Hamburger', icon: '🍔' },
+  { id: 'bistecca', label: 'Bistecca', icon: '🥩' },
+  { id: 'cucina_tradizionale', label: 'Cucina tradizionale', icon: '🏠' },
+  { id: 'cucina_moderna', label: 'Cucina moderna', icon: '✨' },
+  { id: 'degustazione', label: 'Degustazione', icon: '🍷' },
+  { id: 'tapas', label: 'Tapas', icon: '🫒' },
+  { id: 'bbq', label: 'BBQ', icon: '🍖' },
+  { id: 'fritti', label: 'Fritti', icon: '🍟' },
+  { id: 'cucina_regionale', label: 'Cucina regionale', icon: '🗺️' },
+] as const;
+
+export const FORMAT_EXPERIENCE_OPTIONS = [
+  { id: 'trattoria', label: 'Trattoria / Osteria', icon: '🏡' },
+  { id: 'ristorante_classico', label: 'Ristorante classico', icon: '🍽️' },
+  { id: 'fine_dining', label: 'Fine dining', icon: '⭐' },
+  { id: 'pub', label: 'Pub', icon: '🍺' },
+  { id: 'wine_bar', label: 'Wine bar', icon: '🍷' },
+  { id: 'street_food', label: 'Street food', icon: '🌮' },
+  { id: 'fast_casual', label: 'Fast casual', icon: '🥪' },
+  { id: 'vista_panoramica', label: 'Vista panoramica', icon: '🌅' },
+  { id: 'romantico', label: 'Romantico', icon: '💕' },
+  { id: 'tavoli_condivisi', label: 'Tavoli condivisi', icon: '🤝' },
+] as const;
+
+// User-facing atmosphere mappings (UI label → internal format_experience)
+export const ATMOSPHERE_OPTIONS = [
+  { id: 'informale', label: 'Informale e autentico', icon: '🏡', mapsTo: ['trattoria', 'fast_casual'] },
+  { id: 'curato', label: 'Curato e tranquillo', icon: '✨', mapsTo: ['ristorante_classico'] },
+  { id: 'elegante', label: 'Elegante / romantico', icon: '💕', mapsTo: ['fine_dining', 'romantico'] },
+  { id: 'vista', label: 'Vista panoramica', icon: '🌅', mapsTo: ['vista_panoramica'] },
+  { id: 'vivace', label: 'Vivace e sociale', icon: '🎉', mapsTo: ['pub', 'wine_bar'] },
+  { id: 'condiviso', label: 'Tavoli condivisi', icon: '🤝', mapsTo: ['tavoli_condivisi'] },
+  { id: 'pub', label: 'Pub style', icon: '🍺', mapsTo: ['pub'] },
+  { id: 'fine_dining', label: 'Fine dining', icon: '⭐', mapsTo: ['fine_dining'] },
+] as const;
+
+export const USER_BUDGET_OPTIONS = [
+  { id: 'budget', label: '€', description: 'Economico' },
+  { id: 'moderate', label: '€€', description: 'Medio' },
+  { id: 'expensive', label: '€€€', description: 'Curato' },
+  { id: 'luxury', label: '€€€€', description: 'Esperienza premium' },
 ] as const;
 
 // Meal time options
@@ -531,6 +607,9 @@ export interface Place {
   price_range: 'budget' | 'moderate' | 'expensive' | 'luxury' | null;
   meal_time: 'lunch' | 'dinner' | 'both' | null;
   shared_tables: boolean;
+  food_primary: FoodPrimary | null;
+  food_secondary: FoodSecondary[];
+  format_experience: FormatExperience | null;
   
   // Bar-specific
   bar_time: 'aperitivo' | 'after_dinner' | 'both' | null;
@@ -738,6 +817,9 @@ export interface PlaceFormData {
   price_range: 'budget' | 'moderate' | 'expensive' | 'luxury' | null;
   meal_time: 'lunch' | 'dinner' | 'both' | null;
   shared_tables: boolean;
+  food_primary: FoodPrimary | null;
+  food_secondary: FoodSecondary[];
+  format_experience: FormatExperience | null;
   
   // Bar
   bar_time: 'aperitivo' | 'after_dinner' | 'both' | null;
@@ -809,6 +891,9 @@ export const DEFAULT_PLACE_FORM_DATA: PlaceFormData = {
   price_range: null,
   meal_time: null,
   shared_tables: false,
+  food_primary: null,
+  food_secondary: [],
+  format_experience: null,
   bar_time: null,
   standing_ok: true,
   drink_focus: null,

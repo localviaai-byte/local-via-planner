@@ -82,7 +82,7 @@ export interface TravelPeriod {
 export interface TripPreferences {
   city: string;
   nearbyAreas: boolean;
-  maxTravelMinutes: 0 | 30 | 60 | 90; // 0 = no travel, 30/60/90 = max travel time
+  maxTravelMinutes: 0 | 30 | 60 | 90;
   dates: { start: Date; end: Date } | null;
   travelPeriod: TravelPeriod;
   numDays: number;
@@ -94,12 +94,18 @@ export interface TripPreferences {
   travelWith: 'couple' | 'family' | 'friends' | 'solo';
   interests: string[];
   topInterests: string[];
-  rhythm: number; // 1-5 (calm to intense)
+  rhythm: number;
   startTime: 'early' | 'normal' | 'late';
   lunchStyle: 'long' | 'quick';
+  // NEW structured food preferences
+  foodPrimary: string[];       // multi for multi-day trips
+  foodSecondary: string[];     // optional refinements
+  atmospherePreferences: string[]; // mapped from user-facing options
+  foodBudget: 'budget' | 'moderate' | 'expensive' | 'luxury';
+  dietaryRestrictions: string[];
+  // Legacy (kept for backward compat)
   cuisinePreferences: string[];
   budget: 1 | 2 | 3;
-  dietaryRestrictions: string[];
   activityStyle: 'highlights' | 'maximize';
   guidedTours: 'autonomous' | 'guided' | 'unknown';
   walkingTolerance: 'low' | 'medium' | 'high';
@@ -468,9 +474,13 @@ export const defaultPreferences: TripPreferences = {
   rhythm: 3,
   startTime: 'normal',
   lunchStyle: 'long',
-  cuisinePreferences: ['tradizionale'],
-  budget: 2,
+  foodPrimary: [],
+  foodSecondary: [],
+  atmospherePreferences: [],
+  foodBudget: 'moderate',
   dietaryRestrictions: [],
+  cuisinePreferences: [],
+  budget: 2,
   activityStyle: 'highlights',
   guidedTours: 'unknown',
   walkingTolerance: 'medium',
