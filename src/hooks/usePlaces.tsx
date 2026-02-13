@@ -140,7 +140,7 @@ export function useCreatePlace() {
         supabase.functions.invoke('enrich-tripadvisor', {
           body: { 
             placeName: data.name, 
-            cityName: '', // will be resolved server-side
+            cityName: '',
             placeType: data.place_type,
             placeId: data.id 
           },
@@ -149,6 +149,11 @@ export function useCreatePlace() {
             queryClient.invalidateQueries({ queryKey: ['city-places', data.city_id] });
             queryClient.invalidateQueries({ queryKey: ['place', data.id] });
           }
+        }).catch(console.error);
+
+        // Auto-enrich photos in background
+        supabase.functions.invoke('enrich-photos', {
+          body: { placeId: data.id },
         }).catch(console.error);
       }
     },
