@@ -1,18 +1,20 @@
 import { useParams, useNavigate } from 'react-router-dom';
+import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { ArrowLeft, Plus, Settings, MapPin, ChevronRight } from 'lucide-react';
+import { ArrowLeft, Plus, Settings, MapPin, ChevronRight, RefreshCw, ExternalLink } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useCity, useCityZones } from '@/hooks/useCities';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import type { PlaceType, PlaceStatus } from '@/types/database';
 import { PLACE_TYPE_OPTIONS } from '@/types/database';
 import { DiscoveryPanel } from '@/components/admin/DiscoveryPanel';
 import { CityConnectionsPanel } from '@/components/admin/CityConnectionsPanel';
 import { ProductsPanel } from '@/components/admin/ProductsPanel';
+import { toast } from 'sonner';
 
 const STATUS_CONFIG: Record<PlaceStatus, { label: string; color: string }> = {
   draft: { label: 'Bozza', color: 'bg-muted text-muted-foreground' },
@@ -25,6 +27,8 @@ const STATUS_CONFIG: Record<PlaceStatus, { label: string; color: string }> = {
 export default function CityDetail() {
   const { cityId } = useParams<{ cityId: string }>();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
+  const [isBackfilling, setIsBackfilling] = useState(false);
   
   const { data: city, isLoading: cityLoading } = useCity(cityId);
   const { data: zones } = useCityZones(cityId);
@@ -46,6 +50,29 @@ export default function CityDetail() {
     enabled: !!cityId
   });
   
+  // Count places missing TripAdvisor
+  const missingTA = places?.filter(p => p.place_type !== 'zone' && !p.tripadvisor_url)?.length || 0;
+
+  const handleBackfillTA = async () => {
+    setIsBackfilling(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('backfill-tripadvisor', {
+        body: { cityId },
+      });
+      if (error) throw error;
+      toast.success(`Arricchimento avviato per ${data.total} luoghi in background`);
+      // Refresh after a delay to show updated data
+      setTimeout(() => {
+        queryClient.invalidateQueries({ queryKey: ['city-places', cityId] });
+      }, 10000);
+    } catch (e) {
+      toast.error('Errore nell\'avvio del backfill');
+      console.error(e);
+    } finally {
+      setIsBackfilling(false);
+    }
+  };
+
   // Group places by type
   const placesByType = PLACE_TYPE_OPTIONS.reduce((acc, type) => {
     acc[type.id] = places?.filter(p => p.place_type === type.id) || [];
@@ -129,6 +156,23 @@ export default function CityDetail() {
           </CardContent>
         </Card>
       </div>
+
+      {/* TripAdvisor Backfill */}
+      {missingTA > 0 && (
+        <div className="px-4 pt-2">
+          <Button
+            variant="outline"
+            className="w-full gap-2"
+            onClick={handleBackfillTA}
+            disabled={isBackfilling}
+          >
+            <RefreshCw className={`w-4 h-4 ${isBackfilling ? 'animate-spin' : ''}`} />
+            {isBackfilling 
+              ? 'Arricchimento in corso...' 
+              : `🔗 Aggiungi TripAdvisor a ${missingTA} luoghi`}
+          </Button>
+        </div>
+      )}
       
       {/* City Connections Panel */}
       <div className="px-4 pt-2">
@@ -255,7 +299,8 @@ interface PlaceRowProps {
     place_type: PlaceType;
     status: PlaceStatus;
     zone: string | null;
-    quality_score: number;
+    quality_score: number | null;
+    tripadvisor_url: string | null;
   };
   onClick: () => void;
 }
@@ -288,8 +333,20 @@ function PlaceRow({ place, onClick }: PlaceRowProps) {
             </div>
           </div>
           <div className="flex items-center gap-2">
+            {place.tripadvisor_url && (
+              <a
+                href={place.tripadvisor_url}
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={(e) => e.stopPropagation()}
+                className="text-green-600 hover:text-green-700"
+                title="Vedi su TripAdvisor"
+              >
+                <ExternalLink className="w-3.5 h-3.5" />
+              </a>
+            )}
             <span className="text-sm text-muted-foreground">
-              ⭐ {place.quality_score}
+              ⭐ {place.quality_score ?? 0}
             </span>
             <ChevronRight className="w-4 h-4 text-muted-foreground" />
           </div>
