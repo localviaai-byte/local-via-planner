@@ -259,7 +259,7 @@ export default function CityDetail() {
               <PlaceRow 
                 key={place.id} 
                 place={place} 
-                onClick={() => navigate(`/admin/places/${place.id}/edit`)}
+                onClick={() => navigate(`/admin/places/${place.id}`)}
               />
             ))
           ) : (
@@ -278,7 +278,7 @@ export default function CityDetail() {
                 <PlaceRow 
                   key={place.id} 
                   place={place} 
-                  onClick={() => navigate(`/admin/places/${place.id}/edit`)}
+                  onClick={() => navigate(`/admin/places/${place.id}`)}
                 />
               ))
             ) : (
