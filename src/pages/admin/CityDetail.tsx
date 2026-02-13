@@ -29,6 +29,7 @@ export default function CityDetail() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [isBackfilling, setIsBackfilling] = useState(false);
+  const [isPhotoBackfilling, setIsPhotoBackfilling] = useState(false);
   
   const { data: city, isLoading: cityLoading } = useCity(cityId);
   const { data: zones } = useCityZones(cityId);
@@ -70,6 +71,25 @@ export default function CityDetail() {
       console.error(e);
     } finally {
       setIsBackfilling(false);
+    }
+  };
+
+  const handlePhotoBackfill = async () => {
+    setIsPhotoBackfilling(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('enrich-photos', {
+        body: { cityId },
+      });
+      if (error) throw error;
+      toast.success(`Ricerca foto avviata per ${data.total} luoghi in background`);
+      setTimeout(() => {
+        queryClient.invalidateQueries({ queryKey: ['city-places', cityId] });
+      }, 15000);
+    } catch (e) {
+      toast.error('Errore nell\'avvio della ricerca foto');
+      console.error(e);
+    } finally {
+      setIsPhotoBackfilling(false);
     }
   };
 
@@ -173,6 +193,21 @@ export default function CityDetail() {
           </Button>
         </div>
       )}
+
+      {/* Photo Backfill */}
+      <div className="px-4 pt-2">
+        <Button
+          variant="outline"
+          className="w-full gap-2"
+          onClick={handlePhotoBackfill}
+          disabled={isPhotoBackfilling}
+        >
+          <RefreshCw className={`w-4 h-4 ${isPhotoBackfilling ? 'animate-spin' : ''}`} />
+          {isPhotoBackfilling 
+            ? 'Ricerca foto in corso...' 
+            : `📸 Cerca foto per tutti i luoghi`}
+        </Button>
+      </div>
       
       {/* City Connections Panel */}
       <div className="px-4 pt-2">
