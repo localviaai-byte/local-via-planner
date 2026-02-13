@@ -1,7 +1,18 @@
 import { useParams, useNavigate } from 'react-router-dom';
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { ArrowLeft, Plus, Settings, MapPin, ChevronRight, RefreshCw, ExternalLink } from 'lucide-react';
+import { ArrowLeft, Plus, Settings, MapPin, ChevronRight, RefreshCw, ExternalLink, Trash2 } from 'lucide-react';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -90,6 +101,18 @@ export default function CityDetail() {
       console.error(e);
     } finally {
       setIsPhotoBackfilling(false);
+    }
+  };
+
+  const handleDeletePlace = async (placeId: string, placeName: string) => {
+    try {
+      const { error } = await supabase.from('places').delete().eq('id', placeId);
+      if (error) throw error;
+      toast.success(`"${placeName}" eliminato`);
+      queryClient.invalidateQueries({ queryKey: ['city-places', cityId] });
+    } catch (e) {
+      console.error(e);
+      toast.error('Errore nell\'eliminazione');
     }
   };
 
@@ -260,6 +283,7 @@ export default function CityDetail() {
                 key={place.id} 
                 place={place} 
                 onClick={() => navigate(`/admin/places/${place.id}`)}
+                onDelete={handleDeletePlace}
               />
             ))
           ) : (
@@ -279,6 +303,7 @@ export default function CityDetail() {
                   key={place.id} 
                   place={place} 
                   onClick={() => navigate(`/admin/places/${place.id}`)}
+                  onDelete={handleDeletePlace}
                 />
               ))
             ) : (
@@ -338,9 +363,10 @@ interface PlaceRowProps {
     tripadvisor_url: string | null;
   };
   onClick: () => void;
+  onDelete: (id: string, name: string) => void;
 }
 
-function PlaceRow({ place, onClick }: PlaceRowProps) {
+function PlaceRow({ place, onClick, onDelete }: PlaceRowProps) {
   const typeConfig = PLACE_TYPE_OPTIONS.find(t => t.id === place.place_type);
   const statusConfig = STATUS_CONFIG[place.status];
   
@@ -374,7 +400,7 @@ function PlaceRow({ place, onClick }: PlaceRowProps) {
                 target="_blank"
                 rel="noopener noreferrer"
                 onClick={(e) => e.stopPropagation()}
-                className="text-green-600 hover:text-green-700"
+                className="text-olive hover:text-olive/80"
                 title="Vedi su TripAdvisor"
               >
                 <ExternalLink className="w-3.5 h-3.5" />
@@ -383,6 +409,35 @@ function PlaceRow({ place, onClick }: PlaceRowProps) {
             <span className="text-sm text-muted-foreground">
               ⭐ {place.quality_score ?? 0}
             </span>
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-8 w-8 text-muted-foreground hover:text-destructive"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <Trash2 className="w-4 h-4" />
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent onClick={(e) => e.stopPropagation()}>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Eliminare "{place.name}"?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    Questa azione è irreversibile. Il luogo verrà eliminato definitivamente.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Annulla</AlertDialogCancel>
+                  <AlertDialogAction
+                    className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                    onClick={() => onDelete(place.id, place.name)}
+                  >
+                    Elimina
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
             <ChevronRight className="w-4 h-4 text-muted-foreground" />
           </div>
         </div>
