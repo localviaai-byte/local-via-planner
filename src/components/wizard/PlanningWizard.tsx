@@ -48,6 +48,7 @@ export function PlanningWizard({ onComplete }: PlanningWizardProps) {
   const handleNext = () => {
     if (currentStep < steps.length - 1) {
       setCurrentStep((prev) => prev + 1);
+      window.scrollTo(0, 0);
     } else {
       onComplete(preferences);
     }
@@ -56,6 +57,7 @@ export function PlanningWizard({ onComplete }: PlanningWizardProps) {
   const handleBack = () => {
     if (currentStep > 0) {
       setCurrentStep((prev) => prev - 1);
+      window.scrollTo(0, 0);
     }
   };
 
