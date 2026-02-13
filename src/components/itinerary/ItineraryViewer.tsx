@@ -323,18 +323,18 @@ export function ItineraryViewer({ preferences, generatedData, onBack, onRegenera
       </header>
 
       {/* Quick Actions */}
-      <div className="sticky top-[116px] z-40 bg-background border-b border-border">
-        <div className="container max-w-2xl py-3 px-4">
-          <div className="flex gap-2 overflow-x-auto pb-1 -mb-1">
+      <div className="sticky top-[116px] z-40 bg-background/95 backdrop-blur-sm border-b border-border">
+        <div className="container max-w-2xl py-2.5 px-4">
+          <div className="flex gap-2 overflow-x-auto scrollbar-hide pb-0.5">
             {quickActions.map((action) => (
               <Button
                 key={action.label}
                 variant="outline"
                 size="sm"
                 onClick={action.action}
-                className="flex-shrink-0"
+                className="flex-shrink-0 h-8 text-xs px-3"
               >
-                <action.icon className="w-4 h-4 mr-1" />
+                <action.icon className="w-3.5 h-3.5 mr-1" />
                 {action.label}
               </Button>
             ))}
@@ -498,34 +498,35 @@ export function ItineraryViewer({ preferences, generatedData, onBack, onRegenera
       />
 
       {/* Bottom CTA */}
-      <div className="sticky bottom-0 bg-background border-t border-border z-30">
-        <div className="container max-w-2xl py-4 px-4 flex gap-3">
-          <Button variant="outline" className="flex-1" onClick={() => setShowMapSheet(true)}>
-            <Map className="w-4 h-4 mr-2" />
+      <div className="sticky bottom-0 bg-background/95 backdrop-blur-sm border-t border-border z-30 pb-safe-bottom">
+        <div className="container max-w-2xl py-3 px-4 flex gap-2">
+          <Button variant="outline" size="sm" className="flex-1" onClick={() => setShowMapSheet(true)}>
+            <Map className="w-4 h-4 mr-1.5" />
             Mappa
           </Button>
-          <Button variant="outline" className="flex-1" onClick={() => setShowCalendarSheet(true)}>
-            <Calendar className="w-4 h-4 mr-2" />
+          <Button variant="outline" size="sm" className="flex-1" onClick={() => setShowCalendarSheet(true)}>
+            <Calendar className="w-4 h-4 mr-1.5" />
             Calendario
           </Button>
           <Button 
-            className="flex-1 bg-gradient-hero"
+            size="sm"
+            className="flex-1 bg-gradient-hero text-primary-foreground"
             onClick={handleSavePlan}
             disabled={isSaving || isSaved}
           >
             {isSaving ? (
               <>
-                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                <Loader2 className="w-4 h-4 mr-1.5 animate-spin" />
                 Salvo...
               </>
             ) : isSaved ? (
               <>
-                <Check className="w-4 h-4 mr-2" />
+                <Check className="w-4 h-4 mr-1.5" />
                 Salvato
               </>
             ) : (
               <>
-                <Download className="w-4 h-4 mr-2" />
+                <Download className="w-4 h-4 mr-1.5" />
                 Salva
               </>
             )}
