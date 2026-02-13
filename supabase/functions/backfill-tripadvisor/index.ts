@@ -106,7 +106,7 @@ Deno.serve(async (req) => {
     // Build query for places missing tripadvisor_url
     let query = supabase
       .from('places')
-      .select('id, name, place_type, city_id, cities!inner(name)')
+      .select('id, name, place_type, city_id, cities!places_city_id_fkey(name)')
       .is('tripadvisor_url', null)
       .neq('place_type', 'zone')
       .order('name');
