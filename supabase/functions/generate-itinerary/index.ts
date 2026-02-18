@@ -6,11 +6,22 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
+type TravelPeriodType = 'none' | 'season' | 'month' | 'dates';
+type Season = 'spring' | 'summer' | 'autumn' | 'winter';
+
+interface TravelPeriod {
+  type: TravelPeriodType;
+  season?: Season;
+  month?: number; // 0-11
+  dates?: { start: string; end: string }; // ISO strings
+}
+
 interface TripPreferences {
   city: string;
   nearbyAreas: boolean;
   maxTravelMinutes: number;
   numDays: number;
+  travelPeriod?: TravelPeriod;
   travelers: { adults: number; children: number; seniors: number };
   travelWith: string;
   interests: string[];
@@ -249,6 +260,38 @@ serve(async (req) => {
     };
     const foodBudgetLabel = budgetLabels[preferences.foodBudget] || '€€ (medio)';
 
+    // Build travel period label and compute start date for itinerary
+    const seasonLabels: Record<string, string> = {
+      spring: 'primavera (marzo-maggio) — clima mite, meno folla, fioritura',
+      summer: 'estate (giugno-agosto) — caldo intenso, alta stagione turistica, serate vivaci',
+      autumn: 'autunno (settembre-novembre) — temperatura piacevole, folla ridotta, prodotti tipici',
+      winter: 'inverno (dicembre-febbraio) — freddo, poca folla, atmosfera raccolta',
+    };
+    const monthNames = ['gennaio','febbraio','marzo','aprile','maggio','giugno','luglio','agosto','settembre','ottobre','novembre','dicembre'];
+
+    let travelPeriodLabel = 'non specificato';
+    let itineraryStartDate: Date = new Date();
+
+    const tp = preferences.travelPeriod;
+    if (tp) {
+      if (tp.type === 'season' && tp.season) {
+        travelPeriodLabel = seasonLabels[tp.season] || tp.season;
+        // Set start date to mid-season
+        const seasonStartMonth: Record<string, number> = { spring: 3, summer: 6, autumn: 9, winter: 12 };
+        const m = seasonStartMonth[tp.season] || new Date().getMonth() + 1;
+        itineraryStartDate = new Date(new Date().getFullYear(), m - 1, 15);
+      } else if (tp.type === 'month' && tp.month !== undefined) {
+        travelPeriodLabel = `${monthNames[tp.month]}`;
+        itineraryStartDate = new Date(new Date().getFullYear(), tp.month, 15);
+      } else if (tp.type === 'dates' && tp.dates?.start) {
+        const startD = new Date(tp.dates.start);
+        const endD = tp.dates.end ? new Date(tp.dates.end) : startD;
+        const fmt = (d: Date) => d.toLocaleDateString('it-IT', { day: 'numeric', month: 'long', year: 'numeric' });
+        travelPeriodLabel = `date precise: ${fmt(startD)}${tp.dates.end ? ' → ' + fmt(endD) : ''}`;
+        itineraryStartDate = startD;
+      }
+    }
+
     // Build comprehensive prompt
     const systemPrompt = `Sei un esperto planner di viaggi locale italiano che crea itinerari personalizzati.
 Hai accesso a un database curato di luoghi, ristoranti, bar e esperienze verificati da local contributors.
@@ -267,11 +310,15 @@ REGOLE CRITICHE:
 11. Stile pranzo: ${preferences.lunchStyle === 'long' ? 'Lungo (90min)' : 'Veloce (45min)'}
 12. Visite guidate: ${preferences.guidedTours === 'guided' ? 'Preferisce tour guidati - suggerisci SEMPRE prodotti/esperienze guidate' : preferences.guidedTours === 'autonomous' ? 'Preferisce visitare in autonomia - suggerisci prodotti SOLO se molto rilevanti' : 'Non ha preferenze - suggerisci prodotti quando migliorano l\'esperienza'}
 13. Restrizioni alimentari: ${(preferences.dietaryRestrictions || []).join(', ') || 'nessuna'} — se presenti, scegli ristoranti che le supportano (campo dietary_options)
+14. PERIODO DI VIAGGIO: ${travelPeriodLabel} — FONDAMENTALE: adatta TUTTE le tue scelte tenendo conto di questo periodo. Menziona esplicitamente il periodo nel "reason" di ogni slot (es. "perfetto in estate per..." o "in agosto consigliamo di..."). Considera: affollamento stagionale, orari estivi/invernali, condizioni meteo, aperture speciali/chiusure.
 
 Per ogni slot suggerisci prodotti/esperienze add-on seguendo le preferenze dell'utente.
 Usa il campo "local_one_liner" come base per le descrizioni - è il DNA del posto.`;
 
     const userPrompt = `Crea un itinerario di ${preferences.numDays} ${preferences.numDays === 1 ? 'giorno' : 'giorni'} a ${city.name}.
+
+PERIODO DEL VIAGGIO: ${travelPeriodLabel}
+Tieni SEMPRE presente il periodo in ogni scelta e nella motivazione degli slot.
 
 DATABASE LUOGHI DISPONIBILI:
 ${JSON.stringify(placesForAI, null, 2)}
@@ -293,7 +340,7 @@ PREFERENZE VIAGGIATORE:
 - Desideri speciali: ${preferences.wishes || 'nessuno'}
 
 Genera l'itinerario ottimale usando SOLO luoghi dal database, raggruppando per zone quando possibile per minimizzare spostamenti.
-Per ogni slot indica un motivo personalizzato basato sulle preferenze.
+Per ogni slot indica un motivo personalizzato basato sulle preferenze E sul periodo di viaggio.
 Suggerisci prodotti add-on dove appropriato (es. tour guidato prima di un museo, degustazione dopo pranzo).`;
 
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
@@ -418,7 +465,7 @@ Suggerisci prodotti add-on dove appropriato (es. tour guidato prima di un museo,
 
     // Build final itinerary with full place data
     const itinerary: ItineraryDay[] = aiItinerary.days.map((day: any) => {
-      const baseDate = new Date();
+      const baseDate = new Date(itineraryStartDate);
       baseDate.setDate(baseDate.getDate() + day.dayNumber - 1);
 
       return {
@@ -427,6 +474,7 @@ Suggerisci prodotti add-on dove appropriato (es. tour guidato prima di un museo,
           weekday: "long",
           day: "numeric",
           month: "long",
+          year: "numeric",
         }),
         summary: day.summary,
         slots: day.slots.map((slot: any, idx: number) => {
