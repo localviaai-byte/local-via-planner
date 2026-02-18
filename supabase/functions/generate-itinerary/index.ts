@@ -269,28 +269,63 @@ serve(async (req) => {
     };
     const monthNames = ['gennaio','febbraio','marzo','aprile','maggio','giugno','luglio','agosto','settembre','ottobre','novembre','dicembre'];
 
+    // Season → middle month (1-indexed for Date constructor month-1)
+    const seasonMidMonth: Record<string, number> = { spring: 4, summer: 7, autumn: 10, winter: 1 };
+    // Season → representative year (winter of current year could be next year's Jan)
+    const getSeasonYear = (season: string) => {
+      const currentYear = new Date().getFullYear();
+      // If winter and we're past October, use next year's January
+      if (season === 'winter' && new Date().getMonth() >= 10) return currentYear + 1;
+      return currentYear;
+    };
+
     let travelPeriodLabel = 'non specificato';
-    let itineraryStartDate: Date = new Date();
+    // Use a local-date safe constructor: new Date(year, month0indexed, day) — no UTC shift issues
+    let itineraryStartYear = new Date().getFullYear();
+    let itineraryStartMonth0 = new Date().getMonth(); // 0-indexed
+    let itineraryStartDay = new Date().getDate();
 
     const tp = preferences.travelPeriod;
     if (tp) {
       if (tp.type === 'season' && tp.season) {
         travelPeriodLabel = seasonLabels[tp.season] || tp.season;
-        // Set start date to mid-season
-        const seasonStartMonth: Record<string, number> = { spring: 3, summer: 6, autumn: 9, winter: 12 };
-        const m = seasonStartMonth[tp.season] || new Date().getMonth() + 1;
-        itineraryStartDate = new Date(new Date().getFullYear(), m - 1, 15);
+        itineraryStartYear = getSeasonYear(tp.season);
+        itineraryStartMonth0 = seasonMidMonth[tp.season] - 1; // convert to 0-indexed
+        itineraryStartDay = 15;
       } else if (tp.type === 'month' && tp.month !== undefined) {
-        travelPeriodLabel = `${monthNames[tp.month]}`;
-        itineraryStartDate = new Date(new Date().getFullYear(), tp.month, 15);
+        // tp.month is already 0-indexed (0=gennaio, 7=agosto)
+        travelPeriodLabel = monthNames[tp.month];
+        itineraryStartYear = new Date().getFullYear();
+        // If the selected month is already past, use next year
+        if (tp.month < new Date().getMonth()) itineraryStartYear += 1;
+        itineraryStartMonth0 = tp.month;
+        itineraryStartDay = 15;
       } else if (tp.type === 'dates' && tp.dates?.start) {
-        const startD = new Date(tp.dates.start);
-        const endD = tp.dates.end ? new Date(tp.dates.end) : startD;
-        const fmt = (d: Date) => d.toLocaleDateString('it-IT', { day: 'numeric', month: 'long', year: 'numeric' });
-        travelPeriodLabel = `date precise: ${fmt(startD)}${tp.dates.end ? ' → ' + fmt(endD) : ''}`;
-        itineraryStartDate = startD;
+        // Dates from frontend are ISO strings (serialized Date objects)
+        // Parse as local date to avoid UTC midnight → previous day shift
+        const parseLocalDate = (d: string | Date): { y: number; m: number; day: number } => {
+          const s = typeof d === 'string' ? d : d.toISOString();
+          // ISO string: "2026-08-13T00:00:00.000Z" or "2026-08-13"
+          const match = s.match(/^(\d{4})-(\d{2})-(\d{2})/);
+          if (match) return { y: parseInt(match[1]), m: parseInt(match[2]) - 1, day: parseInt(match[3]) };
+          const fd = new Date(s);
+          return { y: fd.getFullYear(), m: fd.getMonth(), day: fd.getDate() };
+        };
+        const start = parseLocalDate(tp.dates.start as unknown as string);
+        const endRaw = tp.dates.end ? parseLocalDate(tp.dates.end as unknown as string) : start;
+        itineraryStartYear = start.y;
+        itineraryStartMonth0 = start.m;
+        itineraryStartDay = start.day;
+
+        const fmt = (v: { y: number; m: number; day: number }) =>
+          `${v.day} ${monthNames[v.m]} ${v.y}`;
+        const endStr = tp.dates.end ? ` → ${fmt(endRaw)}` : '';
+        travelPeriodLabel = `date precise: ${fmt(start)}${endStr}`;
       }
     }
+
+    // Build the base start date using local-safe constructor (avoids UTC timezone shifts)
+    const itineraryStartDate = new Date(itineraryStartYear, itineraryStartMonth0, itineraryStartDay);
 
     // Build comprehensive prompt
     const systemPrompt = `Sei un esperto planner di viaggi locale italiano che crea itinerari personalizzati.
