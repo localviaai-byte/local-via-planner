@@ -9,7 +9,9 @@ import {
   UserCog,
   LayoutDashboard,
   Menu,
-  X
+  X,
+  FileText,
+  BarChart3
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/hooks/useAuth';
@@ -21,6 +23,8 @@ const navItems = [
   { label: 'Città', icon: Building2, path: '/admin/cities' },
   { label: 'Contributors', icon: Users, path: '/admin/contributors' },
   { label: 'Utenti', icon: UserCog, path: '/admin/users' },
+  { label: 'Riepilogo', icon: FileText, path: '/admin/summary' },
+  { label: 'KPI', icon: BarChart3, path: '/admin/kpi' },
 ];
 
 export function AdminLayout() {

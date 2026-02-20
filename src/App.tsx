@@ -21,6 +21,8 @@ import PlaceWizard from "./pages/admin/PlaceWizard";
 import PlaceDetail from "./pages/admin/PlaceDetail";
 import AcceptInvite from "./pages/admin/AcceptInvite";
 import ContributorDashboard from "./pages/admin/ContributorDashboard";
+import SummaryPage from "./pages/admin/SummaryPage";
+import KpiPage from "./pages/admin/KpiPage";
 
 const queryClient = new QueryClient();
 
@@ -197,6 +199,8 @@ const App = () => (
               <Route path="cities" element={<CitiesPage />} />
               <Route path="contributors" element={<ContributorsPage />} />
               <Route path="users" element={<UsersPage />} />
+              <Route path="summary" element={<SummaryPage />} />
+              <Route path="kpi" element={<KpiPage />} />
             </Route>
             
             {/* Admin standalone pages */}
