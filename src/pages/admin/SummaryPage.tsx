@@ -1,15 +1,17 @@
 import { useRef } from 'react';
 import { motion } from 'framer-motion';
 import { 
-  Map, Users, Building2, Compass, ShoppingBag, Star, 
-  Brain, CalendarDays, Utensils, UserCog, Shield, Bell,
-  Search, Globe, Layers, MessageSquare, Flag, Clock,
-  BarChart3, Package, Sparkles, Route, Download
+  Users, Building2, Shield,
+  Search, Globe, Layers,
+  BarChart3, Package, Sparkles, Route, Download,
+  Brain, Handshake, CreditCard, Link2, Store,
+  Percent, UserCheck, Gift, Target, TrendingUp
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 
+/* ─── Feature Categories ─── */
 const featureCategories = [
   {
     title: 'Gestione Contenuti',
@@ -85,11 +87,50 @@ const featureCategories = [
   },
 ];
 
+/* ─── Status Colors ─── */
 const statusColors: Record<string, string> = {
   active: 'bg-emerald-500/10 text-emerald-600 border-emerald-500/20',
   beta: 'bg-amber-500/10 text-amber-600 border-amber-500/20',
   planned: 'bg-muted text-muted-foreground border-border',
 };
+
+/* ─── Partnership Programs ─── */
+const partnershipPrograms = [
+  {
+    title: 'Referral Partner',
+    subtitle: 'B&B, Tour Operator, NCC, Guide turistiche',
+    icon: Link2,
+    color: 'text-blue-500',
+    details: [
+      'Il partner riceve un link affiliato e/o codice sconto univoco',
+      'Commissione del 10–20% su ogni prenotazione attribuita',
+      'L\'utente finale ottiene il 5% di sconto usando il codice affiliato',
+      'Tracking diretto: ogni conversione è attribuita al partner tramite codice',
+      'Dashboard partner per monitorare click, conversioni e guadagni',
+    ],
+  },
+  {
+    title: 'Affiliate Partner – Ristoratori',
+    subtitle: 'Ristoranti, trattorie, wine bar, bistrot',
+    icon: Store,
+    color: 'text-terracotta',
+    details: [
+      'Fee mensile fissa per essere presenti in piattaforma',
+      'Visibilità garantita negli itinerari AI come opzione locale curata',
+      'Badge "Partner LocalVia" nel profilo del locale',
+      'Accesso a insight: quante volte il locale è stato consigliato, click, salvataggi',
+      'Possibilità di promuovere esperienze speciali (menu degustazione, eventi)',
+    ],
+  },
+];
+
+/* ─── Revenue Streams ─── */
+const revenueStreams = [
+  { name: 'Commissioni Referral', desc: 'Percentuale su prenotazioni generate dai partner affiliati (tour, esperienze, trasporti)', icon: Percent },
+  { name: 'Fee Ristoratori', desc: 'Abbonamento mensile per presenza curata in piattaforma e visibilità negli itinerari', icon: CreditCard },
+  { name: 'Prodotti & Esperienze', desc: 'Margine su tour guidati, degustazioni, workshop e ticket venduti direttamente', icon: Gift },
+  { name: 'Premium / Upsell', desc: 'Itinerari personalizzati premium, concierge digitale, contenuti esclusivi (futuro)', icon: TrendingUp },
+];
 
 export default function SummaryPage() {
   const totalFeatures = featureCategories.reduce((sum, cat) => sum + cat.features.length, 0);
@@ -116,7 +157,7 @@ export default function SummaryPage() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="font-display text-2xl lg:text-3xl font-semibold">Riepilogo Piattaforma</h1>
-          <p className="text-muted-foreground">Executive summary e lista funzionalità</p>
+          <p className="text-muted-foreground">Executive summary completo</p>
         </div>
         <Button variant="outline" size="sm" onClick={handleDownloadPdf}>
           <Download className="w-4 h-4 mr-2" />
@@ -124,80 +165,217 @@ export default function SummaryPage() {
         </Button>
       </div>
 
-      <div ref={contentRef}>
+      <div ref={contentRef} className="space-y-8">
 
-      {/* Executive Summary */}
-      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
-        <Card>
-          <CardHeader>
-            <CardTitle className="font-display text-lg flex items-center gap-2">
-              <Sparkles className="w-5 h-5 text-terracotta" />
-              Executive Summary
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4 text-sm leading-relaxed text-muted-foreground">
-            <p>
-              <strong className="text-foreground">LocalVia</strong> è una piattaforma di travel planning 
-              che genera itinerari personalizzati sfruttando un database curato da contributor locali e 
-              un motore AI. L'obiettivo è offrire esperienze autentiche, lontane dalle trappole turistiche.
-            </p>
-            <div className="grid sm:grid-cols-3 gap-4 pt-2">
-              <div className="rounded-lg border p-3 text-center">
-                <p className="text-2xl font-bold text-foreground">{totalFeatures}</p>
-                <p className="text-xs">Funzionalità attive</p>
-              </div>
-              <div className="rounded-lg border p-3 text-center">
-                <p className="text-2xl font-bold text-foreground">{featureCategories.length}</p>
-                <p className="text-xs">Aree funzionali</p>
-              </div>
-              <div className="rounded-lg border p-3 text-center">
-                <p className="text-2xl font-bold text-foreground">10+</p>
-                <p className="text-xs">Edge Functions</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      </motion.div>
-
-      {/* Feature List */}
-      <div className="space-y-6">
-        <h2 className="font-display text-xl font-semibold">Lista Funzionalità</h2>
-        {featureCategories.map((category, i) => (
-          <motion.div
-            key={category.title}
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.05 * i }}
-          >
-            <Card>
-              <CardHeader className="pb-3">
-                <CardTitle className="text-base font-display flex items-center gap-2">
-                  <category.icon className="w-5 h-5 text-terracotta" />
-                  {category.title}
-                  <Badge variant="secondary" className="ml-auto text-xs">
-                    {category.features.length}
-                  </Badge>
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-2">
-                  {category.features.map((feature) => (
-                    <div key={feature.name} className="flex items-start gap-3 py-1.5 border-b last:border-0">
-                      <Badge variant="outline" className={`text-[10px] shrink-0 mt-0.5 ${statusColors[feature.status]}`}>
-                        {feature.status === 'active' ? 'Attivo' : feature.status === 'beta' ? 'Beta' : 'Pianificato'}
-                      </Badge>
-                      <div className="min-w-0">
-                        <p className="text-sm font-medium">{feature.name}</p>
-                        <p className="text-xs text-muted-foreground">{feature.desc}</p>
-                      </div>
-                    </div>
-                  ))}
+        {/* ══════ EXECUTIVE SUMMARY ══════ */}
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
+          <Card>
+            <CardHeader>
+              <CardTitle className="font-display text-lg flex items-center gap-2">
+                <Sparkles className="w-5 h-5 text-terracotta" />
+                Executive Summary
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4 text-sm leading-relaxed text-muted-foreground">
+              <p>
+                <strong className="text-foreground">LocalVia</strong> è una piattaforma di travel planning 
+                che genera itinerari personalizzati sfruttando un database curato da contributor locali e 
+                un motore AI. L'obiettivo è offrire esperienze autentiche, lontane dalle trappole turistiche.
+              </p>
+              <p>
+                Il modello di business combina <strong className="text-foreground">commissioni su prenotazioni</strong> generate 
+                tramite partner affiliati (B&B, tour operator, NCC), <strong className="text-foreground">abbonamenti mensili</strong> per 
+                ristoratori che vogliono essere presenti nella piattaforma, e <strong className="text-foreground">margini sui prodotti</strong> venduti 
+                direttamente (tour, degustazioni, esperienze).
+              </p>
+              <div className="grid sm:grid-cols-4 gap-4 pt-2">
+                <div className="rounded-lg border p-3 text-center">
+                  <p className="text-2xl font-bold text-foreground">{totalFeatures}</p>
+                  <p className="text-xs">Funzionalità attive</p>
                 </div>
-              </CardContent>
-            </Card>
-          </motion.div>
-        ))}
-      </div>
+                <div className="rounded-lg border p-3 text-center">
+                  <p className="text-2xl font-bold text-foreground">{featureCategories.length}</p>
+                  <p className="text-xs">Aree funzionali</p>
+                </div>
+                <div className="rounded-lg border p-3 text-center">
+                  <p className="text-2xl font-bold text-foreground">2</p>
+                  <p className="text-xs">Programmi Partner</p>
+                </div>
+                <div className="rounded-lg border p-3 text-center">
+                  <p className="text-2xl font-bold text-foreground">4</p>
+                  <p className="text-xs">Revenue Streams</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </motion.div>
+
+        {/* ══════ REVENUE MODEL ══════ */}
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }}>
+          <Card>
+            <CardHeader>
+              <CardTitle className="font-display text-lg flex items-center gap-2">
+                <TrendingUp className="w-5 h-5 text-terracotta" />
+                Modello di Revenue
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid sm:grid-cols-2 gap-4">
+                {revenueStreams.map((stream) => (
+                  <div key={stream.name} className="flex items-start gap-3 p-3 rounded-lg border">
+                    <div className="w-9 h-9 rounded-lg bg-terracotta/10 flex items-center justify-center shrink-0">
+                      <stream.icon className="w-4 h-4 text-terracotta" />
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium">{stream.name}</p>
+                      <p className="text-xs text-muted-foreground">{stream.desc}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        </motion.div>
+
+        {/* ══════ PARTNERSHIP PROGRAMS ══════ */}
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
+          <Card>
+            <CardHeader>
+              <CardTitle className="font-display text-lg flex items-center gap-2">
+                <Handshake className="w-5 h-5 text-terracotta" />
+                Programmi di Partnership
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              {partnershipPrograms.map((program) => (
+                <div key={program.title} className="rounded-lg border p-4 space-y-3">
+                  <div className="flex items-center gap-3">
+                    <div className={`w-10 h-10 rounded-lg bg-muted flex items-center justify-center`}>
+                      <program.icon className={`w-5 h-5 ${program.color}`} />
+                    </div>
+                    <div>
+                      <p className="font-medium text-sm">{program.title}</p>
+                      <p className="text-xs text-muted-foreground">{program.subtitle}</p>
+                    </div>
+                  </div>
+                  <ul className="space-y-1.5 pl-1">
+                    {program.details.map((detail, i) => (
+                      <li key={i} className="text-xs text-muted-foreground flex items-start gap-2">
+                        <span className="text-terracotta mt-0.5">•</span>
+                        {detail}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              ))}
+
+              {/* Affiliate Flow Diagram */}
+              <div className="rounded-lg border bg-muted/30 p-4">
+                <p className="text-xs font-medium mb-3 text-foreground">Flusso Referral</p>
+                <div className="flex items-center justify-between text-xs text-muted-foreground gap-2 flex-wrap">
+                  <div className="text-center px-2 py-1.5 bg-background rounded border">
+                    <UserCheck className="w-4 h-4 mx-auto mb-1 text-blue-500" />
+                    Partner condivide link
+                  </div>
+                  <span className="text-muted-foreground">→</span>
+                  <div className="text-center px-2 py-1.5 bg-background rounded border">
+                    <Target className="w-4 h-4 mx-auto mb-1 text-amber-500" />
+                    Utente usa codice (-5%)
+                  </div>
+                  <span className="text-muted-foreground">→</span>
+                  <div className="text-center px-2 py-1.5 bg-background rounded border">
+                    <Route className="w-4 h-4 mx-auto mb-1 text-terracotta" />
+                    Prenotazione tracciata
+                  </div>
+                  <span className="text-muted-foreground">→</span>
+                  <div className="text-center px-2 py-1.5 bg-background rounded border">
+                    <Percent className="w-4 h-4 mx-auto mb-1 text-emerald-500" />
+                    Partner guadagna 10–20%
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </motion.div>
+
+        {/* ══════ PACCHETTI / PRODOTTI ══════ */}
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }}>
+          <Card>
+            <CardHeader>
+              <CardTitle className="font-display text-lg flex items-center gap-2">
+                <Package className="w-5 h-5 text-terracotta" />
+                Pacchetti & Prodotti
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4 text-sm text-muted-foreground">
+              <p>
+                LocalVia monetizza attraverso un catalogo di <strong className="text-foreground">prodotti ed esperienze</strong> suggeriti 
+                contestualmente all'interno dell'itinerario. Ogni prodotto viene proposto in base a regole 
+                intelligenti (tipo di luogo, interessi dell'utente, fascia oraria, zona).
+              </p>
+              <div className="grid sm:grid-cols-3 gap-3">
+                {[
+                  { label: 'Tour Guidati', desc: 'Walking tour, tour tematici, tour privati' },
+                  { label: 'Degustazioni', desc: 'Vino, olio, street food, cooking class' },
+                  { label: 'Workshop', desc: 'Ceramica, fotografia, artigianato locale' },
+                  { label: 'Dining Experience', desc: 'Cene con chef, menu degustazione, aperitivi speciali' },
+                  { label: 'Trasporti', desc: 'NCC, transfer aeroporto, noleggio scooter' },
+                  { label: 'Ticket & Ingressi', desc: 'Musei, siti archeologici, eventi speciali' },
+                ].map((item) => (
+                  <div key={item.label} className="p-3 rounded-lg border">
+                    <p className="text-xs font-medium text-foreground">{item.label}</p>
+                    <p className="text-xs text-muted-foreground mt-0.5">{item.desc}</p>
+                  </div>
+                ))}
+              </div>
+              <p className="text-xs">
+                I prodotti vengono suggeriti come <strong className="text-foreground">add-on</strong> contestuali negli slot dell'itinerario, 
+                con un checkout semplificato che mostra il riepilogo e il totale degli extra selezionati.
+              </p>
+            </CardContent>
+          </Card>
+        </motion.div>
+
+        {/* ══════ FEATURE LIST ══════ */}
+        <div className="space-y-6">
+          <h2 className="font-display text-xl font-semibold">Lista Funzionalità</h2>
+          {featureCategories.map((category, i) => (
+            <motion.div
+              key={category.title}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.05 * i }}
+            >
+              <Card>
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-base font-display flex items-center gap-2">
+                    <category.icon className="w-5 h-5 text-terracotta" />
+                    {category.title}
+                    <Badge variant="secondary" className="ml-auto text-xs">
+                      {category.features.length}
+                    </Badge>
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-2">
+                    {category.features.map((feature) => (
+                      <div key={feature.name} className="flex items-start gap-3 py-1.5 border-b last:border-0">
+                        <Badge variant="outline" className={`text-[10px] shrink-0 mt-0.5 ${statusColors[feature.status]}`}>
+                          {feature.status === 'active' ? 'Attivo' : feature.status === 'beta' ? 'Beta' : 'Pianificato'}
+                        </Badge>
+                        <div className="min-w-0">
+                          <p className="text-sm font-medium">{feature.name}</p>
+                          <p className="text-xs text-muted-foreground">{feature.desc}</p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            </motion.div>
+          ))}
+        </div>
+
       </div>
     </div>
   );
