@@ -1,12 +1,14 @@
+import { useRef } from 'react';
 import { motion } from 'framer-motion';
 import { 
   Map, Users, Building2, Compass, ShoppingBag, Star, 
   Brain, CalendarDays, Utensils, UserCog, Shield, Bell,
   Search, Globe, Layers, MessageSquare, Flag, Clock,
-  BarChart3, Package, Sparkles, Route
+  BarChart3, Package, Sparkles, Route, Download
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 
 const featureCategories = [
   {
@@ -91,14 +93,38 @@ const statusColors: Record<string, string> = {
 
 export default function SummaryPage() {
   const totalFeatures = featureCategories.reduce((sum, cat) => sum + cat.features.length, 0);
+  const contentRef = useRef<HTMLDivElement>(null);
+
+  const handleDownloadPdf = async () => {
+    const html2pdf = (await import('html2pdf.js')).default;
+    if (!contentRef.current) return;
+    html2pdf()
+      .set({
+        margin: [10, 10],
+        filename: 'LocalVia_Riepilogo.pdf',
+        image: { type: 'jpeg', quality: 0.98 },
+        html2canvas: { scale: 2, useCORS: true },
+        jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
+      })
+      .from(contentRef.current)
+      .save();
+  };
 
   return (
     <div className="space-y-8 max-w-5xl">
       {/* Header */}
-      <div>
-        <h1 className="font-display text-2xl lg:text-3xl font-semibold">Riepilogo Piattaforma</h1>
-        <p className="text-muted-foreground">Executive summary e lista funzionalità</p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="font-display text-2xl lg:text-3xl font-semibold">Riepilogo Piattaforma</h1>
+          <p className="text-muted-foreground">Executive summary e lista funzionalità</p>
+        </div>
+        <Button variant="outline" size="sm" onClick={handleDownloadPdf}>
+          <Download className="w-4 h-4 mr-2" />
+          Scarica PDF
+        </Button>
       </div>
+
+      <div ref={contentRef}>
 
       {/* Executive Summary */}
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
@@ -128,11 +154,6 @@ export default function SummaryPage() {
                 <p className="text-2xl font-bold text-foreground">10+</p>
                 <p className="text-xs">Edge Functions</p>
               </div>
-            </div>
-            <div className="pt-2 space-y-2">
-              <p><strong className="text-foreground">Stack:</strong> React + Vite + Tailwind + Supabase (DB, Auth, Edge Functions, RLS)</p>
-              <p><strong className="text-foreground">AI:</strong> OpenAI per generazione itinerari, prefill luoghi, discovery automatica</p>
-              <p><strong className="text-foreground">Integrazioni:</strong> Mapbox (mappe/geocoding), TripAdvisor (enrichment), Firecrawl (scraping)</p>
             </div>
           </CardContent>
         </Card>
@@ -176,6 +197,7 @@ export default function SummaryPage() {
             </Card>
           </motion.div>
         ))}
+      </div>
       </div>
     </div>
   );
