@@ -5,7 +5,7 @@ import {
   Search, Globe, Layers,
   BarChart3, Package, Sparkles, Route, Download,
   Brain, Handshake, CreditCard, Link2, Store,
-  Percent, UserCheck, Gift, Target, TrendingUp
+  Percent, UserCheck, Gift, Target, TrendingUp, Palette
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -204,6 +204,89 @@ export default function SummaryPage() {
                 <div className="rounded-lg border p-3 text-center">
                   <p className="text-2xl font-bold text-foreground">4</p>
                   <p className="text-xs">Revenue Streams</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </motion.div>
+
+        {/* ══════ COLOR PALETTE ══════ */}
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.03 }}>
+          <Card>
+            <CardHeader>
+              <CardTitle className="font-display text-lg flex items-center gap-2">
+                <Palette className="w-5 h-5 text-terracotta" />
+                Palette & Design System
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-5">
+              <p className="text-sm text-muted-foreground">
+                Identità visiva <strong className="text-foreground">"Urban Local Journal"</strong> — toni caldi e mediterranei, zero gradienti tech. 
+                Font display: <span className="font-display">Playfair Display</span> · Font body: <span className="font-body">Inter</span>.
+              </p>
+
+              {/* Core Palette */}
+              <div>
+                <p className="text-xs font-medium mb-2 text-foreground">Palette Principale</p>
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                  {[
+                    { name: 'Terracotta', hex: '#C46A4A', css: 'bg-terracotta', desc: 'Primary · CTA, accenti, icone' },
+                    { name: 'Warm Sand', hex: '#F4F1EC', css: 'bg-sand', desc: 'Background principale' },
+                    { name: 'Soft Ivory', hex: '#FBFAF8', css: 'bg-sand-light', desc: 'Card, superfici elevate' },
+                    { name: 'Charcoal', hex: '#1F1F1F', css: 'bg-foreground', desc: 'Testo principale' },
+                    { name: 'Olive', hex: '#7A8F7A', css: 'bg-accent', desc: 'Accent · Cultura, relax' },
+                    { name: 'Warm Gray', hex: '#6E6A65', css: 'bg-muted-foreground', desc: 'Testo secondario' },
+                  ].map((c) => (
+                    <div key={c.name} className="flex items-center gap-3 p-2.5 rounded-lg border">
+                      <div className={`w-10 h-10 rounded-lg shrink-0 border ${c.css}`} />
+                      <div className="min-w-0">
+                        <p className="text-xs font-medium">{c.name}</p>
+                        <p className="text-[10px] text-muted-foreground font-mono">{c.hex}</p>
+                        <p className="text-[10px] text-muted-foreground">{c.desc}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Accent & Contextual */}
+              <div>
+                <p className="text-xs font-medium mb-2 text-foreground">Accenti Contestuali</p>
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                  {[
+                    { name: 'Deep Wine', hex: '#6B2E3A', css: 'bg-wine', desc: 'Night · Social, flirt' },
+                    { name: 'Gold', hex: '#D9A441', css: 'bg-gold', desc: 'Warning · Highlight' },
+                    { name: 'Status Success', hex: '#6E8F7A', css: 'bg-status-success', desc: 'Conferme, attivo' },
+                  ].map((c) => (
+                    <div key={c.name} className="flex items-center gap-3 p-2.5 rounded-lg border">
+                      <div className={`w-10 h-10 rounded-lg shrink-0 border ${c.css}`} />
+                      <div className="min-w-0">
+                        <p className="text-xs font-medium">{c.name}</p>
+                        <p className="text-[10px] text-muted-foreground font-mono">{c.hex}</p>
+                        <p className="text-[10px] text-muted-foreground">{c.desc}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Typography & Radius */}
+              <div className="grid sm:grid-cols-2 gap-4">
+                <div className="rounded-lg border p-3 space-y-2">
+                  <p className="text-xs font-medium text-foreground">Tipografia</p>
+                  <p className="font-display text-lg">Playfair Display</p>
+                  <p className="text-xs text-muted-foreground">Display · Titoli, heading, hero</p>
+                  <p className="font-body text-lg">Inter</p>
+                  <p className="text-xs text-muted-foreground">Body · Testo, UI, label</p>
+                </div>
+                <div className="rounded-lg border p-3 space-y-2">
+                  <p className="text-xs font-medium text-foreground">Design Tokens</p>
+                  <div className="space-y-1 text-xs text-muted-foreground">
+                    <p>Border radius: <span className="font-mono text-foreground">16px</span> (lg)</p>
+                    <p>Shadow: <span className="font-mono text-foreground">soft, quasi invisibili</span></p>
+                    <p>Gradients: <span className="font-mono text-foreground">caldi, no tech</span></p>
+                    <p>Dark mode: <span className="font-mono text-foreground">Night theme con Wine</span></p>
+                  </div>
                 </div>
               </div>
             </CardContent>
