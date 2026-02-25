@@ -1,5 +1,7 @@
 import { createContext, useContext, useState, useCallback, ReactNode } from 'react';
 import { toast } from 'sonner';
+import { supabase } from '@/integrations/supabase/client';
+import type { Json } from '@/integrations/supabase/types';
 
 // Plan states as defined in the spec
 export type PlanStatus = 
@@ -8,6 +10,23 @@ export type PlanStatus =
   | 'SAVED_WITH_EXTRAS' // Salvato, con extra selezionati
   | 'CONFIRMED_WITH_EXTRAS'; // Extra pagati
 
+interface SavePlanParams {
+  cityId: string;
+  title?: string;
+  days?: number;
+  preferences?: Record<string, unknown>;
+  slots?: Array<{
+    place_id?: string;
+    product_id?: string;
+    item_type: 'place' | 'product';
+    day_index: number;
+    start_time?: string;
+    end_time?: string;
+    slot_type?: string;
+    sort_order?: number;
+  }>;
+}
+
 interface TripPlanContextType {
   // Plan state
   planStatus: PlanStatus;
@@ -15,7 +34,7 @@ interface TripPlanContextType {
   isSaving: boolean;
   
   // Actions
-  savePlan: () => Promise<boolean>;
+  savePlan: (params: SavePlanParams) => Promise<boolean>;
   setPlanStatus: (status: PlanStatus) => void;
   
   // Flow control
@@ -42,24 +61,53 @@ export function TripPlanProvider({ children }: TripPlanProviderProps) {
   const [hasShownPostSaveSheet, setHasShownPostSaveSheet] = useState(false);
   const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
 
-  const savePlan = useCallback(async (): Promise<boolean> => {
+  const savePlan = useCallback(async (params: SavePlanParams): Promise<boolean> => {
     setIsSaving(true);
     
     try {
-      // Simulate saving to DB (in real implementation, use useTripPlans hooks)
-      await new Promise(resolve => setTimeout(resolve, 800));
+      const { data: { user } } = await supabase.auth.getUser();
       
-      // Generate a mock plan ID
-      const newPlanId = `plan_${Date.now()}`;
-      setPlanId(newPlanId);
+      // Create the trip plan
+      const { data: plan, error: planError } = await supabase
+        .from('trip_plans')
+        .insert({
+          city_id: params.cityId,
+          user_id: user?.id || null,
+          title: params.title || null,
+          days: params.days || 1,
+          preferences: (params.preferences || {}) as Json,
+        })
+        .select()
+        .single();
       
-      // Plan saved successfully
-      toast.success('Piano salvato', {
-        duration: 2000,
-      });
+      if (planError) throw planError;
       
+      // Insert plan items if provided
+      if (params.slots?.length) {
+        const items = params.slots.map(slot => ({
+          plan_id: plan.id,
+          item_type: slot.item_type as 'place' | 'product',
+          place_id: slot.place_id || null,
+          product_id: slot.product_id || null,
+          day_index: slot.day_index,
+          start_time: slot.start_time || null,
+          end_time: slot.end_time || null,
+          slot_type: slot.slot_type || null,
+          sort_order: slot.sort_order || 0,
+        }));
+        
+        const { error: itemsError } = await supabase
+          .from('plan_items')
+          .insert(items);
+        
+        if (itemsError) console.error('Error saving plan items:', itemsError);
+      }
+      
+      setPlanId(plan.id);
+      toast.success('Piano salvato! 🎉', { duration: 2000 });
       return true;
     } catch (error) {
+      console.error('Error saving plan:', error);
       toast.error('Errore nel salvataggio');
       return false;
     } finally {

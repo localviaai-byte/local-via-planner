@@ -27,6 +27,7 @@ import PartnerDashboard from "./pages/partner/PartnerDashboard";
 import AcceptPartnerInvite from "./pages/partner/AcceptPartnerInvite";
 import PartnersPage from "./pages/admin/PartnersPage";
 import AuthPage from "./pages/Auth";
+import MyPlans from "./pages/MyPlans";
 
 const queryClient = new QueryClient();
 
@@ -233,6 +234,7 @@ const App = () => (
             
             {/* Public auth */}
             <Route path="/auth" element={<AuthPage />} />
+            <Route path="/my-plans" element={<MyPlans />} />
             
             {/* Admin routes */}
             <Route path="/admin/login" element={<AdminLogin />} />

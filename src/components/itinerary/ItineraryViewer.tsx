@@ -221,17 +221,44 @@ export function ItineraryViewer({ preferences, generatedData, onBack, onRegenera
 
   // Handle save plan
   const handleSavePlan = async () => {
-    const success = await savePlan();
+    // Build slots from itinerary data
+    const slots = itineraryData.flatMap((day, dayIndex) =>
+      day.slots
+        .filter(slot => slot.place?.id)
+        .map((slot, sortIndex) => ({
+          place_id: slot.place!.id,
+          item_type: 'place' as const,
+          day_index: dayIndex + 1,
+          start_time: slot.startTime ? `${slot.startTime}:00` : undefined,
+          end_time: slot.endTime ? `${slot.endTime}:00` : undefined,
+          slot_type: slot.type,
+          sort_order: sortIndex,
+        }))
+    );
+
+    // Add selected products
+    const productSlots = selectedProducts.map((sp, i) => ({
+      product_id: sp.product.id,
+      item_type: 'product' as const,
+      day_index: sp.dayIndex + 1,
+      sort_order: 100 + i,
+    }));
+
+    const success = await savePlan({
+      cityId: city.id,
+      title: `${preferences.numDays} giorni a ${city.name}`,
+      days: preferences.numDays,
+      preferences: preferences as unknown as Record<string, unknown>,
+      slots: [...slots, ...productSlots],
+    });
     
     if (success) {
-      // Update status based on extras
       if (hasExtras) {
         setPlanStatus('SAVED_WITH_EXTRAS');
       } else {
         setPlanStatus('SAVED');
       }
       
-      // Show post-save sheet (only once)
       if (!hasShownPostSaveSheet) {
         setTimeout(() => {
           setShowSaveSheet(true);

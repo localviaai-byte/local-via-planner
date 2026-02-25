@@ -1,6 +1,7 @@
 import { motion } from 'framer-motion';
-import { ChevronRight, MapPin } from 'lucide-react';
+import { ChevronRight, MapPin, Compass } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { useAuth } from '@/hooks/useAuth';
 import heroImage from '@/assets/hero-pompeii.jpg';
 
 interface HeroSectionProps {
@@ -14,6 +15,8 @@ const destinations = [
 ];
 
 export function HeroSection({ onStart }: HeroSectionProps) {
+  const { user } = useAuth();
+
   return (
     <div className="min-h-[100dvh] bg-background flex flex-col relative overflow-hidden">
       {/* ── Full-screen hero image ── */}
@@ -28,12 +31,23 @@ export function HeroSection({ onStart }: HeroSectionProps) {
         <div className="absolute inset-0 bg-gradient-to-b from-black/20 via-transparent to-black/70" />
 
         {/* Auth — subtle top-right */}
-        <a
-          href="/auth"
-          className="absolute top-safe-top mt-4 right-4 z-20 px-3 py-1.5 text-xs tracking-wide uppercase text-white/70 hover:text-white bg-white/10 hover:bg-white/20 backdrop-blur-md rounded-full transition-colors border border-white/10"
-        >
-          Accedi / Registrati
-        </a>
+        <div className="absolute top-safe-top mt-4 right-4 z-20 flex items-center gap-2">
+          {user && (
+            <a
+              href="/my-plans"
+              className="px-3 py-1.5 text-xs tracking-wide uppercase text-white/70 hover:text-white bg-white/10 hover:bg-white/20 backdrop-blur-md rounded-full transition-colors border border-white/10 flex items-center gap-1.5"
+            >
+              <Compass className="w-3 h-3" />
+              I miei piani
+            </a>
+          )}
+          <a
+            href={user ? '/my-plans' : '/auth'}
+            className="px-3 py-1.5 text-xs tracking-wide uppercase text-white/70 hover:text-white bg-white/10 hover:bg-white/20 backdrop-blur-md rounded-full transition-colors border border-white/10"
+          >
+            {user ? user.email?.split('@')[0] : 'Accedi / Registrati'}
+          </a>
+        </div>
 
         {/* Hero headline — anchored to bottom of image */}
         <div className="absolute inset-x-0 bottom-0 z-10 px-6 pb-8">
