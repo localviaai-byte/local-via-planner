@@ -9,13 +9,17 @@ import {
   Users,
   Check,
   Loader2,
-  ArrowLeft
+  ArrowLeft,
+  Tag,
+  BadgePercent,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useSelectedProducts } from '@/contexts/SelectedProductsContext';
 import { useTripPlan } from '@/contexts/TripPlanContext';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
 import {
   Drawer,
   DrawerContent,
@@ -26,17 +30,68 @@ import {
 
 type CheckoutStep = 'summary' | 'details' | 'payment' | 'complete';
 
+interface AppliedDiscount {
+  partnerId: string;
+  partnerName: string;
+  referralCode: string;
+  discountPercent: number;
+}
+
 export function ExtrasCheckoutSheet() {
   const [step, setStep] = useState<CheckoutStep>('summary');
   const [isProcessing, setIsProcessing] = useState(false);
   const [participantName, setParticipantName] = useState('');
   const [participantEmail, setParticipantEmail] = useState('');
+  const [promoCode, setPromoCode] = useState('');
+  const [promoLoading, setPromoLoading] = useState(false);
+  const [appliedDiscount, setAppliedDiscount] = useState<AppliedDiscount | null>(null);
   
   const { selectedProducts, getTotalPrice } = useSelectedProducts();
   const { isCheckoutOpen, closeCheckout, completeCheckout } = useTripPlan();
 
   const totalPrice = getTotalPrice();
-  const formattedTotal = `€${(totalPrice / 100).toFixed(0)}`;
+  const discountAmount = appliedDiscount 
+    ? Math.round(totalPrice * appliedDiscount.discountPercent / 100)
+    : 0;
+  const finalPrice = totalPrice - discountAmount;
+  const formattedTotal = `€${(finalPrice / 100).toFixed(0)}`;
+  const formattedOriginal = `€${(totalPrice / 100).toFixed(0)}`;
+
+  const applyPromoCode = async () => {
+    if (!promoCode.trim()) return;
+    setPromoLoading(true);
+    try {
+      const { data: partner, error } = await supabase
+        .from('partners')
+        .select('id, company_name, referral_code, discount_percent, status, partner_type')
+        .eq('referral_code', promoCode.trim().toUpperCase())
+        .eq('partner_type', 'referral')
+        .eq('status', 'active')
+        .maybeSingle();
+
+      if (error || !partner) {
+        toast.error('Codice non valido o scaduto');
+        return;
+      }
+
+      setAppliedDiscount({
+        partnerId: partner.id,
+        partnerName: partner.company_name,
+        referralCode: partner.referral_code!,
+        discountPercent: Number(partner.discount_percent) || 5,
+      });
+      toast.success(`Sconto ${partner.discount_percent}% applicato!`);
+    } catch {
+      toast.error('Errore nella verifica del codice');
+    } finally {
+      setPromoLoading(false);
+    }
+  };
+
+  const removeDiscount = () => {
+    setAppliedDiscount(null);
+    setPromoCode('');
+  };
 
   // Group products by day
   const productsByDay = selectedProducts.reduce((acc, item) => {
@@ -57,6 +112,22 @@ export function ExtrasCheckoutSheet() {
 
   const handleCompletePayment = async () => {
     setIsProcessing(true);
+
+    // Track referral conversion if a discount code was used
+    if (appliedDiscount) {
+      try {
+        await supabase.from('referral_conversions').insert({
+          partner_id: appliedDiscount.partnerId,
+          conversion_type: 'checkout',
+          revenue_cents: finalPrice,
+          commission_cents: Math.round(finalPrice * (appliedDiscount.discountPercent * 2) / 100), // commission ~2x the discount
+          status: 'pending',
+        });
+      } catch (err) {
+        console.error('Error tracking referral conversion:', err);
+      }
+    }
+
     const success = await completeCheckout();
     if (success) {
       setStep('complete');
@@ -66,6 +137,8 @@ export function ExtrasCheckoutSheet() {
 
   const handleClose = () => {
     setStep('summary');
+    setAppliedDiscount(null);
+    setPromoCode('');
     closeCheckout();
   };
 
@@ -137,6 +210,51 @@ export function ExtrasCheckoutSheet() {
                   ))}
                 </div>
               ))}
+
+              {/* Promo Code Section */}
+              <div className="border border-dashed border-border rounded-xl p-3 space-y-2">
+                <div className="flex items-center gap-2 text-sm font-medium text-foreground">
+                  <Tag className="w-4 h-4 text-muted-foreground" />
+                  Hai un codice sconto?
+                </div>
+                {appliedDiscount ? (
+                  <div className="flex items-center justify-between bg-primary/10 rounded-lg p-2.5">
+                    <div className="flex items-center gap-2">
+                      <BadgePercent className="w-4 h-4 text-primary" />
+                      <div>
+                        <p className="text-sm font-medium text-primary">
+                          -{appliedDiscount.discountPercent}% applicato
+                        </p>
+                        <p className="text-[10px] text-muted-foreground">
+                          da {appliedDiscount.partnerName}
+                        </p>
+                      </div>
+                    </div>
+                    <Button variant="ghost" size="sm" onClick={removeDiscount} className="h-7 text-xs text-destructive">
+                      Rimuovi
+                    </Button>
+                  </div>
+                ) : (
+                  <div className="flex gap-2">
+                    <Input
+                      placeholder="Es. ABC12345"
+                      value={promoCode}
+                      onChange={(e) => setPromoCode(e.target.value.toUpperCase())}
+                      className="font-mono text-sm uppercase"
+                      onKeyDown={(e) => e.key === 'Enter' && applyPromoCode()}
+                    />
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={applyPromoCode}
+                      disabled={promoLoading || !promoCode.trim()}
+                      className="shrink-0"
+                    >
+                      {promoLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Applica'}
+                    </Button>
+                  </div>
+                )}
+              </div>
             </div>
 
             {/* Policy note */}
@@ -159,7 +277,17 @@ export function ExtrasCheckoutSheet() {
                     {selectedProducts.length} {selectedProducts.length === 1 ? 'esperienza' : 'esperienze'}
                   </p>
                 </div>
-                <span className="text-2xl font-bold text-foreground">{formattedTotal}</span>
+                <div className="text-right">
+                  {appliedDiscount ? (
+                    <>
+                      <span className="text-sm line-through text-muted-foreground mr-2">{formattedOriginal}</span>
+                      <span className="text-2xl font-bold text-primary">{formattedTotal}</span>
+                      <p className="text-xs text-primary">Risparmi €{(discountAmount / 100).toFixed(0)}</p>
+                    </>
+                  ) : (
+                    <span className="text-2xl font-bold text-foreground">{formattedTotal}</span>
+                  )}
+                </div>
               </div>
               
               <Button 
@@ -284,9 +412,22 @@ export function ExtrasCheckoutSheet() {
               </div>
 
               {/* Summary */}
-              <div className="p-4 bg-muted/50 rounded-xl">
-                <div className="flex items-center justify-between">
-                  <span className="text-sm text-muted-foreground">Totale da pagare</span>
+              <div className="p-4 bg-muted/50 rounded-xl space-y-2">
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-muted-foreground">Subtotale</span>
+                  <span>€{(totalPrice / 100).toFixed(0)}</span>
+                </div>
+                {appliedDiscount && (
+                  <div className="flex items-center justify-between text-sm text-primary">
+                    <span className="flex items-center gap-1">
+                      <BadgePercent className="w-3.5 h-3.5" />
+                      Sconto {appliedDiscount.discountPercent}%
+                    </span>
+                    <span>-€{(discountAmount / 100).toFixed(0)}</span>
+                  </div>
+                )}
+                <div className="flex items-center justify-between pt-2 border-t border-border">
+                  <span className="font-medium text-foreground">Totale da pagare</span>
                   <span className="text-xl font-bold text-foreground">{formattedTotal}</span>
                 </div>
               </div>
