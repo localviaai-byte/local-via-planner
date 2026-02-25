@@ -99,10 +99,25 @@ export default function AcceptPartnerInvite() {
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setAccepting(true);
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
     if (error) {
       toast.error(error.message);
       setAccepting(false);
+    } else if (data.user && invite) {
+      // Directly call acceptInvite after successful login
+      try {
+        const { data: result, error: rpcError } = await supabase.rpc('assign_partner_from_invite', {
+          _user_id: data.user.id,
+          _invite_code: code!,
+        });
+        if (rpcError) throw rpcError;
+        if (!result) throw new Error('Invito non valido');
+        toast.success('Benvenuto come partner!');
+        window.location.href = '/partner';
+      } catch (err: any) {
+        setError(err.message);
+        setAccepting(false);
+      }
     }
   };
 
