@@ -25,12 +25,7 @@ const PLANS = {
     name: 'Early Bird',
     price: 35,
     originalPrice: 99,
-    features: [
-      'Posizionamento garantito negli itinerari AI',
-      'Dashboard dedicata con statistiche',
-      'Supporto prioritario',
-      'Prezzo bloccato per sempre',
-    ],
+    features: [],
   },
   standard: {
     priceId: 'price_1T4nHRB6NXLO6Cyww9X3JgzM',
@@ -362,14 +357,6 @@ export default function PartnerDashboard() {
                                 <Badge variant="secondary" className="text-xs">-{Math.round(100 - (PLANS.earlyBird.price / PLANS.earlyBird.originalPrice) * 100)}%</Badge>
                               </div>
                             </div>
-                            <ul className="space-y-2">
-                              {PLANS.earlyBird.features.map((f, i) => (
-                                <li key={i} className="flex items-start gap-2 text-sm">
-                                  <CheckCircle2 className="w-4 h-4 text-primary mt-0.5 shrink-0" />
-                                  <span>{f}</span>
-                                </li>
-                              ))}
-                            </ul>
                             <Button
                               className="w-full bg-terracotta hover:bg-terracotta/90"
                               onClick={() => handleCheckout(PLANS.earlyBird.priceId)}
