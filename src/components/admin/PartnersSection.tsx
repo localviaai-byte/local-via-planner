@@ -18,6 +18,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Separator } from '@/components/ui/separator';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
+import { ReferralQRCode } from '@/components/ui/ReferralQRCode';
 import { toast } from 'sonner';
 import type { Tables } from '@/integrations/supabase/types';
 
@@ -657,6 +658,16 @@ function PartnerDetailContent({
             <div className="flex justify-between items-center">
               <span className="text-muted-foreground">Codice referral</span>
               <span className="font-mono text-xs bg-muted px-2 py-0.5 rounded">{partner.referral_code}</span>
+            </div>
+          )}
+          {partner.referral_code && (
+            <div className="pt-3 border-t">
+              <p className="text-xs text-muted-foreground mb-2 text-center">QR Code referral</p>
+              <ReferralQRCode
+                url={`https://www.localvia.app/?ref=${partner.referral_code}`}
+                label={partner.referral_code}
+                size={140}
+              />
             </div>
           )}
           {partner.commission_percent != null && partner.partner_type === 'referral' && (

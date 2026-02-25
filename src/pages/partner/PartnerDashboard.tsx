@@ -13,8 +13,10 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import { Separator } from '@/components/ui/separator';
 import { useAuth } from '@/hooks/useAuth';
 import { usePartner } from '@/hooks/usePartner';
+import { ReferralQRCode } from '@/components/ui/ReferralQRCode';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
@@ -236,6 +238,12 @@ export default function PartnerDashboard() {
                   <p className="text-xs text-muted-foreground mt-2">
                     Commissione: {partner.commission_percent}% • Sconto utente: {partner.discount_percent}%
                   </p>
+                  <Separator className="my-4" />
+                  <p className="text-sm font-medium mb-2 text-center">QR Code del tuo link</p>
+                  <ReferralQRCode
+                    url={`https://www.localvia.app/?ref=${partner.referral_code}`}
+                    label={partner.referral_code}
+                  />
                 </CardContent>
               </Card>
             </motion.div>
