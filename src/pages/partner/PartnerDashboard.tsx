@@ -224,7 +224,7 @@ export default function PartnerDashboard() {
                 <CardHeader className="pb-3">
                   <CardTitle className="text-lg font-display">Il tuo link referral</CardTitle>
                 </CardHeader>
-                <CardContent>
+                <CardContent className="space-y-4">
                   <div className="flex items-center gap-2">
                     <Input
                       readOnly
@@ -235,10 +235,34 @@ export default function PartnerDashboard() {
                       {copied ? <Check className="w-4 h-4 text-primary" /> : <Copy className="w-4 h-4" />}
                     </Button>
                   </div>
-                  <p className="text-xs text-muted-foreground mt-2">
-                    Commissione: {partner.commission_percent}% • Sconto utente: {partner.discount_percent}%
-                  </p>
-                  <Separator className="my-4" />
+
+                  {/* Codice sconto prominente */}
+                  <div className="rounded-xl border-2 border-dashed border-primary/30 bg-primary/5 p-4 space-y-2">
+                    <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Codice sconto per i tuoi ospiti</p>
+                    <div className="flex items-center gap-3">
+                      <span className="flex-1 text-2xl font-bold font-mono tracking-widest text-primary text-center bg-background rounded-lg py-2 border border-primary/20">
+                        {partner.referral_code}
+                      </span>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="shrink-0"
+                        onClick={() => {
+                          navigator.clipboard.writeText(partner.referral_code!);
+                          toast.success('Codice copiato!');
+                        }}
+                      >
+                        <Copy className="w-4 h-4 mr-1.5" />
+                        Copia
+                      </Button>
+                    </div>
+                    <p className="text-xs text-muted-foreground leading-relaxed">
+                      I tuoi ospiti inseriscono questo codice al checkout per ottenere uno <strong>sconto del {partner.discount_percent}%</strong> sulle esperienze.
+                      Ad ogni utilizzo ti viene riconosciuta una <strong>commissione del {partner.commission_percent}%</strong> sul valore dell'ordine.
+                    </p>
+                  </div>
+
+                  <Separator />
                   <p className="text-sm font-medium mb-2 text-center">QR Code del tuo link</p>
                   <ReferralQRCode
                     url={`https://www.localvia.app/?ref=${partner.referral_code}`}
