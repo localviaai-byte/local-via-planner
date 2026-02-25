@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useAuth } from '@/hooks/useAuth';
 import { 
   ArrowLeft, 
   Share2, 
@@ -26,6 +27,7 @@ import { TimelineSlotReal } from './TimelineSlotReal';
 import { SelectedProductsIndicator } from './SelectedProductsIndicator';
 import { SavePlanSheet } from './SavePlanSheet';
 import { ExtrasCheckoutSheet } from './ExtrasCheckoutSheet';
+import { ItineraryGate } from './ItineraryGate';
 import { ItineraryMapSheet } from './ItineraryMapSheet';
 import { CalendarSheet } from './CalendarSheet';
 import { ReplaceSlotSheet } from './ReplaceSlotSheet';
@@ -45,6 +47,9 @@ interface ItineraryViewerProps {
 }
 
 export function ItineraryViewer({ preferences, generatedData, onBack, onRegenerate, onRegenerateWith }: ItineraryViewerProps) {
+  const { user } = useAuth();
+  const isAuthenticated = !!user;
+  const FREE_SLOTS_LIMIT = 3; // How many slots anonymous users can see
   const [activeDay, setActiveDay] = useState(0);
   const [showDayTransition, setShowDayTransition] = useState(false);
   const [showSaveSheet, setShowSaveSheet] = useState(false);
@@ -382,7 +387,24 @@ export function ItineraryViewer({ preferences, generatedData, onBack, onRegenera
 
       {/* Itinerary Content - All days rendered for scroll */}
       <main className="container max-w-2xl py-6 px-4">
-        {itineraryData.map((day, dayIndex) => (
+        {itineraryData.map((day, dayIndex) => {
+          // For anonymous users, count total slots shown so far
+          let totalSlotsShownBefore = 0;
+          if (!isAuthenticated) {
+            for (let i = 0; i < dayIndex; i++) {
+              totalSlotsShownBefore += itineraryData[i].slots.length;
+            }
+          }
+          const remainingFreeSlots = isAuthenticated ? Infinity : FREE_SLOTS_LIMIT - totalSlotsShownBefore;
+          const shouldGateThisDay = !isAuthenticated && remainingFreeSlots <= 0;
+
+          // Skip entire day if no free slots remain
+          if (shouldGateThisDay && dayIndex > 0) return null;
+
+          const visibleSlots = isAuthenticated ? day.slots : day.slots.slice(0, Math.max(0, remainingFreeSlots));
+          const isGated = !isAuthenticated && totalSlotsShownBefore + day.slots.length > FREE_SLOTS_LIMIT;
+
+          return (
           <div
             key={day.dayNumber}
             ref={(el) => (daySectionRefs.current[dayIndex] = el)}
@@ -427,7 +449,7 @@ export function ItineraryViewer({ preferences, generatedData, onBack, onRegenera
 
             {/* Timeline */}
             <div className="relative">
-              {day.slots.map((slot) => (
+              {visibleSlots.map((slot) => (
                 <TimelineSlotReal
                   key={slot.id}
                   slot={slot}
@@ -440,8 +462,12 @@ export function ItineraryViewer({ preferences, generatedData, onBack, onRegenera
                 />
               ))}
             </div>
+
+            {/* Gate — shown when slots are cut off */}
+            {isGated && <ItineraryGate freeSlots={FREE_SLOTS_LIMIT} />}
           </div>
-        ))}
+          );
+        })}
       </main>
 
       {/* Selected Products Indicator */}
@@ -498,6 +524,7 @@ export function ItineraryViewer({ preferences, generatedData, onBack, onRegenera
       />
 
       {/* Bottom CTA */}
+      {isAuthenticated ? (
       <div className="sticky bottom-0 bg-background/95 backdrop-blur-sm border-t border-border z-30 pb-safe-bottom">
         <div className="container max-w-2xl py-3 px-4 flex gap-2">
           <Button variant="outline" size="sm" className="flex-1" onClick={() => setShowMapSheet(true)}>
@@ -533,6 +560,7 @@ export function ItineraryViewer({ preferences, generatedData, onBack, onRegenera
           </Button>
         </div>
       </div>
+      ) : null}
     </div>
   );
 }

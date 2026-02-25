@@ -27,12 +27,12 @@ export function HeroSection({ onStart }: HeroSectionProps) {
         {/* Cinematic gradient overlay */}
         <div className="absolute inset-0 bg-gradient-to-b from-black/20 via-transparent to-black/70" />
 
-        {/* Login — subtle top-right */}
+        {/* Auth — subtle top-right */}
         <a
-          href="/admin/login"
+          href="/auth"
           className="absolute top-safe-top mt-4 right-4 z-20 px-3 py-1.5 text-xs tracking-wide uppercase text-white/70 hover:text-white bg-white/10 hover:bg-white/20 backdrop-blur-md rounded-full transition-colors border border-white/10"
         >
-          Login
+          Accedi / Registrati
         </a>
 
         {/* Hero headline — anchored to bottom of image */}
