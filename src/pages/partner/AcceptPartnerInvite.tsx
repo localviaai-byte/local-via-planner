@@ -76,7 +76,7 @@ export default function AcceptPartnerInvite() {
     const { error } = await supabase.auth.signUp({
       email,
       password,
-      options: { emailRedirectTo: `${window.location.origin}/partner/invite/${code}` },
+      options: { emailRedirectTo: `https://www.localvia.app/partner/invite/${code}` },
     });
     if (error) {
       toast.error(error.message);

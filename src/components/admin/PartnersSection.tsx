@@ -131,7 +131,7 @@ export function PartnersSection() {
 
       if (error) throw error;
 
-      const inviteUrl = `${window.location.origin}/partner/invite/${code}`;
+      const inviteUrl = `https://www.localvia.app/partner/invite/${code}`;
       await navigator.clipboard.writeText(inviteUrl);
       toast.success('Invito creato! Link copiato negli appunti.');
       setInviteOpen(false);
@@ -199,7 +199,7 @@ export function PartnersSection() {
   };
 
   const copyInviteLink = async (code: string) => {
-    const url = `${window.location.origin}/partner/invite/${code}`;
+    const url = `https://www.localvia.app/partner/invite/${code}`;
     await navigator.clipboard.writeText(url);
     toast.success('Link copiato!');
   };

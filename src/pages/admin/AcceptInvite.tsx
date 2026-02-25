@@ -107,7 +107,7 @@ export default function AcceptInvite() {
         email: invite.email,
         password,
         options: {
-          emailRedirectTo: `${window.location.origin}/contributor`,
+          emailRedirectTo: `https://www.localvia.app/contributor`,
           data: {
             invited_via: code,
           },

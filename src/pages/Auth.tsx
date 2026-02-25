@@ -69,7 +69,7 @@ export default function AuthPage() {
 
     try {
       const { error } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: `${window.location.origin}/reset-password`,
+        redirectTo: `https://www.localvia.app/reset-password`,
       });
       if (error) setError(error.message);
       else setResetEmailSent(true);
