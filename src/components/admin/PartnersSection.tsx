@@ -48,6 +48,8 @@ export function PartnersSection() {
   const [invEmail, setInvEmail] = useState('');
   const [invType, setInvType] = useState<'referral' | 'affiliate'>('referral');
   const [invCompany, setInvCompany] = useState('');
+  const [invContactName, setInvContactName] = useState('');
+  const [invContactPhone, setInvContactPhone] = useState('');
   const [invCityId, setInvCityId] = useState('');
   const [invLinkedPlaceId, setInvLinkedPlaceId] = useState('');
   const [cities, setCities] = useState<{ id: string; name: string }[]>([]);
@@ -123,6 +125,8 @@ export function PartnersSection() {
         email: invEmail,
         partner_type: invType,
         company_name: invCompany,
+        contact_name: invContactName || null,
+        contact_phone: invContactPhone || null,
         city_id: invCityId || null,
         linked_place_id: invType === 'affiliate' ? (invLinkedPlaceId || null) : null,
         invite_code: code,
@@ -148,6 +152,8 @@ export function PartnersSection() {
   const resetInviteForm = () => {
     setInvEmail('');
     setInvCompany('');
+    setInvContactName('');
+    setInvContactPhone('');
     setInvCityId('');
     setInvLinkedPlaceId('');
     setPlaceSearch('');
@@ -286,6 +292,16 @@ export function PartnersSection() {
               <div>
                 <Label>Nome azienda</Label>
                 <Input value={invCompany} onChange={e => setInvCompany(e.target.value)} placeholder={invType === 'referral' ? 'Hotel Vesuvio' : 'Trattoria da Mario'} />
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <Label>Nome e cognome</Label>
+                  <Input value={invContactName} onChange={e => setInvContactName(e.target.value)} placeholder="Mario Rossi" />
+                </div>
+                <div>
+                  <Label>Telefono</Label>
+                  <Input type="tel" value={invContactPhone} onChange={e => setInvContactPhone(e.target.value)} placeholder="+39 333 1234567" />
+                </div>
               </div>
 
               {/* City */}
