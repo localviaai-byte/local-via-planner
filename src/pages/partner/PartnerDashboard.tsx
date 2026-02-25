@@ -32,7 +32,7 @@ export default function PartnerDashboard() {
 
   const copyReferralLink = () => {
     if (!partner?.referral_code) return;
-    const link = `${window.location.origin}/?ref=${partner.referral_code}`;
+    const link = `https://www.localvia.app/?ref=${partner.referral_code}`;
     navigator.clipboard.writeText(link);
     setCopied(true);
     toast.success('Link copiato!');
@@ -156,7 +156,7 @@ export default function PartnerDashboard() {
                   <div className="flex items-center gap-2">
                     <Input
                       readOnly
-                      value={`${window.location.origin}/?ref=${partner.referral_code}`}
+                      value={`https://www.localvia.app/?ref=${partner.referral_code}`}
                       className="font-mono text-sm"
                     />
                     <Button variant="outline" size="icon" onClick={copyReferralLink}>

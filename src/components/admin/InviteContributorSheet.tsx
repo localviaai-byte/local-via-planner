@@ -90,11 +90,7 @@ export function InviteContributorSheet({ open, onOpenChange, cities }: InviteCon
         permissions 
       });
       
-      // Use production URL if available, otherwise fallback to current origin
-      const baseUrl = window.location.hostname.includes('netlify.app') 
-        ? window.location.origin 
-        : 'https://localvia-ai.netlify.app';
-      const link = `${baseUrl}/admin/invite/${result.invite_code}`;
+      const link = `https://www.localvia.app/admin/invite/${result.invite_code}`;
       setGeneratedLink(link);
       toast.success('Invito creato!');
     } catch (error) {

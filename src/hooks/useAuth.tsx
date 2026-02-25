@@ -102,7 +102,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       email, 
       password,
       options: {
-        emailRedirectTo: `${window.location.origin}/admin`
+        emailRedirectTo: `https://www.localvia.app/admin`
       }
     });
     // If sign-up fails OR requires email confirmation (no session), clear loading.

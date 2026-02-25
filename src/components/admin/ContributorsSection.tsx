@@ -46,7 +46,7 @@ export function ContributorsSection() {
   const [copiedId, setCopiedId] = useState<string | null>(null);
   
   const handleCopyLink = async (inviteCode: string) => {
-    const url = `${window.location.origin}/admin/invite/${inviteCode}`;
+    const url = `https://www.localvia.app/admin/invite/${inviteCode}`;
     await navigator.clipboard.writeText(url);
     setCopiedId(inviteCode);
     toast.success('Link copiato!');
