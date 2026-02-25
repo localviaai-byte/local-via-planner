@@ -142,6 +142,16 @@ export function HeroSection({ onStart }: HeroSectionProps) {
             Gratis · Nessuna registrazione richiesta
           </p>
         </motion.div>
+
+        {/* Footer */}
+        <div className="mt-6 pb-2 text-center">
+          <a
+            href="mailto:info@localvia.app"
+            className="text-[11px] text-muted-foreground hover:text-foreground transition-colors"
+          >
+            info@localvia.app
+          </a>
+        </div>
       </div>
     </div>
   );
