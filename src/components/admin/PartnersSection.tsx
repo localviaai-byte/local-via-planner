@@ -198,6 +198,23 @@ export function PartnersSection() {
     }
   };
 
+  const deletePartner = async (partnerId: string) => {
+    const p = partners.find(x => x.id === partnerId);
+    if (p) {
+      const roleType = p.partner_type === 'referral' ? 'referral_partner' : 'affiliate_partner';
+      await supabase.from('user_roles').delete().eq('user_id', p.user_id).eq('role', roleType as any);
+    }
+    const { error } = await supabase.from('partners').delete().eq('id', partnerId);
+    if (error) {
+      toast.error('Errore nell\'eliminazione');
+    } else {
+      toast.success('Partner eliminato');
+      setDetailOpen(false);
+      setDetailPartner(null);
+      fetchData();
+    }
+  };
+
   const copyInviteLink = async (code: string) => {
     const url = `https://www.localvia.app/partner/invite/${code}`;
     await navigator.clipboard.writeText(url);
@@ -532,6 +549,7 @@ export function PartnersSection() {
               cities={cities}
               onUpdateStatus={updatePartnerStatus}
               onLinkPlace={linkPlaceToPartner}
+              onDelete={deletePartner}
               onClose={() => setDetailOpen(false)}
             />
           )}
@@ -550,6 +568,7 @@ function PartnerDetailContent({
   cities,
   onUpdateStatus,
   onLinkPlace,
+  onDelete,
   onClose,
 }: {
   partner: Partner;
@@ -559,12 +578,14 @@ function PartnerDetailContent({
   cities: { id: string; name: string }[];
   onUpdateStatus: (id: string, status: 'active' | 'suspended') => void;
   onLinkPlace: (id: string, placeId: string | null) => void;
+  onDelete: (id: string) => void;
   onClose: () => void;
 }) {
   const [places, setPlaces] = useState<PlaceOption[]>([]);
   const [placeSearch, setPlaceSearch] = useState('');
   const [linkedPlaceName, setLinkedPlaceName] = useState<string | null>(null);
   const [showPlacePicker, setShowPlacePicker] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState(false);
 
   useEffect(() => {
     // Fetch linked place name
@@ -808,6 +829,33 @@ function PartnerDetailContent({
             <CheckCircle2 className="w-4 h-4 mr-2" />
             Attiva partner
           </Button>
+        )}
+
+        {!confirmDelete ? (
+          <Button
+            variant="ghost"
+            className="w-full text-destructive hover:bg-destructive/10"
+            onClick={() => setConfirmDelete(true)}
+          >
+            <Trash2 className="w-4 h-4 mr-2" />
+            Elimina partner
+          </Button>
+        ) : (
+          <div className="flex gap-2">
+            <Button
+              variant="destructive"
+              className="flex-1"
+              onClick={() => onDelete(partner.id)}
+            >
+              Conferma eliminazione
+            </Button>
+            <Button
+              variant="outline"
+              onClick={() => setConfirmDelete(false)}
+            >
+              Annulla
+            </Button>
+          </div>
         )}
       </div>
     </div>
