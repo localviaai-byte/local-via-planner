@@ -2,7 +2,10 @@
 // LOCALVIA DATABASE TYPES
 // =====================================================
 
-export type AppRole = 'admin' | 'local_contributor' | 'editor';
+export type AppRole = 'admin' | 'local_contributor' | 'editor' | 'referral_partner' | 'affiliate_partner';
+
+export type PartnerType = 'referral' | 'affiliate';
+export type PartnerStatus = 'pending' | 'active' | 'suspended' | 'churned';
 
 export type PlaceType = 'attraction' | 'bar' | 'restaurant' | 'club' | 'zone' | 'experience' | 'view';
 

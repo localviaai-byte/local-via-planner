@@ -23,6 +23,9 @@ import AcceptInvite from "./pages/admin/AcceptInvite";
 import ContributorDashboard from "./pages/admin/ContributorDashboard";
 import SummaryPage from "./pages/admin/SummaryPage";
 import KpiPage from "./pages/admin/KpiPage";
+import PartnerDashboard from "./pages/partner/PartnerDashboard";
+import AcceptPartnerInvite from "./pages/partner/AcceptPartnerInvite";
+import PartnersPage from "./pages/admin/PartnersPage";
 
 const queryClient = new QueryClient();
 
@@ -86,6 +89,11 @@ function AdminRoute({ children }: { children: React.ReactNode }) {
   // Contributors should go to their dedicated dashboard
   if (role === 'local_contributor') {
     return <Navigate to="/contributor" replace />;
+  }
+  
+  // Partners should go to their dedicated dashboard
+  if (role === 'referral_partner' || role === 'affiliate_partner') {
+    return <Navigate to="/partner" replace />;
   }
   
   // Check if user has admin or editor role
@@ -172,6 +180,46 @@ function ContributorRoute({ children }: { children: React.ReactNode }) {
   return <>{children}</>;
 }
 
+// Protected route wrapper for partner routes
+function PartnerRoute({ children }: { children: React.ReactNode }) {
+  const { user, isLoading, role, signOut } = useAuth();
+  
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="loading-text">Caricamento...</div>
+      </div>
+    );
+  }
+  
+  if (!user) {
+    return <Navigate to="/admin/login" replace />;
+  }
+  
+  // Admins/editors → admin dashboard
+  if (role === 'admin' || role === 'editor') {
+    return <Navigate to="/admin" replace />;
+  }
+  
+  // Contributors → contributor dashboard
+  if (role === 'local_contributor') {
+    return <Navigate to="/contributor" replace />;
+  }
+  
+  // Check partner roles
+  if (role !== 'referral_partner' && role !== 'affiliate_partner') {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center bg-background p-4 text-center">
+        <h1 className="font-display text-xl font-semibold mb-2">Accesso non autorizzato</h1>
+        <p className="text-muted-foreground mb-4">Non hai i permessi per accedere a questa area.</p>
+        <button type="button" className="mt-6 text-sm underline text-muted-foreground" onClick={() => signOut()}>Esci</button>
+      </div>
+    );
+  }
+  
+  return <>{children}</>;
+}
+
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <AuthProvider>
@@ -198,6 +246,7 @@ const App = () => (
               <Route index element={<DashboardHome />} />
               <Route path="cities" element={<CitiesPage />} />
               <Route path="contributors" element={<ContributorsPage />} />
+              <Route path="partners" element={<PartnersPage />} />
               <Route path="users" element={<UsersPage />} />
               <Route path="summary" element={<SummaryPage />} />
               <Route path="kpi" element={<KpiPage />} />
@@ -276,6 +325,17 @@ const App = () => (
                 <ContributorRoute>
                   <PlaceWizard />
                 </ContributorRoute>
+              }
+            />
+            
+            {/* Partner routes */}
+            <Route path="/partner/invite/:code" element={<AcceptPartnerInvite />} />
+            <Route
+              path="/partner"
+              element={
+                <PartnerRoute>
+                  <PartnerDashboard />
+                </PartnerRoute>
               }
             />
             

@@ -11,6 +11,7 @@ interface AuthContextType {
   isAdmin: boolean;
   isEditor: boolean;
   isContributor: boolean;
+  isPartner: boolean;
   signIn: (email: string, password: string) => Promise<{ error: Error | null }>;
   signUp: (email: string, password: string) => Promise<{ error: Error | null }>;
   signOut: () => Promise<void>;
@@ -124,6 +125,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     isAdmin: role === 'admin',
     isEditor: role === 'editor',
     isContributor: role === 'local_contributor',
+    isPartner: role === 'referral_partner' || role === 'affiliate_partner',
     signIn,
     signUp,
     signOut,
