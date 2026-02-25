@@ -1,0 +1,1 @@
+UPDATE partner_invites SET status = 'pending' WHERE id = '9cd7b984-2e3e-4a03-ba6e-7be711135451';
