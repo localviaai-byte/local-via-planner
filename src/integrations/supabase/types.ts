@@ -428,6 +428,159 @@ export type Database = {
           },
         ]
       }
+      partner_invites: {
+        Row: {
+          city_id: string | null
+          company_name: string | null
+          created_at: string
+          created_by: string
+          email: string
+          expires_at: string
+          id: string
+          invite_code: string
+          linked_place_id: string | null
+          partner_type: Database["public"]["Enums"]["partner_type"]
+          status: string
+        }
+        Insert: {
+          city_id?: string | null
+          company_name?: string | null
+          created_at?: string
+          created_by: string
+          email: string
+          expires_at: string
+          id?: string
+          invite_code: string
+          linked_place_id?: string | null
+          partner_type: Database["public"]["Enums"]["partner_type"]
+          status?: string
+        }
+        Update: {
+          city_id?: string | null
+          company_name?: string | null
+          created_at?: string
+          created_by?: string
+          email?: string
+          expires_at?: string
+          id?: string
+          invite_code?: string
+          linked_place_id?: string | null
+          partner_type?: Database["public"]["Enums"]["partner_type"]
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "partner_invites_city_id_fkey"
+            columns: ["city_id"]
+            isOneToOne: false
+            referencedRelation: "cities"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "partner_invites_linked_place_id_fkey"
+            columns: ["linked_place_id"]
+            isOneToOne: false
+            referencedRelation: "places"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      partners: {
+        Row: {
+          city_id: string | null
+          commission_percent: number | null
+          company_name: string
+          contact_email: string
+          contact_name: string | null
+          contact_phone: string | null
+          created_at: string
+          created_by: string | null
+          description: string | null
+          discount_percent: number | null
+          id: string
+          linked_place_id: string | null
+          logo_url: string | null
+          partner_type: Database["public"]["Enums"]["partner_type"]
+          referral_code: string | null
+          status: Database["public"]["Enums"]["partner_status"]
+          stripe_customer_id: string | null
+          stripe_subscription_id: string | null
+          subscription_ends_at: string | null
+          subscription_started_at: string | null
+          subscription_status: string | null
+          updated_at: string
+          user_id: string
+          website_url: string | null
+        }
+        Insert: {
+          city_id?: string | null
+          commission_percent?: number | null
+          company_name: string
+          contact_email: string
+          contact_name?: string | null
+          contact_phone?: string | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          discount_percent?: number | null
+          id?: string
+          linked_place_id?: string | null
+          logo_url?: string | null
+          partner_type: Database["public"]["Enums"]["partner_type"]
+          referral_code?: string | null
+          status?: Database["public"]["Enums"]["partner_status"]
+          stripe_customer_id?: string | null
+          stripe_subscription_id?: string | null
+          subscription_ends_at?: string | null
+          subscription_started_at?: string | null
+          subscription_status?: string | null
+          updated_at?: string
+          user_id: string
+          website_url?: string | null
+        }
+        Update: {
+          city_id?: string | null
+          commission_percent?: number | null
+          company_name?: string
+          contact_email?: string
+          contact_name?: string | null
+          contact_phone?: string | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          discount_percent?: number | null
+          id?: string
+          linked_place_id?: string | null
+          logo_url?: string | null
+          partner_type?: Database["public"]["Enums"]["partner_type"]
+          referral_code?: string | null
+          status?: Database["public"]["Enums"]["partner_status"]
+          stripe_customer_id?: string | null
+          stripe_subscription_id?: string | null
+          subscription_ends_at?: string | null
+          subscription_started_at?: string | null
+          subscription_status?: string | null
+          updated_at?: string
+          user_id?: string
+          website_url?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "partners_city_id_fkey"
+            columns: ["city_id"]
+            isOneToOne: false
+            referencedRelation: "cities"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "partners_linked_place_id_fkey"
+            columns: ["linked_place_id"]
+            isOneToOne: false
+            referencedRelation: "places"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       place_coverage: {
         Row: {
           base_city_id: string
@@ -1321,6 +1474,105 @@ export type Database = {
           },
         ]
       }
+      referral_clicks: {
+        Row: {
+          created_at: string
+          id: string
+          ip_hash: string | null
+          partner_id: string
+          referral_code: string
+          source_url: string | null
+          user_agent: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          ip_hash?: string | null
+          partner_id: string
+          referral_code: string
+          source_url?: string | null
+          user_agent?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          ip_hash?: string | null
+          partner_id?: string
+          referral_code?: string
+          source_url?: string | null
+          user_agent?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "referral_clicks_partner_id_fkey"
+            columns: ["partner_id"]
+            isOneToOne: false
+            referencedRelation: "partners"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      referral_conversions: {
+        Row: {
+          click_id: string | null
+          commission_cents: number | null
+          conversion_type: string
+          created_at: string
+          id: string
+          paid_at: string | null
+          partner_id: string
+          revenue_cents: number | null
+          status: string
+          trip_plan_id: string | null
+        }
+        Insert: {
+          click_id?: string | null
+          commission_cents?: number | null
+          conversion_type?: string
+          created_at?: string
+          id?: string
+          paid_at?: string | null
+          partner_id: string
+          revenue_cents?: number | null
+          status?: string
+          trip_plan_id?: string | null
+        }
+        Update: {
+          click_id?: string | null
+          commission_cents?: number | null
+          conversion_type?: string
+          created_at?: string
+          id?: string
+          paid_at?: string | null
+          partner_id?: string
+          revenue_cents?: number | null
+          status?: string
+          trip_plan_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "referral_conversions_click_id_fkey"
+            columns: ["click_id"]
+            isOneToOne: false
+            referencedRelation: "referral_clicks"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "referral_conversions_partner_id_fkey"
+            columns: ["partner_id"]
+            isOneToOne: false
+            referencedRelation: "partners"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "referral_conversions_trip_plan_id_fkey"
+            columns: ["trip_plan_id"]
+            isOneToOne: false
+            referencedRelation: "trip_plans"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       tags: {
         Row: {
           created_at: string
@@ -1432,6 +1684,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      assign_partner_from_invite: {
+        Args: { _invite_code: string; _user_id: string }
+        Returns: boolean
+      }
       assign_role_from_invite: {
         Args: { _invite_code: string; _user_id: string }
         Returns: boolean
@@ -1463,7 +1719,12 @@ export type Database = {
       }
     }
     Enums: {
-      app_role: "admin" | "local_contributor" | "editor"
+      app_role:
+        | "admin"
+        | "local_contributor"
+        | "editor"
+        | "referral_partner"
+        | "affiliate_partner"
       best_time_of_day: "morning" | "afternoon" | "evening" | "night"
       city_rhythm: "very_slow" | "medium" | "intense"
       city_status: "empty" | "building" | "active"
@@ -1493,6 +1754,8 @@ export type Database = {
         | "chill"
         | "party"
         | "flirt_friendly"
+      partner_status: "pending" | "active" | "suspended" | "cancelled"
+      partner_type: "referral" | "affiliate"
       place_status:
         | "draft"
         | "pending_review"
@@ -1674,7 +1937,13 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      app_role: ["admin", "local_contributor", "editor"],
+      app_role: [
+        "admin",
+        "local_contributor",
+        "editor",
+        "referral_partner",
+        "affiliate_partner",
+      ],
       best_time_of_day: ["morning", "afternoon", "evening", "night"],
       city_rhythm: ["very_slow", "medium", "intense"],
       city_status: ["empty", "building", "active"],
@@ -1706,6 +1975,8 @@ export const Constants = {
         "party",
         "flirt_friendly",
       ],
+      partner_status: ["pending", "active", "suspended", "cancelled"],
+      partner_type: ["referral", "affiliate"],
       place_status: [
         "draft",
         "pending_review",
