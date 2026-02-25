@@ -1,6 +1,7 @@
 import { motion } from 'framer-motion';
-import { Check, Map, Sparkles, Share2, X } from 'lucide-react';
+import { Check, Map, Sparkles, Share2, X, Compass } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { useNavigate } from 'react-router-dom';
 import {
   Drawer,
   DrawerContent,
@@ -24,6 +25,8 @@ export function SavePlanSheet({
   onConfirmExtras,
   onBackToPlan,
 }: SavePlanSheetProps) {
+  const navigate = useNavigate();
+
   return (
     <Drawer open={isOpen} onOpenChange={onOpenChange}>
       <DrawerContent className="max-h-[60vh]">
@@ -101,13 +104,12 @@ export function SavePlanSheet({
 
               <div className="space-y-3">
                 <Button
-                  onClick={onBackToPlan}
-                  variant="outline"
-                  className="w-full"
+                  onClick={() => navigate('/my-plans')}
+                  className="w-full bg-gradient-hero text-primary-foreground"
                   size="lg"
                 >
-                  <Map className="w-4 h-4 mr-2" />
-                  Esporta su mappa
+                  <Compass className="w-4 h-4 mr-2" />
+                  Vai ai miei piani
                 </Button>
                 
                 <Button
@@ -122,12 +124,10 @@ export function SavePlanSheet({
                 
                 <Button
                   onClick={onBackToPlan}
-                  variant="outline"
+                  variant="ghost"
                   className="w-full"
-                  size="lg"
                 >
-                  <Share2 className="w-4 h-4 mr-2" />
-                  Condividi
+                  Torna al piano
                 </Button>
               </div>
             </motion.div>
