@@ -1,10 +1,10 @@
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import {
   MapPin, LogOut, Copy, Check, ExternalLink, Building2,
   TrendingUp, MousePointerClick, DollarSign, Link2, Store,
-  CreditCard, AlertCircle
+  CreditCard, AlertCircle, Loader2, Sparkles, CheckCircle2
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -15,15 +15,90 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { useAuth } from '@/hooks/useAuth';
 import { usePartner } from '@/hooks/usePartner';
+import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+
+const PLANS = {
+  earlyBird: {
+    priceId: 'price_1T4nJ5B6NXLO6Cyw5gMyotxK',
+    productId: 'prod_U2t5qDLRw661sO',
+    name: 'Early Bird',
+    price: 29,
+    originalPrice: 99,
+    features: [
+      'Posizionamento garantito negli itinerari AI',
+      'Dashboard dedicata con statistiche',
+      'Supporto prioritario',
+      'Prezzo bloccato per sempre',
+    ],
+  },
+  standard: {
+    priceId: 'price_1T4nHRB6NXLO6Cyww9X3JgzM',
+    productId: 'prod_U2t3M7PmDxV5gO',
+    name: 'Standard',
+    price: 99,
+    features: [
+      'Posizionamento garantito negli itinerari AI',
+      'Dashboard dedicata con statistiche',
+      'Supporto prioritario',
+    ],
+  },
+};
 
 export default function PartnerDashboard() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { user, signOut } = useAuth();
   const { partner, stats, recentClicks, conversions, linkedPlace, isLoading, updateProfile } = usePartner();
   const [copied, setCopied] = useState(false);
   const [editMode, setEditMode] = useState(false);
+  const [checkoutLoading, setCheckoutLoading] = useState(false);
+  const [subscriptionStatus, setSubscriptionStatus] = useState<{ subscribed: boolean; subscription_end?: string } | null>(null);
   const [formData, setFormData] = useState({ company_name: '', contact_name: '', contact_phone: '', website_url: '', description: '' });
+
+  // Check subscription on mount and after successful checkout
+  useEffect(() => {
+    if (user) {
+      checkSubscription();
+    }
+  }, [user]);
+
+  useEffect(() => {
+    if (searchParams.get('subscription') === 'success') {
+      toast.success('Abbonamento attivato con successo! 🎉');
+      // Re-check after a short delay to let Stripe process
+      setTimeout(() => checkSubscription(), 2000);
+    }
+  }, [searchParams]);
+
+  const checkSubscription = async () => {
+    try {
+      const { data, error } = await supabase.functions.invoke('check-partner-subscription');
+      if (!error && data) {
+        setSubscriptionStatus(data);
+      }
+    } catch (err) {
+      console.error('Error checking subscription:', err);
+    }
+  };
+
+  const handleCheckout = async (priceId: string) => {
+    setCheckoutLoading(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('create-partner-checkout', {
+        body: { priceId },
+      });
+      if (error) throw error;
+      if (data?.url) {
+        window.open(data.url, '_blank');
+      }
+    } catch (err: any) {
+      toast.error('Errore nell\'avvio del pagamento');
+      console.error(err);
+    } finally {
+      setCheckoutLoading(false);
+    }
+  };
 
   const handleSignOut = async () => {
     await signOut();
@@ -247,12 +322,14 @@ export default function PartnerDashboard() {
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  {partner.subscription_status === 'active' ? (
+                  {(subscriptionStatus?.subscribed || partner.subscription_status === 'active') ? (
                     <div className="space-y-2">
                       <div className="flex items-center gap-2">
                         <Badge className="bg-primary text-primary-foreground">Attivo</Badge>
                         <span className="text-sm text-muted-foreground">
-                          Scade il {partner.subscription_ends_at ? new Date(partner.subscription_ends_at).toLocaleDateString('it-IT') : '—'}
+                          Rinnovo il {(subscriptionStatus?.subscription_end || partner.subscription_ends_at)
+                            ? new Date(subscriptionStatus?.subscription_end || partner.subscription_ends_at!).toLocaleDateString('it-IT')
+                            : '—'}
                         </span>
                       </div>
                       <p className="text-sm text-muted-foreground">
@@ -260,16 +337,78 @@ export default function PartnerDashboard() {
                       </p>
                     </div>
                   ) : (
-                    <div className="space-y-3">
-                      <div className="flex items-center gap-2">
-                        <Badge variant="secondary">Non attivo</Badge>
-                      </div>
+                    <div className="space-y-4">
                       <p className="text-sm text-muted-foreground">
-                        Attiva l'abbonamento mensile per apparire negli itinerari AI generati per i viaggiatori.
+                        Attiva l'abbonamento per apparire negli itinerari AI generati per i viaggiatori. 
+                        L'abbonamento sostiene gli investimenti pubblicitari e lo sviluppo della piattaforma.
                       </p>
-                      <Button className="bg-terracotta hover:bg-terracotta/90" disabled>
-                        Attiva abbonamento (prossimamente)
-                      </Button>
+
+                      {/* Pricing Cards */}
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        {/* Early Bird */}
+                        <Card className="border-2 border-terracotta relative overflow-hidden">
+                          <div className="absolute top-0 left-0 right-0 bg-terracotta text-white text-xs text-center py-1 font-medium">
+                            🔥 Offerta lancio — posti limitati
+                          </div>
+                          <CardContent className="p-4 pt-8 space-y-3">
+                            <div>
+                              <h3 className="font-display font-semibold text-lg">{PLANS.earlyBird.name}</h3>
+                              <div className="flex items-baseline gap-2">
+                                <span className="text-3xl font-bold">€{PLANS.earlyBird.price}</span>
+                                <span className="text-sm text-muted-foreground">/mese + IVA</span>
+                              </div>
+                              <div className="flex items-center gap-1 mt-1">
+                                <span className="text-sm line-through text-muted-foreground">€{PLANS.earlyBird.originalPrice}/mese</span>
+                                <Badge variant="secondary" className="text-xs">-{Math.round(100 - (PLANS.earlyBird.price / PLANS.earlyBird.originalPrice) * 100)}%</Badge>
+                              </div>
+                            </div>
+                            <ul className="space-y-2">
+                              {PLANS.earlyBird.features.map((f, i) => (
+                                <li key={i} className="flex items-start gap-2 text-sm">
+                                  <CheckCircle2 className="w-4 h-4 text-primary mt-0.5 shrink-0" />
+                                  <span>{f}</span>
+                                </li>
+                              ))}
+                            </ul>
+                            <Button
+                              className="w-full bg-terracotta hover:bg-terracotta/90"
+                              onClick={() => handleCheckout(PLANS.earlyBird.priceId)}
+                              disabled={checkoutLoading}
+                            >
+                              {checkoutLoading ? (
+                                <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Caricamento...</>
+                              ) : (
+                                <><Sparkles className="w-4 h-4 mr-2" />Attiva ora</>
+                              )}
+                            </Button>
+                          </CardContent>
+                        </Card>
+
+                        {/* Standard */}
+                        <Card className="border opacity-60">
+                          <CardContent className="p-4 space-y-3">
+                            <div>
+                              <h3 className="font-display font-semibold text-lg">{PLANS.standard.name}</h3>
+                              <div className="flex items-baseline gap-2">
+                                <span className="text-3xl font-bold">€{PLANS.standard.price}</span>
+                                <span className="text-sm text-muted-foreground">/mese + IVA</span>
+                              </div>
+                              <p className="text-xs text-muted-foreground mt-1">Prezzo standard</p>
+                            </div>
+                            <ul className="space-y-2">
+                              {PLANS.standard.features.map((f, i) => (
+                                <li key={i} className="flex items-start gap-2 text-sm">
+                                  <CheckCircle2 className="w-4 h-4 text-muted-foreground mt-0.5 shrink-0" />
+                                  <span>{f}</span>
+                                </li>
+                              ))}
+                            </ul>
+                            <Button variant="outline" className="w-full" disabled>
+                              Disponibile a breve
+                            </Button>
+                          </CardContent>
+                        </Card>
+                      </div>
                     </div>
                   )}
                 </CardContent>

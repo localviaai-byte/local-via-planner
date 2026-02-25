@@ -17,3 +17,9 @@ verify_jwt = false
 
 [functions.geocode-place]
 verify_jwt = false
+
+[functions.create-partner-checkout]
+verify_jwt = false
+
+[functions.check-partner-subscription]
+verify_jwt = false
