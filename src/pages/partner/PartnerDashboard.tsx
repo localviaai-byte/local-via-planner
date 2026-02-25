@@ -23,7 +23,7 @@ const PLANS = {
     priceId: 'price_1T4nJ5B6NXLO6Cyw5gMyotxK',
     productId: 'prod_U2t5qDLRw661sO',
     name: 'Early Bird',
-    price: 29,
+    price: 35,
     originalPrice: 99,
     features: [
       'Posizionamento garantito negli itinerari AI',
