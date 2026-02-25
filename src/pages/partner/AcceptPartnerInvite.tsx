@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { MapPin, Loader2, CheckCircle2, XCircle, Eye, EyeOff } from 'lucide-react';
+import { MapPin, Loader2, CheckCircle2, XCircle, Eye, EyeOff, Mail } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -23,6 +23,7 @@ export default function AcceptPartnerInvite() {
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+  const [emailSent, setEmailSent] = useState(false);
 
   useEffect(() => {
     if (code) fetchInvite();
@@ -83,16 +84,40 @@ export default function AcceptPartnerInvite() {
       return;
     }
     setAccepting(true);
-    const { error } = await supabase.auth.signUp({
+    const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
       email,
       password,
       options: { emailRedirectTo: `https://www.localvia.app/partner/invite/${code}` },
     });
-    if (error) {
-      toast.error(error.message);
+    if (signUpError) {
+      // If already registered, switch to login mode
+      if (signUpError.message.toLowerCase().includes('already registered')) {
+        setShowRegister(false);
+        toast.error('Email già registrata. Accedi con la tua password.');
+        setAccepting(false);
+        return;
+      }
+      toast.error(signUpError.message);
       setAccepting(false);
+    } else if (signUpData.user && signUpData.session) {
+      // Auto-confirmed (no email confirmation required) — accept immediately
+      try {
+        const { data: result, error: rpcError } = await supabase.rpc('assign_partner_from_invite', {
+          _user_id: signUpData.user.id,
+          _invite_code: code!,
+        });
+        if (rpcError) throw rpcError;
+        if (!result) throw new Error('Invito non valido');
+        toast.success('Benvenuto come partner!');
+        window.location.href = '/partner';
+      } catch (err: any) {
+        setError(err.message);
+        setAccepting(false);
+      }
     } else {
-      toast.success('Registrazione completata! Controlla la tua email per confermare.');
+      // Email confirmation required — show success screen
+      setAccepting(false);
+      setEmailSent(true);
     }
   };
 
@@ -151,6 +176,27 @@ export default function AcceptPartnerInvite() {
           <Loader2 className="w-8 h-8 animate-spin text-terracotta mx-auto" />
           <p className="text-muted-foreground">Attivazione in corso...</p>
         </div>
+      </div>
+    );
+  }
+
+  // Email confirmation sent
+  if (emailSent) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background p-4">
+        <Card className="max-w-md w-full">
+          <CardContent className="p-6 text-center space-y-4">
+            <Mail className="w-12 h-12 text-terracotta mx-auto" />
+            <h2 className="font-display text-xl font-semibold">Controlla la tua email</h2>
+            <p className="text-muted-foreground text-sm">
+              Ti abbiamo inviato un'email di conferma a <strong>{email}</strong>. 
+              Clicca il link nell'email per attivare il tuo account e completare la registrazione come partner.
+            </p>
+            <p className="text-xs text-muted-foreground">
+              Non hai ricevuto l'email? Controlla la cartella spam.
+            </p>
+          </CardContent>
+        </Card>
       </div>
     );
   }
