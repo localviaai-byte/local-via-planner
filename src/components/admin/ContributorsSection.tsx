@@ -25,6 +25,8 @@ const ROLE_CONFIG: Record<AppRole, { label: string; color: string }> = {
   admin: { label: 'Admin', color: 'bg-terracotta/20 text-terracotta' },
   editor: { label: 'Editor', color: 'bg-olive/20 text-olive' },
   local_contributor: { label: 'Local', color: 'bg-gold/20 text-gold' },
+  referral_partner: { label: 'Referral', color: 'bg-primary/20 text-primary' },
+  affiliate_partner: { label: 'Affiliate', color: 'bg-accent/20 text-accent-foreground' },
 };
 
 const PERMISSION_LABELS: Record<string, string> = {
