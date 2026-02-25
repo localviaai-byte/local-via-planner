@@ -1,11 +1,23 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { User, Shield, UserCheck, Users, Mail, Calendar, Building2 } from 'lucide-react';
+import { User, Shield, UserCheck, Users, Mail, Calendar, Building2, Trash2 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Button } from '@/components/ui/button';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
 import type { Tables } from '@/integrations/supabase/types';
 
 type UserRole = Tables<'user_roles'>;
@@ -28,6 +40,8 @@ export function UsersSection() {
   const [users, setUsers] = useState<UserWithRole[]>([]);
   const [cities, setCities] = useState<CityBasic[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [deleteTarget, setDeleteTarget] = useState<UserWithRole | null>(null);
+  const [deleting, setDeleting] = useState(false);
 
   useEffect(() => {
     fetchUsersAndCities();
@@ -74,6 +88,25 @@ export function UsersSection() {
       console.error('Error fetching users:', error);
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const handleDeleteUser = async () => {
+    if (!deleteTarget) return;
+    setDeleting(true);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const res = await supabase.functions.invoke('delete-user', {
+        body: { user_id: deleteTarget.user_id },
+      });
+      if (res.error) throw res.error;
+      toast.success(`Utente ${deleteTarget.email} eliminato`);
+      setUsers(prev => prev.filter(u => u.user_id !== deleteTarget.user_id));
+    } catch (err: any) {
+      toast.error(err.message || 'Errore durante l\'eliminazione');
+    } finally {
+      setDeleting(false);
+      setDeleteTarget(null);
     }
   };
 
@@ -137,6 +170,16 @@ export function UsersSection() {
             </div>
           </div>
         </div>
+        {user.role !== 'admin' && (
+          <Button
+            variant="ghost"
+            size="icon"
+            className="shrink-0 text-muted-foreground hover:text-destructive"
+            onClick={() => setDeleteTarget(user)}
+          >
+            <Trash2 className="w-4 h-4" />
+          </Button>
+        )}
       </div>
     </motion.div>
   );
@@ -231,6 +274,28 @@ export function UsersSection() {
           <UserList users={contributorUsers} emptyMessage="Nessun contributor" />
         </TabsContent>
       </Tabs>
+
+      <AlertDialog open={!!deleteTarget} onOpenChange={(open) => !open && setDeleteTarget(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Eliminare questo utente?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Stai per eliminare <strong>{deleteTarget?.email}</strong> ({deleteTarget?.role}). 
+              Questa azione è irreversibile e rimuoverà l'utente e tutti i suoi ruoli.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={deleting}>Annulla</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDeleteUser}
+              disabled={deleting}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {deleting ? 'Eliminazione...' : 'Elimina'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
