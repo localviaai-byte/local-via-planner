@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { MapPin, Loader2, CheckCircle2, XCircle } from 'lucide-react';
+import { MapPin, Loader2, CheckCircle2, XCircle, Eye, EyeOff } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -21,6 +21,8 @@ export default function AcceptPartnerInvite() {
   const [showRegister, setShowRegister] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
 
   useEffect(() => {
     if (code) fetchInvite();
@@ -72,6 +74,14 @@ export default function AcceptPartnerInvite() {
 
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (password !== confirmPassword) {
+      toast.error('Le password non coincidono');
+      return;
+    }
+    if (password.length < 6) {
+      toast.error('La password deve avere almeno 6 caratteri');
+      return;
+    }
     setAccepting(true);
     const { error } = await supabase.auth.signUp({
       email,
@@ -154,8 +164,43 @@ export default function AcceptPartnerInvite() {
             </div>
             <div>
               <Label>Password</Label>
-              <Input type="password" value={password} onChange={e => setPassword(e.target.value)} required minLength={6} />
+              <div className="relative">
+                <Input
+                  type={showPassword ? 'text' : 'password'}
+                  value={password}
+                  onChange={e => setPassword(e.target.value)}
+                  required
+                  minLength={6}
+                  className="pr-10"
+                />
+                <button
+                  type="button"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                  onClick={() => setShowPassword(!showPassword)}
+                  tabIndex={-1}
+                >
+                  {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                </button>
+              </div>
             </div>
+            {showRegister && (
+              <div>
+                <Label>Conferma Password</Label>
+                <div className="relative">
+                  <Input
+                    type={showPassword ? 'text' : 'password'}
+                    value={confirmPassword}
+                    onChange={e => setConfirmPassword(e.target.value)}
+                    required
+                    minLength={6}
+                    className="pr-10"
+                  />
+                </div>
+                {confirmPassword && password !== confirmPassword && (
+                  <p className="text-xs text-destructive mt-1">Le password non coincidono</p>
+                )}
+              </div>
+            )}
             <Button type="submit" className="w-full bg-terracotta hover:bg-terracotta/90">
               {showRegister ? 'Registrati e accetta' : 'Accedi e accetta'}
             </Button>
