@@ -26,6 +26,7 @@ import KpiPage from "./pages/admin/KpiPage";
 import PartnerDashboard from "./pages/partner/PartnerDashboard";
 import AcceptPartnerInvite from "./pages/partner/AcceptPartnerInvite";
 import PartnersPage from "./pages/admin/PartnersPage";
+import AuthPage from "./pages/Auth";
 
 const queryClient = new QueryClient();
 
@@ -229,6 +230,9 @@ const App = () => (
         <BrowserRouter>
           <Routes>
             <Route path="/" element={<Index />} />
+            
+            {/* Public auth */}
+            <Route path="/auth" element={<AuthPage />} />
             
             {/* Admin routes */}
             <Route path="/admin/login" element={<AdminLogin />} />
