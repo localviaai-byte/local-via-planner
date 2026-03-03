@@ -16,6 +16,13 @@ export interface PartnerStats {
   conversionsThisMonth: number;
 }
 
+export interface AffiliateStats {
+  planItemAppearances: number;
+  distinctItineraries: number;
+  thisMonthAppearances: number;
+  thisMonthItineraries: number;
+}
+
 export function usePartner() {
   const { user } = useAuth();
   const [partner, setPartner] = useState<Partner | null>(null);
@@ -27,6 +34,12 @@ export function usePartner() {
   const [conversions, setConversions] = useState<ReferralConversion[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [linkedPlace, setLinkedPlace] = useState<Tables<'places'> | null>(null);
+  const [affiliateStats, setAffiliateStats] = useState<AffiliateStats>({
+    planItemAppearances: 0,
+    distinctItineraries: 0,
+    thisMonthAppearances: 0,
+    thisMonthItineraries: 0,
+  });
 
   useEffect(() => {
     if (user) fetchPartnerData();
@@ -54,6 +67,30 @@ export function usePartner() {
           .eq('id', partnerData.linked_place_id)
           .maybeSingle();
         setLinkedPlace(place);
+
+        // Fetch affiliate KPIs from plan_items
+        if (place) {
+          const startOfMonth = new Date();
+          startOfMonth.setDate(1);
+          startOfMonth.setHours(0, 0, 0, 0);
+
+          const { data: planItems } = await supabase
+            .from('plan_items')
+            .select('id, plan_id, created_at')
+            .eq('place_id', place.id);
+
+          const items = planItems || [];
+          const distinctPlans = new Set(items.map(i => i.plan_id));
+          const thisMonthItems = items.filter(i => new Date(i.created_at) >= startOfMonth);
+          const thisMonthPlans = new Set(thisMonthItems.map(i => i.plan_id));
+
+          setAffiliateStats({
+            planItemAppearances: items.length,
+            distinctItineraries: distinctPlans.size,
+            thisMonthAppearances: thisMonthItems.length,
+            thisMonthItineraries: thisMonthPlans.size,
+          });
+        }
       }
 
       // Fetch referral stats (only for referral partners)
@@ -113,5 +150,5 @@ export function usePartner() {
     return { error };
   };
 
-  return { partner, stats, recentClicks, conversions, linkedPlace, isLoading, updateProfile, refetch: fetchPartnerData };
+  return { partner, stats, affiliateStats, recentClicks, conversions, linkedPlace, isLoading, updateProfile, refetch: fetchPartnerData };
 }
