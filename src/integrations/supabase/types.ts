@@ -493,6 +493,11 @@ export type Database = {
       }
       partners: {
         Row: {
+          billing_address: string | null
+          billing_company_name: string | null
+          billing_pec: string | null
+          billing_sdi_code: string | null
+          billing_vat_number: string | null
           city_id: string | null
           commission_percent: number | null
           company_name: string
@@ -519,6 +524,11 @@ export type Database = {
           website_url: string | null
         }
         Insert: {
+          billing_address?: string | null
+          billing_company_name?: string | null
+          billing_pec?: string | null
+          billing_sdi_code?: string | null
+          billing_vat_number?: string | null
           city_id?: string | null
           commission_percent?: number | null
           company_name: string
@@ -545,6 +555,11 @@ export type Database = {
           website_url?: string | null
         }
         Update: {
+          billing_address?: string | null
+          billing_company_name?: string | null
+          billing_pec?: string | null
+          billing_sdi_code?: string | null
+          billing_vat_number?: string | null
           city_id?: string | null
           commission_percent?: number | null
           company_name?: string
