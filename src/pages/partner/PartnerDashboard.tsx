@@ -27,7 +27,7 @@ const PLANS = {
     priceId: 'price_1T6pseB6NXLO6Cyw6dZJweAg',
     productId: 'prod_U4zsxt155KH6ZU',
     name: 'Early Bird',
-    price: 1,
+    price: 35,
     originalPrice: 99,
     features: [],
   },
