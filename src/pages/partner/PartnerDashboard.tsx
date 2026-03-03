@@ -5,7 +5,7 @@ import {
   MapPin, LogOut, Copy, Check, ExternalLink, Building2,
   TrendingUp, MousePointerClick, DollarSign, Link2, Store,
   CreditCard, AlertCircle, Loader2, Sparkles, CheckCircle2,
-  Pencil, Plus, Trash2, ImageIcon, Star, Home
+  Pencil, Plus, Trash2, ImageIcon, Star, Home, Eye
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -20,6 +20,7 @@ import { usePartner } from '@/hooks/usePartner';
 import { ReferralQRCode } from '@/components/ui/ReferralQRCode';
 import { supabase } from '@/integrations/supabase/client';
 import { ProfileSection } from '@/components/partner/ProfileSection';
+import { PlaceDetailSheet } from '@/components/itinerary/PlaceDetailSheet';
 import { toast } from 'sonner';
 
 const PLANS = {
@@ -62,6 +63,7 @@ export default function PartnerDashboard() {
   const [dragOver, setDragOver] = useState(false);
   const [placeSaving, setPlaceSaving] = useState(false);
   const [portalLoading, setPortalLoading] = useState(false);
+  const [previewOpen, setPreviewOpen] = useState(false);
 
   // Check subscription on mount and after successful checkout
   useEffect(() => {
@@ -666,10 +668,16 @@ export default function PartnerDashboard() {
                         La tua attività su LocalVia
                       </CardTitle>
                       {!placeEditMode && (
-                        <Button variant="outline" size="sm" onClick={startPlaceEdit}>
-                          <Pencil className="w-3.5 h-3.5 mr-1.5" />
-                          Modifica
-                        </Button>
+                        <div className="flex gap-2">
+                          <Button variant="outline" size="sm" onClick={() => setPreviewOpen(true)}>
+                            <Eye className="w-3.5 h-3.5 mr-1.5" />
+                            Anteprima
+                          </Button>
+                          <Button variant="outline" size="sm" onClick={startPlaceEdit}>
+                            <Pencil className="w-3.5 h-3.5 mr-1.5" />
+                            Modifica
+                          </Button>
+                        </div>
                       )}
                     </div>
                   </CardHeader>
@@ -836,6 +844,31 @@ export default function PartnerDashboard() {
             )}
           </>
         )}
+
+            {/* Place Preview Sheet */}
+            {linkedPlace && (
+              <PlaceDetailSheet
+                place={{
+                  id: linkedPlace.id,
+                  name: linkedPlace.name,
+                  type: linkedPlace.place_type,
+                  address: linkedPlace.address ?? null,
+                  zone: linkedPlace.zone ?? null,
+                  photo_url: linkedPlace.photo_url ?? null,
+                  local_one_liner: linkedPlace.local_one_liner ?? null,
+                  duration_minutes: linkedPlace.duration_minutes ?? null,
+                  price_range: linkedPlace.price_range ?? null,
+                  cuisine_type: linkedPlace.cuisine_type ?? null,
+                  crowd_level: linkedPlace.crowd_level ?? null,
+                  indoor_outdoor: linkedPlace.indoor_outdoor ?? null,
+                  vibe_touristy_to_local: linkedPlace.vibe_touristy_to_local ?? null,
+                  latitude: linkedPlace.latitude ?? null,
+                  longitude: linkedPlace.longitude ?? null,
+                }}
+                isOpen={previewOpen}
+                onClose={() => setPreviewOpen(false)}
+              />
+            )}
 
         {/* Profile Section */}
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}>
