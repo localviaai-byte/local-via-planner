@@ -156,7 +156,7 @@ export default function PartnerDashboard() {
   // Place editing functions
   const startPlaceEdit = async () => {
     if (!linkedPlace) return;
-    setPlaceDescription(linkedPlace.local_one_liner || '');
+    setPlaceDescription(partner?.description || '');
     // Fetch photos
     const { data: photos } = await supabase
       .from('place_media')
@@ -168,15 +168,12 @@ export default function PartnerDashboard() {
   };
 
   const savePlaceChanges = async () => {
-    if (!linkedPlace) return;
+    if (!linkedPlace || !partner) return;
     setPlaceSaving(true);
     try {
-      const { error } = await supabase
-        .from('places')
-        .update({ local_one_liner: placeDescription })
-        .eq('id', linkedPlace.id);
-      if (error) throw error;
-      toast.success('Descrizione aggiornata!');
+      // Save partner description on partners table
+      await updateProfile({ description: placeDescription });
+      toast.success('Modifiche salvate!');
       setPlaceEditMode(false);
       refetch();
     } catch (err) {
@@ -690,17 +687,28 @@ export default function PartnerDashboard() {
                           <p className="text-sm text-muted-foreground">{linkedPlace.address}</p>
                         </div>
 
-                        {/* Description editing */}
+                        {/* Local one-liner (read-only, set by contributor) */}
+                        {linkedPlace.local_one_liner && (
+                          <div className="space-y-1.5">
+                            <Label className="text-muted-foreground">Consiglio del locale</Label>
+                            <div className="bg-primary/5 rounded-xl p-3 border border-primary/10">
+                              <p className="text-sm italic text-foreground">"{linkedPlace.local_one_liner}"</p>
+                              <p className="text-[10px] text-muted-foreground mt-1.5">Inserito dai nostri contributor locali · non modificabile</p>
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Partner description editing */}
                         <div className="space-y-2">
                           <Label>Descrizione della tua attività</Label>
                           <Textarea
                             value={placeDescription}
-                            onChange={e => setPlaceDescription(e.target.value)}
+                            onChange={e => { if (e.target.value.length <= 250) setPlaceDescription(e.target.value); }}
                             rows={4}
-                            placeholder="Racconta cosa rende speciale la tua attività..."
-                            maxLength={300}
+                            placeholder="Racconta cosa rende speciale la tua attività per i viaggiatori..."
+                            maxLength={250}
                           />
-                          <p className="text-xs text-muted-foreground text-right">{placeDescription.length}/300</p>
+                          <p className="text-xs text-muted-foreground text-right">{placeDescription.length}/250</p>
                         </div>
 
                         {/* Photo management */}
@@ -834,7 +842,13 @@ export default function PartnerDashboard() {
                           </div>
                         </div>
                         {linkedPlace.local_one_liner && (
-                          <p className="text-sm text-muted-foreground italic">"{linkedPlace.local_one_liner}"</p>
+                          <div className="bg-primary/5 rounded-xl p-3 border border-primary/10">
+                            <p className="text-sm italic text-foreground">"{linkedPlace.local_one_liner}"</p>
+                            <p className="text-[10px] text-muted-foreground mt-1">— Consiglio del locale</p>
+                          </div>
+                        )}
+                        {partner?.description && (
+                          <p className="text-sm text-muted-foreground">{partner.description}</p>
                         )}
                       </div>
                     )}
