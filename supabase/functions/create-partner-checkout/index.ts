@@ -28,7 +28,21 @@ serve(async (req) => {
     const stripeKey = Deno.env.get("STRIPE_SECRET_KEY");
     if (!stripeKey) throw new Error("STRIPE_SECRET_KEY is not set");
 
-    const authHeader = req.headers.get("Authorization")!;
+    const stripeKeyMode = stripeKey.startsWith("sk_live_")
+      ? "live"
+      : stripeKey.startsWith("sk_test_")
+        ? "test"
+        : "invalid";
+    if (stripeKeyMode === "invalid") {
+      throw new Error("STRIPE_SECRET_KEY non valida: usa una Secret key Stripe (sk_live_... o sk_test_...)");
+    }
+    logStep("Stripe key mode", { mode: stripeKeyMode });
+
+    const authHeader = req.headers.get("Authorization");
+    if (!authHeader?.startsWith("Bearer ")) {
+      throw new Error("Authorization header mancante o non valido");
+    }
+
     const token = authHeader.replace("Bearer ", "");
     const { data } = await supabaseClient.auth.getUser(token);
     const user = data.user;
@@ -40,6 +54,17 @@ serve(async (req) => {
     logStep("Price ID", { priceId });
 
     const stripe = new Stripe(stripeKey, { apiVersion: "2025-08-27.basil" });
+
+    try {
+      const price = await stripe.prices.retrieve(priceId);
+      logStep("Price found", { id: price.id, livemode: price.livemode });
+    } catch (priceError) {
+      const priceMessage = priceError instanceof Error ? priceError.message : String(priceError);
+      if (priceMessage.includes("No such price")) {
+        throw new Error(`No such price: '${priceId}'. Il price non esiste nell'ambiente ${stripeKeyMode} di questa chiave Stripe.`);
+      }
+      throw priceError;
+    }
 
     // Check if customer already exists
     const customers = await stripe.customers.list({ email: user.email, limit: 1 });

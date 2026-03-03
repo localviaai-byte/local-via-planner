@@ -100,7 +100,20 @@ export default function PartnerDashboard() {
         window.open(data.url, '_blank');
       }
     } catch (err: any) {
-      toast.error('Errore nell\'avvio del pagamento');
+      let errorMessage = "Errore nell'avvio del pagamento";
+
+      if (err?.context) {
+        try {
+          const payload = await err.context.json();
+          if (payload?.error) errorMessage = payload.error;
+        } catch {
+          // noop
+        }
+      } else if (err?.message) {
+        errorMessage = err.message;
+      }
+
+      toast.error(errorMessage);
       console.error(err);
     } finally {
       setCheckoutLoading(false);
