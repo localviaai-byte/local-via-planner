@@ -4,7 +4,8 @@ import { motion } from 'framer-motion';
 import {
   MapPin, LogOut, Copy, Check, ExternalLink, Building2,
   TrendingUp, MousePointerClick, DollarSign, Link2, Store,
-  CreditCard, AlertCircle, Loader2, Sparkles, CheckCircle2
+  CreditCard, AlertCircle, Loader2, Sparkles, CheckCircle2,
+  Pencil, Plus, Trash2, ImageIcon, Star
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -46,12 +47,19 @@ export default function PartnerDashboard() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const { user, signOut } = useAuth();
-  const { partner, stats, recentClicks, conversions, linkedPlace, isLoading, updateProfile } = usePartner();
+  const { partner, stats, recentClicks, conversions, linkedPlace, isLoading, updateProfile, refetch } = usePartner();
   const [copied, setCopied] = useState(false);
   const [editMode, setEditMode] = useState(false);
   const [checkoutLoading, setCheckoutLoading] = useState(false);
   const [subscriptionStatus, setSubscriptionStatus] = useState<{ subscribed: boolean; subscription_end?: string } | null>(null);
   const [formData, setFormData] = useState({ company_name: '', contact_name: '', contact_phone: '', website_url: '', description: '' });
+  
+  // Place editing state
+  const [placeEditMode, setPlaceEditMode] = useState(false);
+  const [placeDescription, setPlaceDescription] = useState('');
+  const [placePhotos, setPlacePhotos] = useState<Array<{ id: string; media_url: string; caption: string | null; sort_order: number }>>([]);
+  const [newPhotoUrl, setNewPhotoUrl] = useState('');
+  const [placeSaving, setPlaceSaving] = useState(false);
 
   // Check subscription on mount and after successful checkout
   useEffect(() => {
@@ -130,6 +138,91 @@ export default function PartnerDashboard() {
       setEditMode(false);
     } else {
       toast.error('Errore nel salvataggio');
+    }
+  };
+
+  // Place editing functions
+  const startPlaceEdit = async () => {
+    if (!linkedPlace) return;
+    setPlaceDescription(linkedPlace.local_one_liner || '');
+    // Fetch photos
+    const { data: photos } = await supabase
+      .from('place_media')
+      .select('*')
+      .eq('place_id', linkedPlace.id)
+      .order('sort_order');
+    setPlacePhotos(photos || []);
+    setPlaceEditMode(true);
+  };
+
+  const savePlaceChanges = async () => {
+    if (!linkedPlace) return;
+    setPlaceSaving(true);
+    try {
+      const { error } = await supabase
+        .from('places')
+        .update({ local_one_liner: placeDescription })
+        .eq('id', linkedPlace.id);
+      if (error) throw error;
+      toast.success('Descrizione aggiornata!');
+      setPlaceEditMode(false);
+      refetch();
+    } catch (err) {
+      toast.error('Errore nel salvataggio');
+    } finally {
+      setPlaceSaving(false);
+    }
+  };
+
+  const addPhoto = async () => {
+    if (!linkedPlace || !newPhotoUrl.trim()) return;
+    try {
+      const nextOrder = placePhotos.length;
+      const { data, error } = await supabase
+        .from('place_media')
+        .insert({
+          place_id: linkedPlace.id,
+          media_url: newPhotoUrl.trim(),
+          sort_order: nextOrder,
+          created_by: user?.id,
+        })
+        .select()
+        .single();
+      if (error) throw error;
+      setPlacePhotos(prev => [...prev, data]);
+      setNewPhotoUrl('');
+      toast.success('Foto aggiunta');
+    } catch (err) {
+      toast.error('Errore nell\'aggiunta della foto');
+    }
+  };
+
+  const removePhoto = async (photoId: string) => {
+    try {
+      const { error } = await supabase
+        .from('place_media')
+        .delete()
+        .eq('id', photoId);
+      if (error) throw error;
+      setPlacePhotos(prev => prev.filter(p => p.id !== photoId));
+      toast.success('Foto rimossa');
+    } catch (err) {
+      toast.error('Errore nella rimozione');
+    }
+  };
+
+  const setCoverPhoto = async (photoUrl: string) => {
+    if (!linkedPlace) return;
+    try {
+      const { error } = await supabase
+        .from('places')
+        .update({ photo_url: photoUrl })
+        .eq('id', linkedPlace.id);
+      if (error) throw error;
+      toast.success('Foto di copertina aggiornata');
+      refetch();
+    } catch (err) {
+      toast.error('Errore nell\'aggiornamento');
     }
   };
 
@@ -349,18 +442,48 @@ export default function PartnerDashboard() {
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  {(subscriptionStatus?.subscribed || partner.subscription_status === 'active') ? (
-                    <div className="space-y-2">
-                      <div className="flex items-center gap-2">
-                        <Badge className="bg-primary text-primary-foreground">Attivo</Badge>
-                        <span className="text-sm text-muted-foreground">
-                          Rinnovo il {(subscriptionStatus?.subscription_end || partner.subscription_ends_at)
-                            ? new Date(subscriptionStatus?.subscription_end || partner.subscription_ends_at!).toLocaleDateString('it-IT')
-                            : '—'}
-                        </span>
+                {(subscriptionStatus?.subscribed || partner.subscription_status === 'active') ? (
+                    <div className="space-y-4">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <Badge className="bg-primary text-primary-foreground">✅ Abbonamento attivo</Badge>
+                          <span className="text-sm text-muted-foreground">
+                            Rinnovo il {(subscriptionStatus?.subscription_end || partner.subscription_ends_at)
+                              ? new Date(subscriptionStatus?.subscription_end || partner.subscription_ends_at!).toLocaleDateString('it-IT')
+                              : '—'}
+                          </span>
+                        </div>
                       </div>
-                      <p className="text-sm text-muted-foreground">
-                        La tua attività viene proposta agli utenti che cercano esperienze compatibili con il tuo profilo.
+                      
+                      <div className="rounded-xl bg-primary/5 border border-primary/15 p-4 space-y-3">
+                        <p className="text-sm font-medium text-foreground">
+                          🎉 Grazie per il tuo supporto! Stiamo lavorando per portare grandi risultati alla tua attività.
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          La tua attività viene proposta agli utenti che cercano esperienze compatibili con il tuo profilo nei nostri itinerari AI.
+                        </p>
+                      </div>
+
+                      {/* Preliminary KPIs */}
+                      <div className="grid grid-cols-3 gap-3">
+                        <div className="rounded-xl bg-card border p-3 text-center">
+                          <TrendingUp className="w-4 h-4 mx-auto mb-1 text-muted-foreground" />
+                          <p className="text-xl font-bold">—</p>
+                          <p className="text-[10px] text-muted-foreground">Visualizzazioni</p>
+                        </div>
+                        <div className="rounded-xl bg-card border p-3 text-center">
+                          <MousePointerClick className="w-4 h-4 mx-auto mb-1 text-muted-foreground" />
+                          <p className="text-xl font-bold">—</p>
+                          <p className="text-[10px] text-muted-foreground">Click al sito</p>
+                        </div>
+                        <div className="rounded-xl bg-card border p-3 text-center">
+                          <MapPin className="w-4 h-4 mx-auto mb-1 text-muted-foreground" />
+                          <p className="text-xl font-bold">—</p>
+                          <p className="text-[10px] text-muted-foreground">Itinerari con te</p>
+                        </div>
+                      </div>
+                      <p className="text-[10px] text-muted-foreground text-center italic">
+                        Le statistiche saranno disponibili a breve. Stiamo raccogliendo i primi dati.
                       </p>
                     </div>
                   ) : (
@@ -439,31 +562,139 @@ export default function PartnerDashboard() {
               <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
                 <Card>
                   <CardHeader className="pb-3">
-                    <CardTitle className="text-lg font-display flex items-center gap-2">
-                      <Building2 className="w-5 h-5" />
-                      La tua attività su LocalVia
-                    </CardTitle>
+                    <div className="flex items-center justify-between">
+                      <CardTitle className="text-lg font-display flex items-center gap-2">
+                        <Building2 className="w-5 h-5" />
+                        La tua attività su LocalVia
+                      </CardTitle>
+                      {!placeEditMode && (
+                        <Button variant="outline" size="sm" onClick={startPlaceEdit}>
+                          <Pencil className="w-3.5 h-3.5 mr-1.5" />
+                          Modifica
+                        </Button>
+                      )}
+                    </div>
                   </CardHeader>
                   <CardContent>
-                    <div className="flex items-start gap-4">
-                      {linkedPlace.photo_url && (
-                        <img
-                          src={linkedPlace.photo_url}
-                          alt={linkedPlace.name}
-                          className="w-20 h-20 rounded-lg object-cover"
-                        />
-                      )}
-                      <div className="flex-1">
-                        <h3 className="font-medium">{linkedPlace.name}</h3>
-                        <p className="text-sm text-muted-foreground">{linkedPlace.address}</p>
-                        <div className="flex items-center gap-2 mt-1">
-                          <Badge variant="outline">{linkedPlace.place_type}</Badge>
-                          <Badge variant={linkedPlace.status === 'approved' ? 'default' : 'secondary'}>
-                            {linkedPlace.status === 'approved' ? 'Visibile' : linkedPlace.status}
-                          </Badge>
+                    {placeEditMode ? (
+                      <div className="space-y-5">
+                        {/* Place name (read-only) */}
+                        <div>
+                          <h3 className="font-medium text-lg">{linkedPlace.name}</h3>
+                          <p className="text-sm text-muted-foreground">{linkedPlace.address}</p>
+                        </div>
+
+                        {/* Description editing */}
+                        <div className="space-y-2">
+                          <Label>Descrizione della tua attività</Label>
+                          <Textarea
+                            value={placeDescription}
+                            onChange={e => setPlaceDescription(e.target.value)}
+                            rows={4}
+                            placeholder="Racconta cosa rende speciale la tua attività..."
+                            maxLength={300}
+                          />
+                          <p className="text-xs text-muted-foreground text-right">{placeDescription.length}/300</p>
+                        </div>
+
+                        {/* Photo management */}
+                        <div className="space-y-3">
+                          <Label className="flex items-center gap-2">
+                            <ImageIcon className="w-4 h-4" />
+                            Galleria foto
+                          </Label>
+                          
+                          {/* Existing photos */}
+                          {placePhotos.length > 0 ? (
+                            <div className="grid grid-cols-3 gap-2">
+                              {placePhotos.map(photo => (
+                                <div key={photo.id} className="relative group rounded-lg overflow-hidden aspect-square">
+                                  <img src={photo.media_url} alt="" className="w-full h-full object-cover" />
+                                  <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-colors flex items-center justify-center gap-1 opacity-0 group-hover:opacity-100">
+                                    <Button
+                                      size="icon"
+                                      variant="secondary"
+                                      className="h-7 w-7"
+                                      onClick={() => setCoverPhoto(photo.media_url)}
+                                      title="Imposta come copertina"
+                                    >
+                                      <Star className="w-3.5 h-3.5" />
+                                    </Button>
+                                    <Button
+                                      size="icon"
+                                      variant="destructive"
+                                      className="h-7 w-7"
+                                      onClick={() => removePhoto(photo.id)}
+                                      title="Rimuovi"
+                                    >
+                                      <Trash2 className="w-3.5 h-3.5" />
+                                    </Button>
+                                  </div>
+                                  {linkedPlace.photo_url === photo.media_url && (
+                                    <div className="absolute top-1 left-1">
+                                      <Badge className="bg-primary text-primary-foreground text-[10px] px-1.5 py-0">Copertina</Badge>
+                                    </div>
+                                  )}
+                                </div>
+                              ))}
+                            </div>
+                          ) : (
+                            <p className="text-sm text-muted-foreground">Nessuna foto aggiunta</p>
+                          )}
+
+                          {/* Add new photo */}
+                          <div className="flex items-center gap-2">
+                            <Input
+                              value={newPhotoUrl}
+                              onChange={e => setNewPhotoUrl(e.target.value)}
+                              placeholder="URL della foto (https://...)"
+                              className="flex-1"
+                            />
+                            <Button variant="outline" size="sm" onClick={addPhoto} disabled={!newPhotoUrl.trim()}>
+                              <Plus className="w-4 h-4 mr-1" />
+                              Aggiungi
+                            </Button>
+                          </div>
+                          <p className="text-xs text-muted-foreground">
+                            Usa foto reali della tua attività. Passa il mouse su una foto per impostarla come copertina o rimuoverla.
+                          </p>
+                        </div>
+
+                        {/* Save/Cancel */}
+                        <div className="flex gap-2 pt-2">
+                          <Button onClick={savePlaceChanges} disabled={placeSaving} className="bg-terracotta hover:bg-terracotta/90">
+                            {placeSaving ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : null}
+                            Salva modifiche
+                          </Button>
+                          <Button variant="outline" onClick={() => setPlaceEditMode(false)}>Annulla</Button>
                         </div>
                       </div>
-                    </div>
+                    ) : (
+                      <div className="space-y-3">
+                        <div className="flex items-start gap-4">
+                          {linkedPlace.photo_url && (
+                            <img
+                              src={linkedPlace.photo_url}
+                              alt={linkedPlace.name}
+                              className="w-20 h-20 rounded-lg object-cover"
+                            />
+                          )}
+                          <div className="flex-1">
+                            <h3 className="font-medium">{linkedPlace.name}</h3>
+                            <p className="text-sm text-muted-foreground">{linkedPlace.address}</p>
+                            <div className="flex items-center gap-2 mt-1">
+                              <Badge variant="outline">{linkedPlace.place_type}</Badge>
+                              <Badge variant={linkedPlace.status === 'approved' ? 'default' : 'secondary'}>
+                                {linkedPlace.status === 'approved' ? 'Visibile' : linkedPlace.status}
+                              </Badge>
+                            </div>
+                          </div>
+                        </div>
+                        {linkedPlace.local_one_liner && (
+                          <p className="text-sm text-muted-foreground italic">"{linkedPlace.local_one_liner}"</p>
+                        )}
+                      </div>
+                    )}
                   </CardContent>
                 </Card>
               </motion.div>
