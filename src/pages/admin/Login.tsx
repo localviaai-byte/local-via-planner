@@ -22,15 +22,21 @@ export default function AdminLogin() {
   const [viewMode, setViewMode] = useState<ViewMode>('login');
   const [resetEmailSent, setResetEmailSent] = useState(false);
   
-  const { user, isLoading, signIn, signUp } = useAuth();
+  const { user, isLoading, role, signIn, signUp } = useAuth();
   const navigate = useNavigate();
 
-  // Redirect if already logged in
+  // Redirect if already logged in - route based on role
   useEffect(() => {
-    if (user && !isLoading) {
-      navigate('/admin', { replace: true });
+    if (user && !isLoading && role !== undefined) {
+      if (role === 'referral_partner' || role === 'affiliate_partner') {
+        navigate('/partner', { replace: true });
+      } else if (role === 'local_contributor') {
+        navigate('/contributor', { replace: true });
+      } else {
+        navigate('/admin', { replace: true });
+      }
     }
-  }, [user, isLoading, navigate]);
+  }, [user, isLoading, role, navigate]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
