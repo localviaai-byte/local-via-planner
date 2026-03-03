@@ -141,6 +141,8 @@ export function PlaceDetailSheet({ place, isOpen, onClose }: PlaceDetailSheetPro
   const [mediaIndex, setMediaIndex] = useState(0);
   const [partnerLinks, setPartnerLinks] = useState<Array<{ title: string; url: string }>>([]);
   const [partnerDescription, setPartnerDescription] = useState<string | null>(null);
+  const [partnerAnnouncements, setPartnerAnnouncements] = useState<Array<{ text: string }>>([]);
+  const [placeHours, setPlaceHours] = useState<Array<{ day_of_week: number; open_time: string; close_time: string; is_closed: boolean }>>([]);
 
   useEffect(() => {
     if (!isOpen || !place?.id) {
@@ -148,6 +150,8 @@ export function PlaceDetailSheet({ place, isOpen, onClose }: PlaceDetailSheetPro
       setMediaIndex(0);
       setPartnerLinks([]);
       setPartnerDescription(null);
+      setPartnerAnnouncements([]);
+      setPlaceHours([]);
       return;
     }
 
@@ -178,21 +182,37 @@ export function PlaceDetailSheet({ place, isOpen, onClose }: PlaceDetailSheetPro
           setFullData(data as unknown as FullPlaceData);
           
           // Fetch partner info for this place
-          const { data: partnerData } = await supabase
-            .from('partners')
-            .select('custom_links, description')
-            .eq('linked_place_id', place.id)
-            .eq('partner_type', 'affiliate')
-            .eq('status', 'active')
-            .maybeSingle();
+          const [partnerRes, hoursRes] = await Promise.all([
+            supabase
+              .from('partners')
+              .select('custom_links, description, announcements')
+              .eq('linked_place_id', place.id)
+              .eq('partner_type', 'affiliate')
+              .eq('status', 'active')
+              .maybeSingle(),
+            supabase
+              .from('place_opening_hours')
+              .select('day_of_week, open_time, close_time, is_closed')
+              .eq('place_id', place.id)
+              .order('day_of_week'),
+          ]);
           
-          if (partnerData) {
-            const links = partnerData.custom_links as any;
+          if (hoursRes.data && hoursRes.data.length > 0) {
+            setPlaceHours(hoursRes.data);
+          }
+
+          if (partnerRes.data) {
+            const pd = partnerRes.data;
+            const links = pd.custom_links as any;
             if (Array.isArray(links)) {
               setPartnerLinks(links.filter((l: any) => l.title && l.url));
             }
-            if (partnerData.description) {
-              setPartnerDescription(partnerData.description);
+            if (pd.description) {
+              setPartnerDescription(pd.description);
+            }
+            const ann = pd.announcements as any;
+            if (Array.isArray(ann)) {
+              setPartnerAnnouncements(ann.filter((a: any) => a.text));
             }
           }
         }
@@ -642,6 +662,47 @@ export function PlaceDetailSheet({ place, isOpen, onClose }: PlaceDetailSheetPro
               {(d?.zone || place.zone) && (
                 <div className="text-sm text-muted-foreground">
                   📍 Zona: <span className="font-medium text-foreground">{d?.zone || place.zone}</span>
+                </div>
+              )}
+
+              {/* Announcements */}
+              {partnerAnnouncements.length > 0 && (
+                <div className="space-y-2">
+                  {partnerAnnouncements.map((a, idx) => (
+                    <div key={idx} className="bg-accent/50 rounded-xl p-3 border border-accent flex gap-2.5">
+                      <span className="text-base flex-shrink-0">📢</span>
+                      <p className="text-sm text-foreground">{a.text}</p>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {/* Opening hours */}
+              {placeHours.length > 0 && (
+                <div>
+                  <h3 className="text-sm font-semibold text-foreground mb-2 flex items-center gap-1.5">
+                    <Clock className="w-4 h-4" /> Orari di apertura
+                  </h3>
+                  <div className="grid grid-cols-1 gap-1">
+                    {(() => {
+                      const dayNames = ['Lun', 'Mar', 'Mer', 'Gio', 'Ven', 'Sab', 'Dom'];
+                      return dayNames.map((name, idx) => {
+                        const h = placeHours.find(ph => ph.day_of_week === idx);
+                        return (
+                          <div key={idx} className="flex justify-between text-sm px-2 py-1 rounded-lg odd:bg-muted/50">
+                            <span className="font-medium text-foreground w-10">{name}</span>
+                            {h?.is_closed ? (
+                              <span className="text-muted-foreground italic">Chiuso</span>
+                            ) : h ? (
+                              <span className="text-muted-foreground">{h.open_time.slice(0, 5)} – {h.close_time.slice(0, 5)}</span>
+                            ) : (
+                              <span className="text-muted-foreground">—</span>
+                            )}
+                          </div>
+                        );
+                      });
+                    })()}
+                  </div>
                 </div>
               )}
 

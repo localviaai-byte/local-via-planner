@@ -493,6 +493,7 @@ export type Database = {
       }
       partners: {
         Row: {
+          announcements: Json | null
           billing_address: string | null
           billing_company_name: string | null
           billing_pec: string | null
@@ -525,6 +526,7 @@ export type Database = {
           website_url: string | null
         }
         Insert: {
+          announcements?: Json | null
           billing_address?: string | null
           billing_company_name?: string | null
           billing_pec?: string | null
@@ -557,6 +559,7 @@ export type Database = {
           website_url?: string | null
         }
         Update: {
+          announcements?: Json | null
           billing_address?: string | null
           billing_company_name?: string | null
           billing_pec?: string | null
