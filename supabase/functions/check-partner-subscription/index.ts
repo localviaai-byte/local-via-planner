@@ -72,13 +72,17 @@ serve(async (req) => {
       logStep("Active subscription", { productId, priceId, subscriptionEnd });
 
       // Update partner record with subscription info
+      const startedAt = sub.start_date
+        ? new Date(sub.start_date * 1000).toISOString()
+        : new Date(sub.created * 1000).toISOString();
+
       await supabaseClient
         .from("partners")
         .update({
           subscription_status: "active",
           stripe_customer_id: customerId,
           stripe_subscription_id: sub.id,
-          subscription_started_at: new Date(sub.start_date * 1000).toISOString(),
+          subscription_started_at: startedAt,
           subscription_ends_at: subscriptionEnd,
         })
         .eq("user_id", user.id);
