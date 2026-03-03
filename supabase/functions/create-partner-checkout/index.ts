@@ -76,6 +76,12 @@ serve(async (req) => {
 
     const origin = req.headers.get("origin") || "https://www.localvia.app";
 
+    // Trial until March 15, 2026 — billing starts on that date
+    const trialEnd = Math.floor(new Date('2026-03-15T00:00:00Z').getTime() / 1000);
+    const now = Math.floor(Date.now() / 1000);
+    // Only apply trial if the date is in the future
+    const useTrialEnd = trialEnd > now + 48 * 3600 ? trialEnd : undefined;
+
     const session = await stripe.checkout.sessions.create({
       customer: customerId,
       customer_email: customerId ? undefined : user.email,
@@ -86,6 +92,7 @@ serve(async (req) => {
       tax_id_collection: { enabled: true },
       automatic_tax: { enabled: false },
       metadata: { user_id: user.id },
+      ...(useTrialEnd ? { subscription_data: { trial_end: useTrialEnd } } : {}),
     });
 
     logStep("Checkout session created", { sessionId: session.id });
