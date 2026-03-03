@@ -61,6 +61,7 @@ export default function PartnerDashboard() {
   const [uploading, setUploading] = useState(false);
   const [dragOver, setDragOver] = useState(false);
   const [placeSaving, setPlaceSaving] = useState(false);
+  const [portalLoading, setPortalLoading] = useState(false);
 
   // Check subscription on mount and after successful checkout
   useEffect(() => {
@@ -109,6 +110,22 @@ export default function PartnerDashboard() {
   const handleSignOut = async () => {
     await signOut();
     navigate('/admin/login');
+  };
+
+  const handleManageSubscription = async () => {
+    setPortalLoading(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('customer-portal');
+      if (error) throw error;
+      if (data?.url) {
+        window.open(data.url, '_blank');
+      }
+    } catch (err: any) {
+      toast.error('Errore nell\'apertura del portale di gestione');
+      console.error(err);
+    } finally {
+      setPortalLoading(false);
+    }
   };
 
   const copyReferralLink = () => {
@@ -486,6 +503,15 @@ export default function PartnerDashboard() {
                               : '—'}
                           </span>
                         </div>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={handleManageSubscription}
+                          disabled={portalLoading}
+                        >
+                          {portalLoading ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <CreditCard className="w-4 h-4 mr-2" />}
+                          Gestisci abbonamento
+                        </Button>
                       </div>
                       
                       <div className="rounded-xl bg-primary/5 border border-primary/15 p-4 space-y-3">
