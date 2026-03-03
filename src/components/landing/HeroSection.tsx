@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion';
-import { ChevronRight, MapPin, Compass } from 'lucide-react';
+import { ChevronRight, MapPin, Compass, LayoutDashboard } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/hooks/useAuth';
 import heroImage from '@/assets/hero-pompeii.jpg';
@@ -15,7 +15,16 @@ const destinations = [
 ];
 
 export function HeroSection({ onStart }: HeroSectionProps) {
-  const { user } = useAuth();
+  const { user, role, isPartner, isContributor, isAdmin, isEditor } = useAuth();
+
+  const getDashboardLink = () => {
+    if (isPartner) return '/partner';
+    if (isContributor) return '/contributor';
+    if (isAdmin || isEditor) return '/admin';
+    return null;
+  };
+
+  const dashboardLink = getDashboardLink();
 
   return (
     <div className="min-h-[100dvh] bg-background flex flex-col relative overflow-hidden">
@@ -32,6 +41,15 @@ export function HeroSection({ onStart }: HeroSectionProps) {
 
         {/* Auth — subtle top-right */}
         <div className="absolute top-safe-top mt-4 right-4 z-20 flex items-center gap-2">
+          {user && dashboardLink && (
+            <a
+              href={dashboardLink}
+              className="px-3 py-1.5 text-xs tracking-wide uppercase text-white/70 hover:text-white bg-white/10 hover:bg-white/20 backdrop-blur-md rounded-full transition-colors border border-white/10 flex items-center gap-1.5"
+            >
+              <LayoutDashboard className="w-3 h-3" />
+              La mia area
+            </a>
+          )}
           {user && (
             <a
               href="/my-plans"
@@ -41,12 +59,14 @@ export function HeroSection({ onStart }: HeroSectionProps) {
               I miei piani
             </a>
           )}
-          <a
-            href={user ? '/my-plans' : '/auth'}
-            className="px-3 py-1.5 text-xs tracking-wide uppercase text-white/70 hover:text-white bg-white/10 hover:bg-white/20 backdrop-blur-md rounded-full transition-colors border border-white/10"
-          >
-            {user ? user.email?.split('@')[0] : 'Accedi / Registrati'}
-          </a>
+          {!user && (
+            <a
+              href="/auth"
+              className="px-3 py-1.5 text-xs tracking-wide uppercase text-white/70 hover:text-white bg-white/10 hover:bg-white/20 backdrop-blur-md rounded-full transition-colors border border-white/10"
+            >
+              Accedi / Registrati
+            </a>
+          )}
         </div>
 
         {/* Hero headline — anchored to bottom of image */}
