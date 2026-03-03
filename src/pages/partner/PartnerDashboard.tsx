@@ -19,6 +19,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { usePartner } from '@/hooks/usePartner';
 import { ReferralQRCode } from '@/components/ui/ReferralQRCode';
 import { supabase } from '@/integrations/supabase/client';
+import { ProfileSection } from '@/components/partner/ProfileSection';
 import { toast } from 'sonner';
 
 const PLANS = {
@@ -49,10 +50,8 @@ export default function PartnerDashboard() {
   const { user, signOut } = useAuth();
   const { partner, stats, recentClicks, conversions, linkedPlace, isLoading, updateProfile, refetch } = usePartner();
   const [copied, setCopied] = useState(false);
-  const [editMode, setEditMode] = useState(false);
   const [checkoutLoading, setCheckoutLoading] = useState(false);
   const [subscriptionStatus, setSubscriptionStatus] = useState<{ subscribed: boolean; subscription_end?: string } | null>(null);
-  const [formData, setFormData] = useState({ company_name: '', contact_name: '', contact_phone: '', website_url: '', description: '' });
   
   // Place editing state
   const [placeEditMode, setPlaceEditMode] = useState(false);
@@ -121,27 +120,6 @@ export default function PartnerDashboard() {
     setTimeout(() => setCopied(false), 2000);
   };
 
-  const startEdit = () => {
-    if (!partner) return;
-    setFormData({
-      company_name: partner.company_name || '',
-      contact_name: partner.contact_name || '',
-      contact_phone: partner.contact_phone || '',
-      website_url: partner.website_url || '',
-      description: partner.description || '',
-    });
-    setEditMode(true);
-  };
-
-  const saveProfile = async () => {
-    const res = await updateProfile(formData);
-    if (!res?.error) {
-      toast.success('Profilo aggiornato');
-      setEditMode(false);
-    } else {
-      toast.error('Errore nel salvataggio');
-    }
-  };
 
   // Place editing functions
   const startPlaceEdit = async () => {
@@ -796,61 +774,7 @@ export default function PartnerDashboard() {
 
         {/* Profile Section */}
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}>
-          <Card>
-            <CardHeader className="pb-3">
-              <div className="flex items-center justify-between">
-                <CardTitle className="text-lg font-display">Profilo</CardTitle>
-                {!editMode && (
-                  <Button variant="outline" size="sm" onClick={startEdit}>Modifica</Button>
-                )}
-              </div>
-            </CardHeader>
-            <CardContent>
-              {editMode ? (
-                <div className="space-y-4">
-                  <div>
-                    <Label>Nome azienda</Label>
-                    <Input value={formData.company_name} onChange={e => setFormData(p => ({ ...p, company_name: e.target.value }))} />
-                  </div>
-                  <div>
-                    <Label>Referente</Label>
-                    <Input value={formData.contact_name} onChange={e => setFormData(p => ({ ...p, contact_name: e.target.value }))} />
-                  </div>
-                  <div>
-                    <Label>Telefono</Label>
-                    <Input value={formData.contact_phone} onChange={e => setFormData(p => ({ ...p, contact_phone: e.target.value }))} />
-                  </div>
-                  <div>
-                    <Label>Sito web</Label>
-                    <Input value={formData.website_url} onChange={e => setFormData(p => ({ ...p, website_url: e.target.value }))} />
-                  </div>
-                  <div>
-                    <Label>Descrizione</Label>
-                    <Textarea value={formData.description} onChange={e => setFormData(p => ({ ...p, description: e.target.value }))} rows={3} />
-                  </div>
-                  <div className="flex gap-2">
-                    <Button onClick={saveProfile} className="bg-terracotta hover:bg-terracotta/90">Salva</Button>
-                    <Button variant="outline" onClick={() => setEditMode(false)}>Annulla</Button>
-                  </div>
-                </div>
-              ) : (
-                <div className="space-y-3 text-sm">
-                  <div className="flex justify-between"><span className="text-muted-foreground">Azienda</span><span>{partner.company_name}</span></div>
-                  <div className="flex justify-between"><span className="text-muted-foreground">Referente</span><span>{partner.contact_name || '—'}</span></div>
-                  <div className="flex justify-between"><span className="text-muted-foreground">Email</span><span>{partner.contact_email}</span></div>
-                  <div className="flex justify-between"><span className="text-muted-foreground">Telefono</span><span>{partner.contact_phone || '—'}</span></div>
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Sito web</span>
-                    {partner.website_url ? (
-                      <a href={partner.website_url} target="_blank" rel="noopener noreferrer" className="text-terracotta hover:underline flex items-center gap-1">
-                        {partner.website_url.replace(/^https?:\/\//, '')} <ExternalLink className="w-3 h-3" />
-                      </a>
-                    ) : <span>—</span>}
-                  </div>
-                </div>
-              )}
-            </CardContent>
-          </Card>
+          <ProfileSection partner={partner} userEmail={partner.contact_email} updateProfile={updateProfile} />
         </motion.div>
       </main>
     </div>
