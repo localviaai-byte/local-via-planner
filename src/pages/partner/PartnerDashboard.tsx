@@ -24,10 +24,10 @@ import { toast } from 'sonner';
 
 const PLANS = {
   earlyBird: {
-    priceId: 'price_1T6rbnPMs1qzeFhta8eqCRvz', // TEST €1 — ripristinare: price_1T6rXVPMs1qzeFhtMS4CZeVo / prod_U51aewtzTZ2IFp
-    productId: 'prod_U51fJGTkBhpNU1',
+    priceId: 'price_1T6rXVPMs1qzeFhtMS4CZeVo',
+    productId: 'prod_U51aewtzTZ2IFp',
     name: 'Early Bird',
-    price: 1,
+    price: 35,
     originalPrice: 99,
     features: [],
   },
