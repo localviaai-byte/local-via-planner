@@ -5,7 +5,7 @@ import {
   MapPin, LogOut, Copy, Check, ExternalLink, Building2,
   TrendingUp, MousePointerClick, DollarSign, Link2, Store,
   CreditCard, AlertCircle, Loader2, Sparkles, CheckCircle2,
-  Pencil, Plus, Trash2, ImageIcon, Star
+  Pencil, Plus, Trash2, ImageIcon, Star, Home
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -313,10 +313,16 @@ export default function PartnerDashboard() {
               {isReferral ? '🤝 Referral Partner' : '⭐ Affiliate Partner'}
             </Badge>
           </div>
-          <Button variant="ghost" size="sm" onClick={handleSignOut}>
-            <LogOut className="w-4 h-4 mr-2" />
-            Esci
-          </Button>
+          <div className="flex items-center gap-1">
+            <Button variant="ghost" size="sm" onClick={() => navigate('/')}>
+              <Home className="w-4 h-4 mr-1" />
+              Home
+            </Button>
+            <Button variant="ghost" size="sm" onClick={handleSignOut}>
+              <LogOut className="w-4 h-4 mr-2" />
+              Esci
+            </Button>
+          </div>
         </div>
       </header>
 
