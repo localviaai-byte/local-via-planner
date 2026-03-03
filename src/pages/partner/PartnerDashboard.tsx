@@ -48,7 +48,7 @@ export default function PartnerDashboard() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const { user, signOut } = useAuth();
-  const { partner, stats, recentClicks, conversions, linkedPlace, isLoading, updateProfile, refetch } = usePartner();
+  const { partner, stats, affiliateStats, recentClicks, conversions, linkedPlace, isLoading, updateProfile, refetch } = usePartner();
   const [copied, setCopied] = useState(false);
   const [checkoutLoading, setCheckoutLoading] = useState(false);
   const [subscriptionStatus, setSubscriptionStatus] = useState<{ subscribed: boolean; subscription_end?: string } | null>(null);
@@ -497,27 +497,31 @@ export default function PartnerDashboard() {
                         </p>
                       </div>
 
-                      {/* Preliminary KPIs */}
+                      {/* KPIs */}
                       <div className="grid grid-cols-3 gap-3">
                         <div className="rounded-xl bg-card border p-3 text-center">
                           <TrendingUp className="w-4 h-4 mx-auto mb-1 text-muted-foreground" />
-                          <p className="text-xl font-bold">—</p>
+                          <p className="text-xl font-bold">{affiliateStats.planItemAppearances}</p>
                           <p className="text-[10px] text-muted-foreground">Visualizzazioni</p>
+                          {affiliateStats.thisMonthAppearances > 0 && (
+                            <p className="text-[10px] text-primary font-medium">+{affiliateStats.thisMonthAppearances} questo mese</p>
+                          )}
+                        </div>
+                        <div className="rounded-xl bg-card border p-3 text-center">
+                          <MapPin className="w-4 h-4 mx-auto mb-1 text-muted-foreground" />
+                          <p className="text-xl font-bold">{affiliateStats.distinctItineraries}</p>
+                          <p className="text-[10px] text-muted-foreground">Itinerari con te</p>
+                          {affiliateStats.thisMonthItineraries > 0 && (
+                            <p className="text-[10px] text-primary font-medium">+{affiliateStats.thisMonthItineraries} questo mese</p>
+                          )}
                         </div>
                         <div className="rounded-xl bg-card border p-3 text-center">
                           <MousePointerClick className="w-4 h-4 mx-auto mb-1 text-muted-foreground" />
                           <p className="text-xl font-bold">—</p>
                           <p className="text-[10px] text-muted-foreground">Click al sito</p>
-                        </div>
-                        <div className="rounded-xl bg-card border p-3 text-center">
-                          <MapPin className="w-4 h-4 mx-auto mb-1 text-muted-foreground" />
-                          <p className="text-xl font-bold">—</p>
-                          <p className="text-[10px] text-muted-foreground">Itinerari con te</p>
+                          <p className="text-[10px] text-muted-foreground italic">Prossimamente</p>
                         </div>
                       </div>
-                      <p className="text-[10px] text-muted-foreground text-center italic">
-                        Le statistiche saranno disponibili a breve. Stiamo raccogliendo i primi dati.
-                      </p>
                     </div>
                   ) : (
                     <div className="space-y-4">
