@@ -5,7 +5,8 @@ import {
   MapPin, LogOut, Copy, Check, ExternalLink, Building2,
   TrendingUp, MousePointerClick, DollarSign, Link2, Store,
   CreditCard, AlertCircle, Loader2, Sparkles, CheckCircle2,
-  Pencil, Plus, Trash2, ImageIcon, Star, Home, Eye
+  Pencil, Plus, Trash2, ImageIcon, Star, Home, Eye, Clock,
+  Megaphone
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -65,6 +66,8 @@ export default function PartnerDashboard() {
   const [portalLoading, setPortalLoading] = useState(false);
   const [previewOpen, setPreviewOpen] = useState(false);
   const [customLinks, setCustomLinks] = useState<Array<{ title: string; url: string }>>([]);
+  const [openingHours, setOpeningHours] = useState<Array<{ day: number; open: string; close: string; closed: boolean }>>([]);
+  const [announcements, setAnnouncements] = useState<Array<{ text: string }>>([]);
 
   // Check subscription on mount and after successful checkout
   useEffect(() => {
@@ -159,6 +162,8 @@ export default function PartnerDashboard() {
     if (!linkedPlace) return;
     setPlaceDescription(partner?.description || '');
     setCustomLinks(Array.isArray((partner as any)?.custom_links) ? (partner as any).custom_links : []);
+    setAnnouncements(Array.isArray((partner as any)?.announcements) ? (partner as any).announcements : []);
+    
     // Fetch photos
     const { data: photos } = await supabase
       .from('place_media')
@@ -166,6 +171,27 @@ export default function PartnerDashboard() {
       .eq('place_id', linkedPlace.id)
       .order('sort_order');
     setPlacePhotos(photos || []);
+
+    // Fetch opening hours
+    const { data: hours } = await supabase
+      .from('place_opening_hours')
+      .select('*')
+      .eq('place_id', linkedPlace.id)
+      .order('day_of_week');
+    
+    const DAY_NAMES = ['Lunedì', 'Martedì', 'Mercoledì', 'Giovedì', 'Venerdì', 'Sabato', 'Domenica'];
+    const hoursMap = new Map((hours || []).map(h => [h.day_of_week, h]));
+    const fullHours = DAY_NAMES.map((_, idx) => {
+      const existing = hoursMap.get(idx);
+      return {
+        day: idx,
+        open: existing?.open_time?.slice(0, 5) || '09:00',
+        close: existing?.close_time?.slice(0, 5) || '22:00',
+        closed: existing?.is_closed ?? false,
+      };
+    });
+    setOpeningHours(fullHours);
+
     setPlaceEditMode(true);
   };
 
@@ -173,9 +199,32 @@ export default function PartnerDashboard() {
     if (!linkedPlace || !partner) return;
     setPlaceSaving(true);
     try {
-      // Save partner description and custom links on partners table
+      // Save partner description, custom links, and announcements
       const validLinks = customLinks.filter(l => l.title.trim() && l.url.trim());
-      await updateProfile({ description: placeDescription, custom_links: validLinks } as any);
+      const validAnnouncements = announcements.filter(a => a.text.trim());
+      await updateProfile({ description: placeDescription, custom_links: validLinks, announcements: validAnnouncements } as any);
+
+      // Save opening hours
+      // Delete existing then re-insert
+      await supabase
+        .from('place_opening_hours')
+        .delete()
+        .eq('place_id', linkedPlace.id);
+      
+      const hoursToInsert = openingHours.map(h => ({
+        place_id: linkedPlace.id,
+        day_of_week: h.day,
+        open_time: h.open + ':00',
+        close_time: h.close + ':00',
+        is_closed: h.closed,
+      }));
+      
+      if (hoursToInsert.length > 0) {
+        await supabase
+          .from('place_opening_hours')
+          .insert(hoursToInsert);
+      }
+
       toast.success('Modifiche salvate!');
       setPlaceEditMode(false);
       refetch();
@@ -762,6 +811,104 @@ export default function PartnerDashboard() {
                               onClick={() => setCustomLinks([...customLinks, { title: '', url: '' }])}
                             >
                               <Plus className="w-3.5 h-3.5 mr-1" /> Aggiungi link
+                            </Button>
+                          )}
+                        </div>
+
+                        {/* Opening hours */}
+                        <div className="space-y-3">
+                          <Label className="flex items-center gap-2">
+                            <Clock className="w-4 h-4" />
+                            Orari di apertura
+                          </Label>
+                          {openingHours.map((h, idx) => {
+                            const dayNames = ['Lunedì', 'Martedì', 'Mercoledì', 'Giovedì', 'Venerdì', 'Sabato', 'Domenica'];
+                            return (
+                              <div key={idx} className="flex items-center gap-2">
+                                <span className="text-sm w-20 flex-shrink-0">{dayNames[h.day]}</span>
+                                <label className="flex items-center gap-1.5 cursor-pointer flex-shrink-0">
+                                  <input
+                                    type="checkbox"
+                                    checked={h.closed}
+                                    onChange={e => {
+                                      const updated = [...openingHours];
+                                      updated[idx] = { ...updated[idx], closed: e.target.checked };
+                                      setOpeningHours(updated);
+                                    }}
+                                    className="rounded"
+                                  />
+                                  <span className="text-xs text-muted-foreground">Chiuso</span>
+                                </label>
+                                {!h.closed && (
+                                  <>
+                                    <Input
+                                      type="time"
+                                      value={h.open}
+                                      onChange={e => {
+                                        const updated = [...openingHours];
+                                        updated[idx] = { ...updated[idx], open: e.target.value };
+                                        setOpeningHours(updated);
+                                      }}
+                                      className="w-24 text-sm"
+                                    />
+                                    <span className="text-muted-foreground text-sm">–</span>
+                                    <Input
+                                      type="time"
+                                      value={h.close}
+                                      onChange={e => {
+                                        const updated = [...openingHours];
+                                        updated[idx] = { ...updated[idx], close: e.target.value };
+                                        setOpeningHours(updated);
+                                      }}
+                                      className="w-24 text-sm"
+                                    />
+                                  </>
+                                )}
+                              </div>
+                            );
+                          })}
+                        </div>
+
+                        {/* Announcements */}
+                        <div className="space-y-3">
+                          <Label className="flex items-center gap-2">
+                            <Megaphone className="w-4 h-4" />
+                            Comunicazioni (max 2)
+                          </Label>
+                          <p className="text-xs text-muted-foreground">Messaggi visibili a chi visualizza la tua attività, es. "Chiusi per ferie dal 10 al 20 agosto"</p>
+                          {announcements.map((a, idx) => (
+                            <div key={idx} className="flex gap-2">
+                              <Textarea
+                                value={a.text}
+                                onChange={e => {
+                                  if (e.target.value.length <= 150) {
+                                    const updated = [...announcements];
+                                    updated[idx] = { text: e.target.value };
+                                    setAnnouncements(updated);
+                                  }
+                                }}
+                                rows={2}
+                                placeholder="Scrivi una comunicazione..."
+                                maxLength={150}
+                                className="flex-1"
+                              />
+                              <Button
+                                size="icon"
+                                variant="ghost"
+                                className="h-9 w-9 flex-shrink-0 mt-1"
+                                onClick={() => setAnnouncements(announcements.filter((_, i) => i !== idx))}
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </Button>
+                            </div>
+                          ))}
+                          {announcements.length < 2 && (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => setAnnouncements([...announcements, { text: '' }])}
+                            >
+                              <Plus className="w-3.5 h-3.5 mr-1" /> Aggiungi comunicazione
                             </Button>
                           )}
                         </div>
