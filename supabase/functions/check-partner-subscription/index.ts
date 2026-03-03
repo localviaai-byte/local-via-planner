@@ -66,25 +66,40 @@ serve(async (req) => {
 
     if (hasActive) {
       const sub = subscriptions.data[0];
-      subscriptionEnd = new Date(sub.current_period_end * 1000).toISOString();
+      logStep("Sub raw fields", {
+        current_period_end: sub.current_period_end,
+        start_date: sub.start_date,
+        created: sub.created,
+        id: sub.id,
+      });
+
       productId = sub.items.data[0].price.product;
       priceId = sub.items.data[0].price.id;
-      logStep("Active subscription", { productId, priceId, subscriptionEnd });
 
-      // Update partner record with subscription info
-      const startedAt = sub.start_date
-        ? new Date(sub.start_date * 1000).toISOString()
-        : new Date(sub.created * 1000).toISOString();
+      // Safely convert timestamps - guard against undefined/null/0
+      if (sub.current_period_end && typeof sub.current_period_end === 'number') {
+        subscriptionEnd = new Date(sub.current_period_end * 1000).toISOString();
+      }
+
+      let startedAt: string | null = null;
+      const startTs = sub.start_date || sub.created;
+      if (startTs && typeof startTs === 'number') {
+        startedAt = new Date(startTs * 1000).toISOString();
+      }
+
+      logStep("Active subscription", { productId, priceId, subscriptionEnd, startedAt });
+
+      const updatePayload: Record<string, any> = {
+        subscription_status: "active",
+        stripe_customer_id: customerId,
+        stripe_subscription_id: sub.id,
+      };
+      if (startedAt) updatePayload.subscription_started_at = startedAt;
+      if (subscriptionEnd) updatePayload.subscription_ends_at = subscriptionEnd;
 
       await supabaseClient
         .from("partners")
-        .update({
-          subscription_status: "active",
-          stripe_customer_id: customerId,
-          stripe_subscription_id: sub.id,
-          subscription_started_at: startedAt,
-          subscription_ends_at: subscriptionEnd,
-        })
+        .update(updatePayload)
         .eq("user_id", user.id);
     } else {
       logStep("No active subscription");
