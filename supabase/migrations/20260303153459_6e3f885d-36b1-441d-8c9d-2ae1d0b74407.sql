@@ -1,0 +1,1 @@
+ALTER TABLE public.partners ADD COLUMN custom_links jsonb DEFAULT '[]'::jsonb;

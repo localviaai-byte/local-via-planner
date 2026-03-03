@@ -64,6 +64,7 @@ export default function PartnerDashboard() {
   const [placeSaving, setPlaceSaving] = useState(false);
   const [portalLoading, setPortalLoading] = useState(false);
   const [previewOpen, setPreviewOpen] = useState(false);
+  const [customLinks, setCustomLinks] = useState<Array<{ title: string; url: string }>>([]);
 
   // Check subscription on mount and after successful checkout
   useEffect(() => {
@@ -157,6 +158,7 @@ export default function PartnerDashboard() {
   const startPlaceEdit = async () => {
     if (!linkedPlace) return;
     setPlaceDescription(partner?.description || '');
+    setCustomLinks(Array.isArray((partner as any)?.custom_links) ? (partner as any).custom_links : []);
     // Fetch photos
     const { data: photos } = await supabase
       .from('place_media')
@@ -171,8 +173,9 @@ export default function PartnerDashboard() {
     if (!linkedPlace || !partner) return;
     setPlaceSaving(true);
     try {
-      // Save partner description on partners table
-      await updateProfile({ description: placeDescription });
+      // Save partner description and custom links on partners table
+      const validLinks = customLinks.filter(l => l.title.trim() && l.url.trim());
+      await updateProfile({ description: placeDescription, custom_links: validLinks } as any);
       toast.success('Modifiche salvate!');
       setPlaceEditMode(false);
       refetch();
@@ -710,6 +713,57 @@ export default function PartnerDashboard() {
                             maxLength={250}
                           />
                           <p className="text-xs text-muted-foreground text-right">{placeDescription.length}/250</p>
+                        </div>
+
+                        {/* Custom links management */}
+                        <div className="space-y-3">
+                          <Label className="flex items-center gap-2">
+                            <Link2 className="w-4 h-4" />
+                            Link utili (max 3)
+                          </Label>
+                          <p className="text-xs text-muted-foreground">Aggiungi link visibili agli utenti, es. "Prenotazione", "E-commerce vini"</p>
+                          {customLinks.map((link, idx) => (
+                            <div key={idx} className="flex gap-2 items-start">
+                              <Input
+                                placeholder="Titolo (es. Prenotazione)"
+                                value={link.title}
+                                maxLength={30}
+                                onChange={e => {
+                                  const updated = [...customLinks];
+                                  updated[idx] = { ...updated[idx], title: e.target.value };
+                                  setCustomLinks(updated);
+                                }}
+                                className="w-1/3"
+                              />
+                              <Input
+                                placeholder="https://..."
+                                value={link.url}
+                                onChange={e => {
+                                  const updated = [...customLinks];
+                                  updated[idx] = { ...updated[idx], url: e.target.value };
+                                  setCustomLinks(updated);
+                                }}
+                                className="flex-1"
+                              />
+                              <Button
+                                size="icon"
+                                variant="ghost"
+                                className="h-9 w-9 flex-shrink-0"
+                                onClick={() => setCustomLinks(customLinks.filter((_, i) => i !== idx))}
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </Button>
+                            </div>
+                          ))}
+                          {customLinks.length < 3 && (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => setCustomLinks([...customLinks, { title: '', url: '' }])}
+                            >
+                              <Plus className="w-3.5 h-3.5 mr-1" /> Aggiungi link
+                            </Button>
+                          )}
                         </div>
 
                         {/* Photo management */}

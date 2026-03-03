@@ -506,6 +506,7 @@ export type Database = {
           contact_phone: string | null
           created_at: string
           created_by: string | null
+          custom_links: Json | null
           description: string | null
           discount_percent: number | null
           id: string
@@ -537,6 +538,7 @@ export type Database = {
           contact_phone?: string | null
           created_at?: string
           created_by?: string | null
+          custom_links?: Json | null
           description?: string | null
           discount_percent?: number | null
           id?: string
@@ -568,6 +570,7 @@ export type Database = {
           contact_phone?: string | null
           created_at?: string
           created_by?: string | null
+          custom_links?: Json | null
           description?: string | null
           discount_percent?: number | null
           id?: string
