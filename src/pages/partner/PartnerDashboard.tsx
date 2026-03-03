@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { copyToClipboard } from '@/lib/clipboard';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import {
@@ -147,10 +148,10 @@ export default function PartnerDashboard() {
     }
   };
 
-  const copyReferralLink = () => {
+  const copyReferralLink = async () => {
     if (!partner?.referral_code) return;
     const link = `https://www.localvia.app/?ref=${partner.referral_code}`;
-    navigator.clipboard.writeText(link);
+    await copyToClipboard(link);
     setCopied(true);
     toast.success('Link copiato!');
     setTimeout(() => setCopied(false), 2000);
@@ -454,8 +455,8 @@ export default function PartnerDashboard() {
                         variant="outline"
                         size="sm"
                         className="shrink-0"
-                        onClick={() => {
-                          navigator.clipboard.writeText(partner.referral_code!);
+                        onClick={async () => {
+                          await copyToClipboard(partner.referral_code!);
                           toast.success('Codice copiato!');
                         }}
                       >

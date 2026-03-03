@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { copyToClipboard } from '@/lib/clipboard';
 import { motion } from 'framer-motion';
 import { 
   Users, 
@@ -47,9 +48,9 @@ export function ContributorsSection() {
   
   const handleCopyLink = async (inviteCode: string) => {
     const url = `https://www.localvia.app/admin/invite/${inviteCode}`;
-    await navigator.clipboard.writeText(url);
+    const copied = await copyToClipboard(url);
     setCopiedId(inviteCode);
-    toast.success('Link copiato!');
+    toast.success(copied ? 'Link copiato!' : `Link: ${url}`);
     setTimeout(() => setCopiedId(null), 2000);
   };
   

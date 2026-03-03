@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { copyToClipboard } from '@/lib/clipboard';
 import { 
   Sheet, 
   SheetContent, 
@@ -100,9 +101,9 @@ export function InviteContributorSheet({ open, onOpenChange, cities }: InviteCon
   
   const handleCopyLink = async () => {
     if (generatedLink) {
-      await navigator.clipboard.writeText(generatedLink);
+      const ok = await copyToClipboard(generatedLink);
       setCopied(true);
-      toast.success('Link copiato!');
+      toast.success(ok ? 'Link copiato!' : `Link: ${generatedLink}`);
       setTimeout(() => setCopied(false), 2000);
     }
   };

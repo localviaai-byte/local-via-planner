@@ -6,6 +6,7 @@ import {
   MapPin, TrendingUp, MousePointerClick, DollarSign, Eye, Trash2,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { copyToClipboard } from '@/lib/clipboard';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -137,8 +138,8 @@ export function PartnersSection() {
       if (error) throw error;
 
       const inviteUrl = `https://www.localvia.app/partner/invite/${code}`;
-      await navigator.clipboard.writeText(inviteUrl);
-      toast.success('Invito creato! Link copiato negli appunti.');
+      const copied = await copyToClipboard(inviteUrl);
+      toast.success(copied ? 'Invito creato! Link copiato negli appunti.' : `Invito creato! Link: ${inviteUrl}`);
       setInviteOpen(false);
       resetInviteForm();
       fetchData();
@@ -224,8 +225,8 @@ export function PartnersSection() {
 
   const copyInviteLink = async (code: string) => {
     const url = `https://www.localvia.app/partner/invite/${code}`;
-    await navigator.clipboard.writeText(url);
-    toast.success('Link copiato!');
+    const copied = await copyToClipboard(url);
+    toast.success(copied ? 'Link copiato!' : `Link: ${url}`);
   };
 
   const deleteInvite = async (id: string) => {
