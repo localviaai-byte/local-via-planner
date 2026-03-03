@@ -51,7 +51,7 @@ export default function PartnerDashboard() {
   const { partner, stats, affiliateStats, recentClicks, conversions, linkedPlace, isLoading, updateProfile, refetch } = usePartner();
   const [copied, setCopied] = useState(false);
   const [checkoutLoading, setCheckoutLoading] = useState(false);
-  const [subscriptionStatus, setSubscriptionStatus] = useState<{ subscribed: boolean; subscription_end?: string } | null>(null);
+  const [subscriptionStatus, setSubscriptionStatus] = useState<{ subscribed: boolean; subscription_end?: string; cancel_at_period_end?: boolean } | null>(null);
   
   // Place editing state
   const [placeEditMode, setPlaceEditMode] = useState(false);
@@ -494,13 +494,24 @@ export default function PartnerDashboard() {
                 <CardContent>
                 {(subscriptionStatus?.subscribed || partner.subscription_status === 'active') ? (
                     <div className="space-y-4">
-                      <div className="flex items-center justify-between">
+                      <div className="flex items-center justify-between flex-wrap gap-2">
                         <div className="flex items-center gap-2">
-                          <Badge className="bg-primary text-primary-foreground">✅ Abbonamento attivo</Badge>
+                          {subscriptionStatus?.cancel_at_period_end ? (
+                            <Badge variant="secondary" className="bg-amber-100 text-amber-800 border-amber-300">
+                              ⏳ Abbonamento cancellato
+                            </Badge>
+                          ) : (
+                            <Badge className="bg-primary text-primary-foreground">✅ Abbonamento attivo</Badge>
+                          )}
                           <span className="text-sm text-muted-foreground">
-                            Rinnovo il {(subscriptionStatus?.subscription_end || partner.subscription_ends_at)
-                              ? new Date(subscriptionStatus?.subscription_end || partner.subscription_ends_at!).toLocaleDateString('it-IT')
-                              : '—'}
+                            {subscriptionStatus?.cancel_at_period_end 
+                              ? `Termina il ${(subscriptionStatus?.subscription_end || partner.subscription_ends_at)
+                                  ? new Date(subscriptionStatus?.subscription_end || partner.subscription_ends_at!).toLocaleDateString('it-IT')
+                                  : '—'}`
+                              : `Rinnovo il ${(subscriptionStatus?.subscription_end || partner.subscription_ends_at)
+                                  ? new Date(subscriptionStatus?.subscription_end || partner.subscription_ends_at!).toLocaleDateString('it-IT')
+                                  : '—'}`
+                            }
                           </span>
                         </div>
                         <Button
@@ -514,14 +525,25 @@ export default function PartnerDashboard() {
                         </Button>
                       </div>
                       
-                      <div className="rounded-xl bg-primary/5 border border-primary/15 p-4 space-y-3">
-                        <p className="text-sm font-medium text-foreground">
-                          🎉 Grazie per il tuo supporto! Stiamo lavorando per portare grandi risultati alla tua attività.
-                        </p>
-                        <p className="text-xs text-muted-foreground">
-                          La tua attività viene proposta agli utenti che cercano esperienze compatibili con il tuo profilo nei nostri itinerari AI.
-                        </p>
-                      </div>
+                      {subscriptionStatus?.cancel_at_period_end ? (
+                        <div className="rounded-xl bg-amber-50 border border-amber-200 p-4 space-y-2">
+                          <p className="text-sm font-medium text-amber-900">
+                            Il tuo abbonamento è stato cancellato e non verrà rinnovato.
+                          </p>
+                          <p className="text-xs text-amber-700">
+                            Continuerai ad apparire negli itinerari fino alla data di scadenza. Puoi riattivare l'abbonamento in qualsiasi momento.
+                          </p>
+                        </div>
+                      ) : (
+                        <div className="rounded-xl bg-primary/5 border border-primary/15 p-4 space-y-3">
+                          <p className="text-sm font-medium text-foreground">
+                            🎉 Grazie per il tuo supporto! Stiamo lavorando per portare grandi risultati alla tua attività.
+                          </p>
+                          <p className="text-xs text-muted-foreground">
+                            La tua attività viene proposta agli utenti che cercano esperienze compatibili con il tuo profilo nei nostri itinerari AI.
+                          </p>
+                        </div>
+                      )}
 
                       {/* KPIs */}
                       <div className="grid grid-cols-3 gap-3">

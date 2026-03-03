@@ -63,10 +63,12 @@ serve(async (req) => {
     let productId = null;
     let priceId = null;
     let subscriptionEnd = null;
+    let cancelAtPeriodEnd = false;
 
     if (hasActive) {
       const sub = subscriptions.data[0];
       const subItem = sub.items.data[0];
+      cancelAtPeriodEnd = !!(sub as any).cancel_at_period_end;
       productId = subItem.price.product;
       priceId = subItem.price.id;
 
@@ -117,6 +119,7 @@ serve(async (req) => {
       product_id: productId,
       price_id: priceId,
       subscription_end: subscriptionEnd,
+      cancel_at_period_end: cancelAtPeriodEnd,
     }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
       status: 200,
