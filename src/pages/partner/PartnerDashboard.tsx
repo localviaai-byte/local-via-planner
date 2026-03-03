@@ -608,6 +608,7 @@ export default function PartnerDashboard() {
                                 <span className="text-sm line-through text-muted-foreground">€{PLANS.earlyBird.originalPrice}/mese</span>
                                 <Badge variant="secondary" className="text-xs">-{Math.round(100 - (PLANS.earlyBird.price / PLANS.earlyBird.originalPrice) * 100)}%</Badge>
                               </div>
+                              <p className="text-xs text-muted-foreground">Prezzo bloccato per i primi 6 mesi</p>
                             </div>
                             <Button
                               className="w-full bg-terracotta hover:bg-terracotta/90"
