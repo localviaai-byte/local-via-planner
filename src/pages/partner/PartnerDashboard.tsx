@@ -59,6 +59,8 @@ export default function PartnerDashboard() {
   const [placeDescription, setPlaceDescription] = useState('');
   const [placePhotos, setPlacePhotos] = useState<Array<{ id: string; media_url: string; caption: string | null; sort_order: number }>>([]);
   const [newPhotoUrl, setNewPhotoUrl] = useState('');
+  const [uploading, setUploading] = useState(false);
+  const [dragOver, setDragOver] = useState(false);
   const [placeSaving, setPlaceSaving] = useState(false);
 
   // Check subscription on mount and after successful checkout
@@ -194,6 +196,53 @@ export default function PartnerDashboard() {
       toast.success('Foto aggiunta');
     } catch (err) {
       toast.error('Errore nell\'aggiunta della foto');
+    }
+  };
+
+  const uploadFiles = async (files: FileList | File[]) => {
+    if (!linkedPlace || !user) return;
+    setUploading(true);
+    try {
+      for (const file of Array.from(files)) {
+        if (!file.type.startsWith('image/')) {
+          toast.error(`${file.name} non è un'immagine`);
+          continue;
+        }
+        if (file.size > 5 * 1024 * 1024) {
+          toast.error(`${file.name} supera il limite di 5MB`);
+          continue;
+        }
+        const ext = file.name.split('.').pop();
+        const path = `${user.id}/${linkedPlace.id}/${Date.now()}.${ext}`;
+        const { error: uploadError } = await supabase.storage
+          .from('place-photos')
+          .upload(path, file);
+        if (uploadError) throw uploadError;
+
+        const { data: { publicUrl } } = supabase.storage
+          .from('place-photos')
+          .getPublicUrl(path);
+
+        const nextOrder = placePhotos.length;
+        const { data, error } = await supabase
+          .from('place_media')
+          .insert({
+            place_id: linkedPlace.id,
+            media_url: publicUrl,
+            sort_order: nextOrder,
+            created_by: user.id,
+          })
+          .select()
+          .single();
+        if (error) throw error;
+        setPlacePhotos(prev => [...prev, data]);
+      }
+      toast.success('Foto caricate!');
+    } catch (err) {
+      console.error(err);
+      toast.error('Errore nel caricamento');
+    } finally {
+      setUploading(false);
     }
   };
 
@@ -642,12 +691,49 @@ export default function PartnerDashboard() {
                             <p className="text-sm text-muted-foreground">Nessuna foto aggiunta</p>
                           )}
 
-                          {/* Add new photo */}
+                          {/* Drag & Drop / File upload zone */}
+                          <div
+                            className={`border-2 border-dashed rounded-2xl p-6 text-center transition-colors cursor-pointer ${
+                              dragOver ? 'border-primary bg-primary/5' : 'border-border hover:border-primary/40'
+                            }`}
+                            onDragOver={e => { e.preventDefault(); setDragOver(true); }}
+                            onDragLeave={() => setDragOver(false)}
+                            onDrop={e => {
+                              e.preventDefault();
+                              setDragOver(false);
+                              if (e.dataTransfer.files.length) uploadFiles(e.dataTransfer.files);
+                            }}
+                            onClick={() => {
+                              const input = document.createElement('input');
+                              input.type = 'file';
+                              input.accept = 'image/*';
+                              input.multiple = true;
+                              input.onchange = () => { if (input.files?.length) uploadFiles(input.files); };
+                              input.click();
+                            }}
+                          >
+                            {uploading ? (
+                              <div className="flex items-center justify-center gap-2 text-muted-foreground">
+                                <Loader2 className="w-5 h-5 animate-spin" />
+                                <span className="text-sm">Caricamento in corso...</span>
+                              </div>
+                            ) : (
+                              <>
+                                <ImageIcon className="w-8 h-8 mx-auto text-muted-foreground/60 mb-2" />
+                                <p className="text-sm font-medium text-muted-foreground">
+                                  Trascina le foto qui o clicca per selezionarle
+                                </p>
+                                <p className="text-xs text-muted-foreground/60 mt-1">JPG, PNG, WebP • Max 5MB</p>
+                              </>
+                            )}
+                          </div>
+
+                          {/* URL fallback */}
                           <div className="flex items-center gap-2">
                             <Input
                               value={newPhotoUrl}
                               onChange={e => setNewPhotoUrl(e.target.value)}
-                              placeholder="URL della foto (https://...)"
+                              placeholder="Oppure incolla un URL (https://...)"
                               className="flex-1"
                             />
                             <Button variant="outline" size="sm" onClick={addPhoto} disabled={!newPhotoUrl.trim()}>
