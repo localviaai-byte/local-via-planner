@@ -139,11 +139,15 @@ export function PlaceDetailSheet({ place, isOpen, onClose }: PlaceDetailSheetPro
   const [fullData, setFullData] = useState<FullPlaceData | null>(null);
   const [loading, setLoading] = useState(false);
   const [mediaIndex, setMediaIndex] = useState(0);
+  const [partnerLinks, setPartnerLinks] = useState<Array<{ title: string; url: string }>>([]);
+  const [partnerDescription, setPartnerDescription] = useState<string | null>(null);
 
   useEffect(() => {
     if (!isOpen || !place?.id) {
       setFullData(null);
       setMediaIndex(0);
+      setPartnerLinks([]);
+      setPartnerDescription(null);
       return;
     }
 
@@ -172,6 +176,25 @@ export function PlaceDetailSheet({ place, isOpen, onClose }: PlaceDetailSheetPro
 
         if (!error && data) {
           setFullData(data as unknown as FullPlaceData);
+          
+          // Fetch partner info for this place
+          const { data: partnerData } = await supabase
+            .from('partners')
+            .select('custom_links, description')
+            .eq('linked_place_id', place.id)
+            .eq('partner_type', 'affiliate')
+            .eq('status', 'active')
+            .maybeSingle();
+          
+          if (partnerData) {
+            const links = partnerData.custom_links as any;
+            if (Array.isArray(links)) {
+              setPartnerLinks(links.filter((l: any) => l.title && l.url));
+            }
+            if (partnerData.description) {
+              setPartnerDescription(partnerData.description);
+            }
+          }
         }
       } catch (e) {
         console.error('Error fetching place details:', e);
@@ -619,6 +642,31 @@ export function PlaceDetailSheet({ place, isOpen, onClose }: PlaceDetailSheetPro
               {(d?.zone || place.zone) && (
                 <div className="text-sm text-muted-foreground">
                   📍 Zona: <span className="font-medium text-foreground">{d?.zone || place.zone}</span>
+                </div>
+              )}
+
+              {/* Partner description */}
+              {partnerDescription && (
+                <div className="space-y-1">
+                  <h3 className="text-sm font-semibold text-foreground">Dal gestore</h3>
+                  <p className="text-sm text-muted-foreground">{partnerDescription}</p>
+                </div>
+              )}
+
+              {/* Partner custom links */}
+              {partnerLinks.length > 0 && (
+                <div className="space-y-2">
+                  {partnerLinks.map((link, idx) => (
+                    <Button
+                      key={idx}
+                      variant="outline"
+                      className="w-full justify-start"
+                      onClick={() => window.open(link.url.startsWith('http') ? link.url : `https://${link.url}`, '_blank')}
+                    >
+                      <ExternalLink className="w-4 h-4 mr-2 flex-shrink-0" />
+                      {link.title}
+                    </Button>
+                  ))}
                 </div>
               )}
 
