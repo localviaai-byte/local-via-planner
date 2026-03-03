@@ -66,19 +66,21 @@ serve(async (req) => {
 
     if (hasActive) {
       const sub = subscriptions.data[0];
+      const subItem = sub.items.data[0];
+      productId = subItem.price.product;
+      priceId = subItem.price.id;
+
+      // In basil API, current_period_end moved to subscription item level
+      const itemPeriodEnd = (subItem as any).current_period_end;
       logStep("Sub raw fields", {
-        current_period_end: sub.current_period_end,
+        item_current_period_end: itemPeriodEnd,
         start_date: sub.start_date,
         created: sub.created,
         id: sub.id,
       });
 
-      productId = sub.items.data[0].price.product;
-      priceId = sub.items.data[0].price.id;
-
-      // Safely convert timestamps - guard against undefined/null/0
-      if (sub.current_period_end && typeof sub.current_period_end === 'number') {
-        subscriptionEnd = new Date(sub.current_period_end * 1000).toISOString();
+      if (itemPeriodEnd && typeof itemPeriodEnd === 'number') {
+        subscriptionEnd = new Date(itemPeriodEnd * 1000).toISOString();
       }
 
       let startedAt: string | null = null;
