@@ -140,7 +140,7 @@ export function TransportHubsPanel({ cityId, cityName }: TransportHubsPanelProps
                           <p className="text-xs text-muted-foreground">{hub.transport_to_center}</p>
                         )}
                         {hub.ncc_taxi_note && (
-                          <p className="text-xs text-amber-600">🚕 {hub.ncc_taxi_note}</p>
+                          <p className="text-xs text-warning">🚕 {hub.ncc_taxi_note}</p>
                         )}
                       </div>
                     </div>

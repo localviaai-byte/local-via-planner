@@ -59,7 +59,7 @@ export function TransportInfoBanner({ cityId }: TransportInfoBannerProps) {
                 </a>
               )}
               {hub.ncc_taxi_note && !hub.ncc_contact_url && (
-                <p className="text-xs text-amber-600 mt-0.5">🚕 {hub.ncc_taxi_note}</p>
+                <p className="text-xs text-warning mt-0.5">🚕 {hub.ncc_taxi_note}</p>
               )}
             </div>
           </div>
