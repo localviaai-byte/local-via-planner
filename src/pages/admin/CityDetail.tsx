@@ -255,6 +255,14 @@ export default function CityDetail() {
         />
       </div>
       
+      {/* Transport Hubs Panel */}
+      <div className="px-4 pt-2">
+        <TransportHubsPanel 
+          cityId={cityId!}
+          cityName={city.name}
+        />
+      </div>
+      
       {/* Discovery Panel */}
       <div className="px-4 pt-2">
         <DiscoveryPanel 
