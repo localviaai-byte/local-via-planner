@@ -277,6 +277,32 @@ export function StepDestination({ preferences, onUpdate }: StepDestinationProps)
           </motion.div>
         )}
 
+        {/* Arrival time - shown when dates are selected */}
+        {preferences.travelPeriod?.type === 'dates' && preferences.travelPeriod?.dates?.start && (
+          <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} className="space-y-2">
+            <p className="text-xs text-muted-foreground font-medium">🕐 A che ora inizi il primo giorno?</p>
+            <div className="grid grid-cols-3 gap-1.5">
+              {([
+                { value: 'early' as const, label: 'Mattina', icon: '🌅', desc: 'Entro le 9:00' },
+                { value: 'normal' as const, label: 'Pomeriggio', icon: '☀️', desc: 'Dopo le 13:00' },
+                { value: 'late' as const, label: 'Sera', icon: '🌙', desc: 'Dopo le 18:00' },
+              ]).map((opt) => (
+                <Button
+                  key={opt.value}
+                  type="button"
+                  variant={preferences.startTime === opt.value ? 'default' : 'outline'}
+                  onClick={() => onUpdate({ startTime: opt.value })}
+                  className="h-auto py-2.5 flex flex-col gap-0.5 px-1"
+                >
+                  <span className="text-base">{opt.icon}</span>
+                  <span className="text-[10px] font-medium leading-tight">{opt.label}</span>
+                  <span className="text-[9px] opacity-70 leading-tight">{opt.desc}</span>
+                </Button>
+              ))}
+            </div>
+          </motion.div>
+        )}
+
         {/* "Non lo so ancora" option */}
         {preferences.travelPeriod?.type !== 'none' && (
           <button
