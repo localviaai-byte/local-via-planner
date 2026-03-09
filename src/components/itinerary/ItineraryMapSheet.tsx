@@ -8,6 +8,7 @@ import { useMapboxToken } from '@/hooks/useMapboxToken';
 import { type GeneratedItinerary, type ItineraryPlace } from '@/hooks/useGenerateItinerary';
 import { PlacePreviewSheet } from './PlacePreviewSheet';
 import { PlaceDetailSheet } from './PlaceDetailSheet';
+import { useTransportHubs, type TransportHub, type HubType } from '@/hooks/useTransportHubs';
 
 interface MapPoint {
   id: string;
