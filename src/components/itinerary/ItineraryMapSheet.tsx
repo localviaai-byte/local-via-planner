@@ -134,6 +134,14 @@ export function ItineraryMapSheet({
   const [mapError, setMapError] = useState<string | null>(null);
 
   const { itinerary, city } = generatedData;
+  const { data: transportHubs = [] } = useTransportHubs(city.id);
+
+  const HUB_EMOJIS: Record<HubType, string> = {
+    airport: '✈️',
+    train_station: '🚂',
+    bus_station: '🚌',
+    port: '⛴️',
+  };
 
   // Sync local state ONLY when opening the sheet (or while closed).
   // If the parent changes activeDay due to scroll observers while the sheet is open,
