@@ -355,6 +355,11 @@ export function ItineraryViewer({ preferences, generatedData, onBack, onRegenera
         </div>
       </header>
 
+      {/* Transport Info */}
+      <div className="container max-w-2xl px-4 pt-3">
+        <TransportInfoBanner cityId={city.id} />
+      </div>
+
       {/* Quick Actions */}
       <div className="sticky top-[116px] z-40 bg-background/95 backdrop-blur-sm border-b border-border">
         <div className="container max-w-2xl py-2.5 px-4">
