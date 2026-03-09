@@ -131,8 +131,10 @@ export function CityConnectionsPanel({ cityId, cityName }: CityConnectionsPanelP
       toast.success('Connessione creata!');
       setShowAddDialog(false);
       setFormData(DEFAULT_CONNECTION_FORM_DATA);
-    } catch (error) {
-      toast.error('Errore nella creazione della connessione');
+    } catch (error: any) {
+      console.error('Connection create error:', error);
+      const msg = error?.message || 'Errore sconosciuto';
+      toast.error(`Errore: ${msg}`);
     }
   };
   
