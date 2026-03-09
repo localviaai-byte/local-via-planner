@@ -418,6 +418,47 @@ export function ItineraryMapSheet({
         markersRef.current.push(marker);
       });
 
+      // Add transport hub markers
+      transportHubs.forEach((hub) => {
+        if (!hub.latitude || !hub.longitude) return;
+        
+        const emoji = HUB_EMOJIS[hub.hub_type] || '📍';
+        const el = document.createElement('div');
+        el.className = 'hub-marker';
+        el.style.cssText = `
+          width: 32px;
+          height: 32px;
+          background: hsl(var(--muted));
+          border: 2px solid hsl(var(--border));
+          border-radius: 8px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-size: 16px;
+          box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+          cursor: pointer;
+        `;
+        el.textContent = emoji;
+
+        const popupHtml = `
+          <div style="font-family: inherit; padding: 4px; max-width: 220px;">
+            <strong>${hub.name}</strong>${hub.code ? ` <span style="color: #888;">(${hub.code})</span>` : ''}
+            ${hub.distance_from_center_km ? `<br/><span style="font-size: 11px;">📏 ${hub.distance_from_center_km} km dal centro</span>` : ''}
+            ${hub.travel_time_to_center_minutes ? `<br/><span style="font-size: 11px;">⏱️ ${hub.travel_time_to_center_minutes} min</span>` : ''}
+            ${hub.transport_to_center ? `<br/><span style="font-size: 11px;">🚌 ${hub.transport_to_center}</span>` : ''}
+            ${hub.ncc_taxi_note ? `<br/><span style="font-size: 11px;">🚕 ${hub.ncc_taxi_note}</span>` : ''}
+            ${hub.ncc_contact_url ? `<br/><a href="${hub.ncc_contact_url}" target="_blank" rel="noopener" style="font-size: 11px; color: #E85D04;">📞 Prenota NCC/Taxi</a>` : ''}
+          </div>
+        `;
+
+        const marker = new mapboxgl.Marker({ element: el })
+          .setLngLat([Number(hub.longitude), Number(hub.latitude)])
+          .setPopup(new mapboxgl.Popup({ offset: 25, closeButton: false }).setHTML(popupHtml))
+          .addTo(m);
+
+        markersRef.current.push(marker);
+      });
+
       // Draw connecting line (dashed)
       if (dayPoints.length >= 2) {
         const coordinates = dayPoints.map(p => [p.lng, p.lat]);
