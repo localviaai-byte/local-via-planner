@@ -518,7 +518,7 @@ export function ItineraryMapSheet({
     }
 
     render();
-  }, [dayPoints, mapLoaded, cityCenter, localActiveDay, pointsSignature]);
+  }, [dayPoints, mapLoaded, cityCenter, localActiveDay, pointsSignature, transportHubs]);
 
   const totalWalkingTime = walkingSegments.reduce((acc, seg) => acc + seg.walkingMinutes, 0);
 
