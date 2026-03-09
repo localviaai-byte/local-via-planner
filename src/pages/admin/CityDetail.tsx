@@ -25,6 +25,7 @@ import type { PlaceType, PlaceStatus } from '@/types/database';
 import { PLACE_TYPE_OPTIONS } from '@/types/database';
 import { DiscoveryPanel } from '@/components/admin/DiscoveryPanel';
 import { CityConnectionsPanel } from '@/components/admin/CityConnectionsPanel';
+import { TransportHubsPanel } from '@/components/admin/TransportHubsPanel';
 import { ProductsPanel } from '@/components/admin/ProductsPanel';
 import { toast } from 'sonner';
 
