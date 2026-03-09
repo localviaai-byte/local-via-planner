@@ -25,6 +25,7 @@ import type { PlaceType, PlaceStatus } from '@/types/database';
 import { PLACE_TYPE_OPTIONS } from '@/types/database';
 import { DiscoveryPanel } from '@/components/admin/DiscoveryPanel';
 import { CityConnectionsPanel } from '@/components/admin/CityConnectionsPanel';
+import { TransportHubsPanel } from '@/components/admin/TransportHubsPanel';
 import { ProductsPanel } from '@/components/admin/ProductsPanel';
 import { toast } from 'sonner';
 
@@ -249,6 +250,14 @@ export default function CityDetail() {
       {/* City Connections Panel */}
       <div className="px-4 pt-2">
         <CityConnectionsPanel 
+          cityId={cityId!}
+          cityName={city.name}
+        />
+      </div>
+      
+      {/* Transport Hubs Panel */}
+      <div className="px-4 pt-2">
+        <TransportHubsPanel 
           cityId={cityId!}
           cityName={city.name}
         />

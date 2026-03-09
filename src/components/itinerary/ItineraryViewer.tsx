@@ -32,6 +32,7 @@ import { ItineraryMapSheet } from './ItineraryMapSheet';
 import { CalendarSheet } from './CalendarSheet';
 import { ReplaceSlotSheet } from './ReplaceSlotSheet';
 import { MoveSlotSheet } from './MoveSlotSheet';
+import { TransportInfoBanner } from './TransportInfoBanner';
 import { useSelectedProducts } from '@/contexts/SelectedProductsContext';
 import { useTripPlan } from '@/contexts/TripPlanContext';
 import { type TripPreferences } from '@/lib/mockData';
@@ -353,6 +354,11 @@ export function ItineraryViewer({ preferences, generatedData, onBack, onRegenera
           </motion.div>
         </div>
       </header>
+
+      {/* Transport Info */}
+      <div className="container max-w-2xl px-4 pt-3">
+        <TransportInfoBanner cityId={city.id} />
+      </div>
 
       {/* Quick Actions */}
       <div className="sticky top-[116px] z-40 bg-background/95 backdrop-blur-sm border-b border-border">
