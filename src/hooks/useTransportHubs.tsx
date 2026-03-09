@@ -49,7 +49,7 @@ export function useTransportHubs(cityId: string | undefined) {
 export function useCreateTransportHub() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async (hub: Omit<TransportHub, 'id' | 'created_at' | 'is_active'>) => {
+    mutationFn: async (hub: Omit<TransportHub, 'id' | 'created_at' | 'is_active'> & { created_by?: string | null }) => {
       const { data, error } = await (supabase as any)
         .from('city_transport_hubs')
         .insert(hub)
