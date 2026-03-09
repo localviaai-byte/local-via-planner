@@ -32,6 +32,7 @@ import { ItineraryMapSheet } from './ItineraryMapSheet';
 import { CalendarSheet } from './CalendarSheet';
 import { ReplaceSlotSheet } from './ReplaceSlotSheet';
 import { MoveSlotSheet } from './MoveSlotSheet';
+import { TransportInfoBanner } from './TransportInfoBanner';
 import { useSelectedProducts } from '@/contexts/SelectedProductsContext';
 import { useTripPlan } from '@/contexts/TripPlanContext';
 import { type TripPreferences } from '@/lib/mockData';
