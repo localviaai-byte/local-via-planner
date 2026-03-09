@@ -269,6 +269,71 @@ export type Database = {
           },
         ]
       }
+      city_transport_hubs: {
+        Row: {
+          city_id: string
+          code: string | null
+          created_at: string
+          created_by: string | null
+          distance_from_center_km: number | null
+          hub_type: string
+          id: string
+          is_active: boolean
+          latitude: number | null
+          longitude: number | null
+          name: string
+          ncc_contact_url: string | null
+          ncc_taxi_note: string | null
+          notes: string | null
+          transport_to_center: string | null
+          travel_time_to_center_minutes: number | null
+        }
+        Insert: {
+          city_id: string
+          code?: string | null
+          created_at?: string
+          created_by?: string | null
+          distance_from_center_km?: number | null
+          hub_type: string
+          id?: string
+          is_active?: boolean
+          latitude?: number | null
+          longitude?: number | null
+          name: string
+          ncc_contact_url?: string | null
+          ncc_taxi_note?: string | null
+          notes?: string | null
+          transport_to_center?: string | null
+          travel_time_to_center_minutes?: number | null
+        }
+        Update: {
+          city_id?: string
+          code?: string | null
+          created_at?: string
+          created_by?: string | null
+          distance_from_center_km?: number | null
+          hub_type?: string
+          id?: string
+          is_active?: boolean
+          latitude?: number | null
+          longitude?: number | null
+          name?: string
+          ncc_contact_url?: string | null
+          ncc_taxi_note?: string | null
+          notes?: string | null
+          transport_to_center?: string | null
+          travel_time_to_center_minutes?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "city_transport_hubs_city_id_fkey"
+            columns: ["city_id"]
+            isOneToOne: false
+            referencedRelation: "cities"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       city_zones: {
         Row: {
           best_time: Database["public"]["Enums"]["time_bucket"] | null
