@@ -24,7 +24,7 @@ interface TimelineSlotRealProps {
   dayIndex: number;
   onReplace: () => void;
   onMove: () => void;
-  onAddProduct?: (product: ProductSuggestion, placeName?: string) => void;
+  onAddProduct?: (product: ProductSuggestion, placeName?: string, quantity?: number, preferredTime?: string) => void;
   userRhythm?: string;
   showSuggestions?: boolean;
 }
