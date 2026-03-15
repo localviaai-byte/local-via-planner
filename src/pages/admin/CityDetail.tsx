@@ -1,7 +1,7 @@
 import { useParams, useNavigate } from 'react-router-dom';
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { ArrowLeft, Plus, Settings, MapPin, ChevronRight, RefreshCw, ExternalLink, Trash2, Eye, EyeOff } from 'lucide-react';
+import { ArrowLeft, Plus, Settings, MapPin, ChevronRight, RefreshCw, ExternalLink, Trash2, Eye, EyeOff, Search } from 'lucide-react';
 import {
   AlertDialog,
   AlertDialogAction,
