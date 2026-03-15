@@ -12,9 +12,13 @@ import {
   FOOD_PRIMARY_OPTIONS, 
   FOOD_SECONDARY_OPTIONS, 
   FORMAT_EXPERIENCE_OPTIONS,
+  SHOP_CATEGORY_OPTIONS,
+  SHOP_FORMAT_OPTIONS,
   type FoodPrimary,
   type FoodSecondary,
   type FormatExperience,
+  type ShopCategory,
+  type ShopFormat,
 } from '@/types/database';
 import type { PlaceFormData } from '@/types/database';
 import { dietaryRestrictions } from '@/lib/mockData';
