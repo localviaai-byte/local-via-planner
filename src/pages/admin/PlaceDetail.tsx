@@ -264,6 +264,84 @@ export default function PlaceDetail() {
           />
         )}
 
+        {/* AI Description */}
+        <Card className="border-primary/20">
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between mb-2">
+              <h3 className="text-sm font-semibold flex items-center gap-1.5">
+                <Sparkles className="w-4 h-4 text-primary" />
+                Descrizione
+              </h3>
+              {canEdit && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleGenerateDescription}
+                  disabled={isGenerating}
+                  className="gap-1.5"
+                >
+                  {isGenerating ? (
+                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                  ) : (
+                    <Sparkles className="w-3.5 h-3.5" />
+                  )}
+                  {isGenerating ? 'Generazione...' : (place as any).description ? 'Rigenera' : 'Genera con AI'}
+                </Button>
+              )}
+            </div>
+
+            {/* Show generated preview */}
+            {generatedDescription && (
+              <div className="space-y-3">
+                <div className="p-3 rounded-xl bg-primary/5 border border-primary/10">
+                  <p className="text-sm italic leading-relaxed">{generatedDescription}</p>
+                  <p className="text-xs text-muted-foreground mt-2">{generatedDescription.length}/400 caratteri</p>
+                </div>
+                <div className="flex gap-2">
+                  <Button
+                    size="sm"
+                    onClick={() => handleSaveDescription(generatedDescription)}
+                    disabled={updatePlace.isPending}
+                    className="flex-1"
+                  >
+                    {updatePlace.isPending ? <Loader2 className="w-3.5 h-3.5 animate-spin mr-1" /> : null}
+                    Salva descrizione
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={handleGenerateDescription}
+                    disabled={isGenerating}
+                  >
+                    Rigenera
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={() => setGeneratedDescription(null)}
+                  >
+                    Annulla
+                  </Button>
+                </div>
+              </div>
+            )}
+
+            {/* Show saved description */}
+            {!generatedDescription && (place as any).description && (
+              <p className="text-sm leading-relaxed italic text-muted-foreground">
+                "{(place as any).description}"
+              </p>
+            )}
+
+            {/* Empty state */}
+            {!generatedDescription && !(place as any).description && (
+              <p className="text-sm text-muted-foreground">
+                Nessuna descrizione ancora. Usa il pulsante "Genera con AI" per creare una descrizione coinvolgente.
+              </p>
+            )}
+          </CardContent>
+        </Card>
+
         {/* Quick info card */}
         <Card>
           <CardContent className="p-4 space-y-1">
