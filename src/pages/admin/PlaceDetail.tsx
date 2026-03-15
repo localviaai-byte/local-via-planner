@@ -1,15 +1,16 @@
+import { useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { ArrowLeft, Edit, ExternalLink, MapPin, Clock, Users, Heart, AlertTriangle, Star, Image } from 'lucide-react';
+import { ArrowLeft, Edit, ExternalLink, MapPin, Clock, Users, Heart, AlertTriangle, Star, Image, Sparkles, Loader2, Copy, Check } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
-import { usePlace } from '@/hooks/usePlaces';
+import { usePlace, useUpdatePlace } from '@/hooks/usePlaces';
 import { useCity } from '@/hooks/useCities';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
-import { Loader2 } from 'lucide-react';
+import { toast } from 'sonner';
 import { TripAdvisorBadge } from '@/components/admin/wizard/TripAdvisorBadge';
 import {
   PLACE_TYPE_OPTIONS,
@@ -85,6 +86,67 @@ export default function PlaceDetail() {
   const { role } = useAuth();
   const { data: place, isLoading } = usePlace(placeId);
   const { data: city } = useCity(place?.city_id);
+  const updatePlace = useUpdatePlace();
+  const queryClient = useQueryClient();
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [generatedDescription, setGeneratedDescription] = useState<string | null>(null);
+
+  const handleGenerateDescription = async () => {
+    if (!place || !city) return;
+    setIsGenerating(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('generate-place-description', {
+        body: {
+          placeName: place.name,
+          placeType: place.place_type,
+          cityName: city.name,
+          cityRegion: city.region,
+          zone: place.zone,
+          whyPeopleGo: place.why_people_go,
+          localOneLiner: place.local_one_liner,
+          moodPrimary: place.mood_primary,
+          moodSecondary: place.mood_secondary,
+          idealFor: place.ideal_for,
+          bestTimes: place.best_times,
+          localWarning: place.local_warning,
+          cuisineType: place.cuisine_type,
+          priceRange: place.price_range,
+          soloFriendly: place.solo_friendly,
+          groupFriendly: place.group_friendly,
+          localSecret: place.local_secret,
+          touristTrap: place.tourist_trap,
+          vibeCalm: place.vibe_calm_to_energetic,
+          vibeTouristy: place.vibe_touristy_to_local,
+        },
+      });
+      if (error) throw error;
+      if (data?.description) {
+        setGeneratedDescription(data.description);
+      } else {
+        throw new Error('Nessuna descrizione generata');
+      }
+    } catch (e: any) {
+      console.error(e);
+      toast.error(e?.message || 'Errore nella generazione della descrizione');
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+
+  const handleSaveDescription = async (description: string) => {
+    if (!place) return;
+    updatePlace.mutate(
+      { id: place.id, description } as any,
+      {
+        onSuccess: () => {
+          toast.success('Descrizione salvata');
+          setGeneratedDescription(null);
+          queryClient.invalidateQueries({ queryKey: ['place', place.id] });
+        },
+        onError: () => toast.error('Errore nel salvataggio'),
+      }
+    );
+  };
 
   // Fetch place media
   const { data: media } = useQuery({
@@ -201,6 +263,84 @@ export default function PlaceDetail() {
             enrichedAt={place.tripadvisor_enriched_at}
           />
         )}
+
+        {/* AI Description */}
+        <Card className="border-primary/20">
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between mb-2">
+              <h3 className="text-sm font-semibold flex items-center gap-1.5">
+                <Sparkles className="w-4 h-4 text-primary" />
+                Descrizione
+              </h3>
+              {canEdit && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleGenerateDescription}
+                  disabled={isGenerating}
+                  className="gap-1.5"
+                >
+                  {isGenerating ? (
+                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                  ) : (
+                    <Sparkles className="w-3.5 h-3.5" />
+                  )}
+                  {isGenerating ? 'Generazione...' : (place as any).description ? 'Rigenera' : 'Genera con AI'}
+                </Button>
+              )}
+            </div>
+
+            {/* Show generated preview */}
+            {generatedDescription && (
+              <div className="space-y-3">
+                <div className="p-3 rounded-xl bg-primary/5 border border-primary/10">
+                  <p className="text-sm italic leading-relaxed">{generatedDescription}</p>
+                  <p className="text-xs text-muted-foreground mt-2">{generatedDescription.length}/400 caratteri</p>
+                </div>
+                <div className="flex gap-2">
+                  <Button
+                    size="sm"
+                    onClick={() => handleSaveDescription(generatedDescription)}
+                    disabled={updatePlace.isPending}
+                    className="flex-1"
+                  >
+                    {updatePlace.isPending ? <Loader2 className="w-3.5 h-3.5 animate-spin mr-1" /> : null}
+                    Salva descrizione
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={handleGenerateDescription}
+                    disabled={isGenerating}
+                  >
+                    Rigenera
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={() => setGeneratedDescription(null)}
+                  >
+                    Annulla
+                  </Button>
+                </div>
+              </div>
+            )}
+
+            {/* Show saved description */}
+            {!generatedDescription && (place as any).description && (
+              <p className="text-sm leading-relaxed italic text-muted-foreground">
+                "{(place as any).description}"
+              </p>
+            )}
+
+            {/* Empty state */}
+            {!generatedDescription && !(place as any).description && (
+              <p className="text-sm text-muted-foreground">
+                Nessuna descrizione ancora. Usa il pulsante "Genera con AI" per creare una descrizione coinvolgente.
+              </p>
+            )}
+          </CardContent>
+        </Card>
 
         {/* Quick info card */}
         <Card>
