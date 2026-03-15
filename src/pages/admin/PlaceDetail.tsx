@@ -1,15 +1,16 @@
+import { useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { ArrowLeft, Edit, ExternalLink, MapPin, Clock, Users, Heart, AlertTriangle, Star, Image } from 'lucide-react';
+import { ArrowLeft, Edit, ExternalLink, MapPin, Clock, Users, Heart, AlertTriangle, Star, Image, Sparkles, Loader2, Copy, Check } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
-import { usePlace } from '@/hooks/usePlaces';
+import { usePlace, useUpdatePlace } from '@/hooks/usePlaces';
 import { useCity } from '@/hooks/useCities';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
-import { Loader2 } from 'lucide-react';
+import { toast } from 'sonner';
 import { TripAdvisorBadge } from '@/components/admin/wizard/TripAdvisorBadge';
 import {
   PLACE_TYPE_OPTIONS,
