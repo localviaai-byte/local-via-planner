@@ -498,19 +498,27 @@ Suggerisci prodotti add-on dove appropriato (es. tour guidato prima di un museo,
     const placeMap = new Map(places.map(p => [p.id, p]));
     const productMap = new Map((products || []).map(p => [p.id, p]));
 
+    const hasExactDates = tp?.type === 'dates' && !!tp.dates?.start;
+
     // Build final itinerary with full place data
     const itinerary: ItineraryDay[] = aiItinerary.days.map((day: any) => {
-      const baseDate = new Date(itineraryStartDate);
-      baseDate.setDate(baseDate.getDate() + day.dayNumber - 1);
-
-      return {
-        dayNumber: day.dayNumber,
-        date: baseDate.toLocaleDateString("it-IT", {
+      let dateLabel: string;
+      if (hasExactDates) {
+        const baseDate = new Date(itineraryStartDate);
+        baseDate.setDate(baseDate.getDate() + day.dayNumber - 1);
+        dateLabel = baseDate.toLocaleDateString("it-IT", {
           weekday: "long",
           day: "numeric",
           month: "long",
           year: "numeric",
-        }),
+        });
+      } else {
+        dateLabel = `Giorno ${day.dayNumber}`;
+      }
+
+      return {
+        dayNumber: day.dayNumber,
+        date: dateLabel,
         summary: day.summary,
         slots: day.slots.map((slot: any, idx: number) => {
           const place = slot.placeId ? placeMap.get(slot.placeId) : null;
