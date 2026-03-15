@@ -77,7 +77,7 @@ interface FullPlaceData {
   overrated: boolean;
   local_secret: boolean;
   target_audience: string | null;
-  format_experience: string | null;
+  format_experience: string[] | null;
   pace: string | null;
   dead_times_note: string | null;
   // Media
