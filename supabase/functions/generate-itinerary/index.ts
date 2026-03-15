@@ -332,7 +332,8 @@ serve(async (req) => {
 
     // Build comprehensive prompt
     const systemPrompt = `Sei un esperto planner di viaggi locale italiano che crea itinerari personalizzati.
-Hai accesso a un database curato di luoghi, ristoranti, bar e esperienze verificati da local contributors.
+Hai accesso a un database curato di luoghi, ristoranti, bar, shopping e esperienze verificati da local contributors.
+Per lo SHOPPING: se l'utente ha "shopping" tra i suoi interessi, inserisci punti vendita autentici consigliati dai local. Usa shop_category e shop_format per scegliere negozi coerenti con lo stile del viaggiatore (es. luxury fashion per coppie, artigianato locale per chi cerca autenticità). Distingui tra centri commerciali (shopping_mall) e singoli negozi (shopping_point).
 
 REGOLE CRITICHE:
 1. Usa SOLO i luoghi dal database fornito - non inventare posti
