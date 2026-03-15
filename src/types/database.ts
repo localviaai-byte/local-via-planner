@@ -968,6 +968,8 @@ export const DEFAULT_PLACE_FORM_DATA: PlaceFormData = {
   worth_detour: true,
   time_to_spend: '',
   best_period: null,
+  shop_category: null,
+  shop_format: null,
 };
 
 // =====================================================
