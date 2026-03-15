@@ -500,6 +500,38 @@ export default function PlaceDetail() {
           </Card>
         )}
 
+        {/* Shopping info */}
+        {place.place_type === 'shopping' && ((place as any).shop_format || (place as any).shop_category) && (
+          <Card>
+            <CardContent className="p-4 space-y-2">
+              <h3 className="text-sm font-semibold">🛍️ Info Shopping</h3>
+              <div className="flex flex-wrap gap-2">
+                {(place as any).shop_format && (
+                  <Badge variant="secondary">
+                    {(place as any).shop_format === 'shopping_mall' ? '🏬 Centro commerciale' : '🏪 Punto vendita'}
+                  </Badge>
+                )}
+                {(place as any).shop_category && (() => {
+                  const SHOP_CAT_LABELS: Record<string, string> = {
+                    fast_fashion: '👕 Fast Fashion', luxury_fashion: '👗 Luxury Fashion',
+                    calzature: '👟 Calzature', gioielleria: '💎 Gioielleria',
+                    ottica: '👓 Ottica', profumeria_cosmetica: '💄 Profumeria',
+                    enoteca: '🍷 Enoteca', gastronomia_tipici: '🧀 Gastronomia',
+                    souvenir: '🎁 Souvenir', artigianato_locale: '🏺 Artigianato',
+                    cartoleria_regalo: '🎀 Cartoleria', libri_librerie: '📚 Libri',
+                    elettronica_telefonia: '📱 Elettronica', casa_arredamento: '🏠 Casa',
+                  };
+                  return (
+                    <Badge variant="outline">
+                      {SHOP_CAT_LABELS[(place as any).shop_category] || (place as any).shop_category}
+                    </Badge>
+                  );
+                })()}
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
         {/* Chi siamo */}
         {((place as any).about_us || (place as any).contact_phone || (place as any).contact_email || (place as any).contact_website) && (
           <Card>
