@@ -1068,6 +1068,8 @@ export type Database = {
           reviewed_by: string | null
           search_tsv: unknown
           shared_tables: boolean | null
+          shop_category: string | null
+          shop_format: string | null
           social_level: number | null
           solo_friendly: boolean | null
           standing_ok: boolean | null
@@ -1158,6 +1160,8 @@ export type Database = {
           reviewed_by?: string | null
           search_tsv?: unknown
           shared_tables?: boolean | null
+          shop_category?: string | null
+          shop_format?: string | null
           social_level?: number | null
           solo_friendly?: boolean | null
           standing_ok?: boolean | null
@@ -1250,6 +1254,8 @@ export type Database = {
           reviewed_by?: string | null
           search_tsv?: unknown
           shared_tables?: boolean | null
+          shop_category?: string | null
+          shop_format?: string | null
           social_level?: number | null
           solo_friendly?: boolean | null
           standing_ok?: boolean | null
@@ -1877,6 +1883,7 @@ export type Database = {
         | "zone"
         | "experience"
         | "view"
+        | "shopping"
       plan_item_type: "place" | "product"
       price_level: "budget" | "moderate" | "expensive" | "luxury"
       product_type:
@@ -2099,6 +2106,7 @@ export const Constants = {
         "zone",
         "experience",
         "view",
+        "shopping",
       ],
       plan_item_type: ["place", "product"],
       price_level: ["budget", "moderate", "expensive", "luxury"],

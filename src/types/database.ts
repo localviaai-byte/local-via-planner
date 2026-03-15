@@ -7,7 +7,16 @@ export type AppRole = 'admin' | 'local_contributor' | 'editor' | 'referral_partn
 export type PartnerType = 'referral' | 'affiliate';
 export type PartnerStatus = 'pending' | 'active' | 'suspended' | 'churned';
 
-export type PlaceType = 'attraction' | 'bar' | 'restaurant' | 'club' | 'zone' | 'experience' | 'view';
+export type PlaceType = 'attraction' | 'bar' | 'restaurant' | 'club' | 'zone' | 'experience' | 'view' | 'shopping';
+
+// Shopping-specific types
+export type ShopCategory = 
+  | 'fast_fashion' | 'luxury_fashion' | 'calzature' | 'gioielleria'
+  | 'ottica' | 'profumeria_cosmetica' | 'enoteca' | 'gastronomia_tipici'
+  | 'souvenir' | 'artigianato_locale' | 'cartoleria_regalo'
+  | 'libri_librerie' | 'elettronica_telefonia' | 'casa_arredamento';
+
+export type ShopFormat = 'shopping_mall' | 'shopping_point';
 
 export type PlaceStatus = 'draft' | 'pending_review' | 'approved' | 'rejected' | 'archived';
 
@@ -393,7 +402,30 @@ export const PLACE_TYPE_OPTIONS = [
   { id: 'club', label: 'Club / Nightlife', icon: '🎶', description: 'Disco, live music, notte' },
   { id: 'experience', label: 'Esperienza', icon: '✨', description: 'Tour, workshop, attività' },
   { id: 'view', label: 'Vista / Panorama', icon: '🌅', description: 'Punti panoramici' },
+  { id: 'shopping', label: 'Shopping', icon: '🛍️', description: 'Negozi, boutique, centri commerciali' },
   { id: 'zone', label: 'Zona / Area', icon: '🧭', description: 'Quartieri da esplorare' },
+] as const;
+
+export const SHOP_CATEGORY_OPTIONS = [
+  { id: 'fast_fashion', label: 'Fast Fashion', icon: '👕' },
+  { id: 'luxury_fashion', label: 'Luxury Fashion', icon: '👗' },
+  { id: 'calzature', label: 'Calzature', icon: '👟' },
+  { id: 'gioielleria', label: 'Gioielleria', icon: '💎' },
+  { id: 'ottica', label: 'Ottica', icon: '👓' },
+  { id: 'profumeria_cosmetica', label: 'Profumeria e cosmetica', icon: '💄' },
+  { id: 'enoteca', label: 'Enoteca', icon: '🍷' },
+  { id: 'gastronomia_tipici', label: 'Gastronomia / prodotti tipici', icon: '🧀' },
+  { id: 'souvenir', label: 'Souvenir', icon: '🎁' },
+  { id: 'artigianato_locale', label: 'Artigianato locale', icon: '🏺' },
+  { id: 'cartoleria_regalo', label: 'Cartoleria e articoli regalo', icon: '🎀' },
+  { id: 'libri_librerie', label: 'Libri e librerie', icon: '📚' },
+  { id: 'elettronica_telefonia', label: 'Elettronica e telefonia', icon: '📱' },
+  { id: 'casa_arredamento', label: 'Casa e arredamento', icon: '🏠' },
+] as const;
+
+export const SHOP_FORMAT_OPTIONS = [
+  { id: 'shopping_mall', label: 'Centro commerciale', icon: '🏬', description: 'Mall, outlet, grandi superfici' },
+  { id: 'shopping_point', label: 'Punto vendita', icon: '🏪', description: 'Singolo negozio, boutique' },
 ] as const;
 
 // Indoor/Outdoor options
@@ -643,6 +675,10 @@ export interface Place {
   time_to_spend: string | null;
   best_period: 'day' | 'evening' | 'night' | 'anytime' | null;
   
+  // Shopping-specific
+  shop_category: ShopCategory | null;
+  shop_format: ShopFormat | null;
+  
   // Metadata
   status: PlaceStatus;
   quality_score: number;
@@ -859,6 +895,10 @@ export interface PlaceFormData {
   // Zone
   time_to_spend: string;
   best_period: 'day' | 'evening' | 'night' | 'anytime' | null;
+  
+  // Shopping
+  shop_category: ShopCategory | null;
+  shop_format: ShopFormat | null;
 }
 
 export const DEFAULT_PLACE_FORM_DATA: PlaceFormData = {
@@ -928,6 +968,8 @@ export const DEFAULT_PLACE_FORM_DATA: PlaceFormData = {
   worth_detour: true,
   time_to_spend: '',
   best_period: null,
+  shop_category: null,
+  shop_format: null,
 };
 
 // =====================================================
