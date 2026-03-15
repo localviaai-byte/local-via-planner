@@ -230,6 +230,9 @@ serve(async (req) => {
       mood: p.mood_primary,
       why: p.why_people_go,
       budget_match: !p.price_range || allowedPriceRanges.includes(p.price_range),
+      // Shopping fields
+      shop_category: p.shop_category,
+      shop_format: p.shop_format,
     }));
 
     const productsForAI = (products || []).map(p => ({
