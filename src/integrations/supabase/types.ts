@@ -1009,6 +1009,7 @@ export type Database = {
       }
       places: {
         Row: {
+          about_us: string | null
           address: string | null
           bar_time: string | null
           best_days: string[] | null
@@ -1016,6 +1017,9 @@ export type Database = {
           best_period: string | null
           best_times: string[] | null
           city_id: string
+          contact_email: string | null
+          contact_phone: string | null
+          contact_website: string | null
           created_at: string
           created_by: string
           crowd_level: string | null
@@ -1027,9 +1031,9 @@ export type Database = {
           drink_focus: string | null
           duration_minutes: number | null
           flirt_friendly: boolean | null
-          food_primary: string | null
+          food_primary: string[] | null
           food_secondary: string[] | null
-          format_experience: string | null
+          format_experience: string[] | null
           gender_balance: Database["public"]["Enums"]["gender_balance"] | null
           google_place_id: string | null
           group_friendly: boolean | null
@@ -1095,6 +1099,7 @@ export type Database = {
           zone_id: string | null
         }
         Insert: {
+          about_us?: string | null
           address?: string | null
           bar_time?: string | null
           best_days?: string[] | null
@@ -1102,6 +1107,9 @@ export type Database = {
           best_period?: string | null
           best_times?: string[] | null
           city_id: string
+          contact_email?: string | null
+          contact_phone?: string | null
+          contact_website?: string | null
           created_at?: string
           created_by: string
           crowd_level?: string | null
@@ -1113,9 +1121,9 @@ export type Database = {
           drink_focus?: string | null
           duration_minutes?: number | null
           flirt_friendly?: boolean | null
-          food_primary?: string | null
+          food_primary?: string[] | null
           food_secondary?: string[] | null
-          format_experience?: string | null
+          format_experience?: string[] | null
           gender_balance?: Database["public"]["Enums"]["gender_balance"] | null
           google_place_id?: string | null
           group_friendly?: boolean | null
@@ -1183,6 +1191,7 @@ export type Database = {
           zone_id?: string | null
         }
         Update: {
+          about_us?: string | null
           address?: string | null
           bar_time?: string | null
           best_days?: string[] | null
@@ -1190,6 +1199,9 @@ export type Database = {
           best_period?: string | null
           best_times?: string[] | null
           city_id?: string
+          contact_email?: string | null
+          contact_phone?: string | null
+          contact_website?: string | null
           created_at?: string
           created_by?: string
           crowd_level?: string | null
@@ -1201,9 +1213,9 @@ export type Database = {
           drink_focus?: string | null
           duration_minutes?: number | null
           flirt_friendly?: boolean | null
-          food_primary?: string | null
+          food_primary?: string[] | null
           food_secondary?: string[] | null
-          format_experience?: string | null
+          format_experience?: string[] | null
           gender_balance?: Database["public"]["Enums"]["gender_balance"] | null
           google_place_id?: string | null
           group_friendly?: boolean | null
