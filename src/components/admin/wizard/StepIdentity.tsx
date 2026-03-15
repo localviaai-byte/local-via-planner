@@ -332,6 +332,83 @@ export default function StepIdentity({
         </div>
       )}
 
+      {/* Shopping-specific fields */}
+      {isShopping && (
+        <div className="space-y-5 pt-2 border-t border-border/50">
+          <p className="text-sm font-medium text-muted-foreground">
+            🛍️ Info punto vendita
+          </p>
+
+          {/* Shop Format */}
+          <div className="space-y-2">
+            <Label>Formato *</Label>
+            <div className="grid grid-cols-2 gap-3">
+              {SHOP_FORMAT_OPTIONS.map((opt) => (
+                <button
+                  key={opt.id}
+                  type="button"
+                  onClick={() => onUpdate({ shop_format: opt.id as ShopFormat })}
+                  className={`
+                    p-4 rounded-2xl text-left transition-all duration-200 cursor-pointer border-2
+                    ${formData.shop_format === opt.id
+                      ? 'bg-primary/15 border-primary shadow-md'
+                      : 'bg-card border-transparent hover:shadow-soft'
+                    }
+                  `}
+                >
+                  <span className="text-2xl">{opt.icon}</span>
+                  <p className="text-sm font-medium text-foreground mt-1">{opt.label}</p>
+                  <p className="text-xs text-muted-foreground">{opt.description}</p>
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Shop Category */}
+          <div className="space-y-2">
+            <Label>Categoria *</Label>
+            <div className="grid grid-cols-2 gap-2">
+              {SHOP_CATEGORY_OPTIONS.map((opt) => (
+                <button
+                  key={opt.id}
+                  type="button"
+                  onClick={() => onUpdate({ shop_category: opt.id as ShopCategory })}
+                  className={`
+                    p-3 rounded-2xl text-left transition-all duration-200 cursor-pointer flex items-center gap-2 border-2
+                    ${formData.shop_category === opt.id
+                      ? 'bg-primary/15 border-primary shadow-md'
+                      : 'bg-card border-transparent hover:shadow-soft'
+                    }
+                  `}
+                >
+                  <span>{opt.icon}</span>
+                  <span className="text-sm font-medium text-foreground">{opt.label}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Price Range for shopping */}
+          <div className="space-y-2">
+            <Label>Fascia di prezzo</Label>
+            <div className="grid grid-cols-4 gap-2">
+              {PRICE_RANGE_OPTIONS.map((option) => (
+                <Button
+                  key={option.id}
+                  type="button"
+                  variant={formData.price_range === option.id ? 'default' : 'outline'}
+                  className="flex flex-col h-auto py-3"
+                  onClick={() => onUpdate({ price_range: option.id as PlaceFormData['price_range'] })}
+                >
+                  <span className="text-lg">{option.label}</span>
+                  <span className="text-[10px] opacity-70">{option.description}</span>
+                </Button>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Chi siamo */}
       <div className="space-y-5 pt-2 border-t border-border/50">
         <p className="text-sm font-medium text-muted-foreground">
