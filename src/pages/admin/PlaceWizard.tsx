@@ -108,6 +108,8 @@ function placeToFormData(place: Place): PlaceFormData {
     worth_detour: place.worth_detour ?? false,
     time_to_spend: place.time_to_spend || '',
     best_period: place.best_period,
+    shop_category: (place as any).shop_category || null,
+    shop_format: (place as any).shop_format || null,
   };
 }
 
