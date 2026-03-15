@@ -176,7 +176,7 @@ export function ExtrasCheckoutSheet() {
                       key={`${item.product.id}-${item.dayIndex}`}
                       className="p-3 bg-secondary/50 rounded-xl"
                     >
-                      <div className="flex items-start justify-between gap-3">
+                    <div className="flex items-start justify-between gap-3">
                         <div className="flex-1 min-w-0">
                           <h5 className="font-medium text-sm text-foreground">
                             {item.product.title}
@@ -187,12 +187,29 @@ export function ExtrasCheckoutSheet() {
                             </p>
                           )}
                         </div>
-                        <span className="font-semibold text-sm text-primary">
-                          €{(item.product.price_cents / 100).toFixed(0)}
-                        </span>
+                        <div className="text-right shrink-0">
+                          <span className="font-semibold text-sm text-primary">
+                            €{((item.product.price_cents * item.quantity) / 100).toFixed(0)}
+                          </span>
+                          {item.quantity > 1 && (
+                            <p className="text-[10px] text-muted-foreground">
+                              {item.quantity} × €{(item.product.price_cents / 100).toFixed(0)}
+                            </p>
+                          )}
+                        </div>
                       </div>
                       
                       <div className="flex items-center gap-3 mt-2 text-xs text-muted-foreground">
+                        <span className="flex items-center gap-1">
+                          <Users className="w-3 h-3" />
+                          {item.quantity} {item.quantity === 1 ? 'persona' : 'persone'}
+                        </span>
+                        {item.preferredTime && (
+                          <span className="flex items-center gap-1">
+                            <Clock className="w-3 h-3" />
+                            Ore {item.preferredTime}
+                          </span>
+                        )}
                         {item.product.duration_minutes && (
                           <span className="flex items-center gap-1">
                             <Clock className="w-3 h-3" />
