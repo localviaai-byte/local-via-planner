@@ -120,9 +120,13 @@ export function useCreatePlace() {
         // Restaurant-specific
         cuisine_type: formData.cuisine_type || null,
         price_range: formData.price_range || null,
-        food_primary: formData.food_primary || null,
+        food_primary: formData.food_primary || [],
         food_secondary: formData.food_secondary || [],
-        format_experience: formData.format_experience || null,
+        format_experience: formData.format_experience || [],
+        about_us: formData.about_us || null,
+        contact_phone: formData.contact_phone || null,
+        contact_email: formData.contact_email || null,
+        contact_website: formData.contact_website || null,
       };
       
       const { data, error } = await supabase

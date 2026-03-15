@@ -30,7 +30,7 @@ interface AlternativePlace {
   duration_minutes: number | null;
   price_range: string | null;
   cuisine_type: string | null;
-  food_primary: string | null;
+  food_primary: string[] | null;
   photo_url: string | null;
   indoor_outdoor: string | null;
   vibe_touristy_to_local: number | null;

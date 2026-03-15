@@ -33,7 +33,10 @@ export function useAvailableFoodOptions(citySlug: string) {
       const secondarySet = new Set<string>();
 
       for (const p of places) {
-        if (p.food_primary) primarySet.add(p.food_primary);
+        if (p.food_primary) {
+          const primaries = Array.isArray(p.food_primary) ? p.food_primary : [p.food_primary];
+          for (const fp of primaries) primarySet.add(fp);
+        }
         if (p.food_secondary) {
           for (const s of p.food_secondary) {
             secondarySet.add(s);
