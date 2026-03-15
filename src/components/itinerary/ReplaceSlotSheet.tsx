@@ -130,11 +130,11 @@ export function ReplaceSlotSheet({
 
   // Get unique food categories for filter chips
   const foodCategories = isFood
-    ? [...new Set(alternatives.map((a) => a.food_primary).filter(Boolean))]
+    ? [...new Set(alternatives.flatMap((a) => a.food_primary || []).filter(Boolean))]
     : [];
 
   const filteredAlternatives = selectedFilter
-    ? alternatives.filter((a) => a.food_primary === selectedFilter)
+    ? alternatives.filter((a) => (a.food_primary || []).includes(selectedFilter))
     : alternatives;
 
   const getPriceLabel = (priceRange: string | null) => {
