@@ -133,9 +133,16 @@ export default function CityDetail() {
     }
   };
 
+  // Filter places by search
+  const filteredPlaces = places?.filter(p =>
+    !searchQuery || p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    p.zone?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    p.address?.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
   // Group places by type
   const placesByType = PLACE_TYPE_OPTIONS.reduce((acc, type) => {
-    acc[type.id] = places?.filter(p => p.place_type === type.id) || [];
+    acc[type.id] = filteredPlaces?.filter(p => p.place_type === type.id) || [];
     return acc;
   }, {} as Record<string, typeof places>);
   
