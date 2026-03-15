@@ -290,10 +290,23 @@ export default function CityDetail() {
         />
       </div>
       
+      {/* Search bar */}
+      <div className="px-4 pt-4">
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+          <Input
+            placeholder="Cerca luoghi, ristoranti, bar..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="pl-10 bg-card"
+          />
+        </div>
+      </div>
+
       {/* Content tabs */}
       <Tabs defaultValue="all" className="p-4">
         <TabsList className="w-full justify-start overflow-x-auto">
-          <TabsTrigger value="all">Tutto</TabsTrigger>
+          <TabsTrigger value="all">Tutto ({filteredPlaces?.length || 0})</TabsTrigger>
           {PLACE_TYPE_OPTIONS.map(type => (
             <TabsTrigger key={type.id} value={type.id}>
               {type.icon} {placesByType[type.id]?.length || 0}
