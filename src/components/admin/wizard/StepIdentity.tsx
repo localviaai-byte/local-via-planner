@@ -65,12 +65,30 @@ export default function StepIdentity({
     });
   };
 
+  const toggleFoodPrimary = (id: string) => {
+    const current = [...(formData.food_primary || [])];
+    if (current.includes(id as FoodPrimary)) {
+      onUpdate({ food_primary: current.filter(s => s !== id) as FoodPrimary[] });
+    } else {
+      onUpdate({ food_primary: [...current, id as FoodPrimary] });
+    }
+  };
+
   const toggleFoodSecondary = (id: string) => {
     const current = [...(formData.food_secondary || [])];
     if (current.includes(id as FoodSecondary)) {
       onUpdate({ food_secondary: current.filter(s => s !== id) as FoodSecondary[] });
     } else {
       onUpdate({ food_secondary: [...current, id as FoodSecondary] });
+    }
+  };
+
+  const toggleFormatExperience = (id: string) => {
+    const current = [...(formData.format_experience || [])];
+    if (current.includes(id as FormatExperience)) {
+      onUpdate({ format_experience: current.filter(s => s !== id) as FormatExperience[] });
+    } else {
+      onUpdate({ format_experience: [...current, id as FormatExperience] });
     }
   };
 
