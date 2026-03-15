@@ -1,7 +1,7 @@
 import { useParams, useNavigate } from 'react-router-dom';
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { ArrowLeft, Plus, Settings, MapPin, ChevronRight, RefreshCw, ExternalLink, Trash2, Eye, EyeOff } from 'lucide-react';
+import { ArrowLeft, Plus, Settings, MapPin, ChevronRight, RefreshCw, ExternalLink, Trash2, Eye, EyeOff, Search } from 'lucide-react';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -14,6 +14,7 @@ import {
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
@@ -43,6 +44,7 @@ export default function CityDetail() {
   const queryClient = useQueryClient();
   const [isBackfilling, setIsBackfilling] = useState(false);
   const [isPhotoBackfilling, setIsPhotoBackfilling] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
   
   const { data: city, isLoading: cityLoading } = useCity(cityId);
   const { data: zones } = useCityZones(cityId);
@@ -131,9 +133,16 @@ export default function CityDetail() {
     }
   };
 
+  // Filter places by search
+  const filteredPlaces = places?.filter(p =>
+    !searchQuery || p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    p.zone?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    p.address?.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
   // Group places by type
   const placesByType = PLACE_TYPE_OPTIONS.reduce((acc, type) => {
-    acc[type.id] = places?.filter(p => p.place_type === type.id) || [];
+    acc[type.id] = filteredPlaces?.filter(p => p.place_type === type.id) || [];
     return acc;
   }, {} as Record<string, typeof places>);
   
@@ -281,10 +290,23 @@ export default function CityDetail() {
         />
       </div>
       
+      {/* Search bar */}
+      <div className="px-4 pt-4">
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+          <Input
+            placeholder="Cerca luoghi, ristoranti, bar..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="pl-10 bg-card"
+          />
+        </div>
+      </div>
+
       {/* Content tabs */}
       <Tabs defaultValue="all" className="p-4">
         <TabsList className="w-full justify-start overflow-x-auto">
-          <TabsTrigger value="all">Tutto</TabsTrigger>
+          <TabsTrigger value="all">Tutto ({filteredPlaces?.length || 0})</TabsTrigger>
           {PLACE_TYPE_OPTIONS.map(type => (
             <TabsTrigger key={type.id} value={type.id}>
               {type.icon} {placesByType[type.id]?.length || 0}
@@ -300,8 +322,8 @@ export default function CityDetail() {
                 <div key={i} className="h-20 rounded-xl skeleton-sand" />
               ))}
             </div>
-          ) : places && places.length > 0 ? (
-            places.map(place => (
+          ) : filteredPlaces && filteredPlaces.length > 0 ? (
+            filteredPlaces.map(place => (
               <PlaceRow 
                 key={place.id} 
                 place={place} 
