@@ -826,10 +826,16 @@ export interface PlaceFormData {
   price_range: 'budget' | 'moderate' | 'expensive' | 'luxury' | null;
   meal_time: 'lunch' | 'dinner' | 'both' | null;
   shared_tables: boolean;
-  food_primary: FoodPrimary | null;
+  food_primary: FoodPrimary[];
   food_secondary: FoodSecondary[];
-  format_experience: FormatExperience | null;
+  format_experience: FormatExperience[];
   dietary_options: string[];
+  
+  // Chi siamo
+  about_us: string;
+  contact_phone: string;
+  contact_email: string;
+  contact_website: string;
   
   // Bar
   bar_time: 'aperitivo' | 'after_dinner' | 'both' | null;
