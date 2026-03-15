@@ -212,7 +212,7 @@ export default function StepIdentity({
             {isRestaurant ? '🍽️ Info ristorante' : '🍷 Info locale'}
           </p>
           
-          {/* Food Primary (single select) */}
+          {/* Food Primary (multi select) */}
           <div className="space-y-2">
             <Label>Cucina principale *</Label>
             <div className="grid grid-cols-2 gap-2">
@@ -220,10 +220,10 @@ export default function StepIdentity({
                 <button
                   key={opt.id}
                   type="button"
-                  onClick={() => onUpdate({ food_primary: opt.id as FoodPrimary })}
+                  onClick={() => toggleFoodPrimary(opt.id)}
                   className={`
                     p-3 rounded-2xl text-left transition-all duration-200 cursor-pointer flex items-center gap-2 border-2
-                    ${formData.food_primary === opt.id
+                    ${(formData.food_primary || []).includes(opt.id as FoodPrimary)
                       ? 'bg-primary/15 border-primary shadow-md'
                       : 'bg-card border-transparent hover:shadow-soft'
                     }
