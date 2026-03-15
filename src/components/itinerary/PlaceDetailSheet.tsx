@@ -68,7 +68,7 @@ interface FullPlaceData {
   mental_effort: number | null;
   suggested_stay: string | null;
   dress_code: string | null;
-  food_primary: string | null;
+  food_primary: string[] | null;
   food_secondary: string[] | null;
   dietary_options: string[] | null;
   solo_friendly: boolean | null;
@@ -77,7 +77,7 @@ interface FullPlaceData {
   overrated: boolean;
   local_secret: boolean;
   target_audience: string | null;
-  format_experience: string | null;
+  format_experience: string[] | null;
   pace: string | null;
   dead_times_note: string | null;
   // Media
@@ -592,13 +592,13 @@ export function PlaceDetailSheet({ place, isOpen, onClose }: PlaceDetailSheetPro
               )}
 
               {/* Food details */}
-              {(d?.food_primary || (d?.dietary_options && d.dietary_options.length > 0)) && (
+              {(d?.food_primary?.length || (d?.dietary_options && d.dietary_options.length > 0)) && (
                 <div>
                   <h3 className="text-sm font-semibold text-foreground mb-2">Dettagli cucina</h3>
                   <div className="space-y-2">
-                    {d?.food_primary && (
+                    {d?.food_primary && d.food_primary.length > 0 && (
                       <p className="text-sm text-muted-foreground">
-                        Specialità: <span className="font-medium text-foreground">{d.food_primary}</span>
+                        Specialità: <span className="font-medium text-foreground">{d.food_primary.join(', ')}</span>
                         {d.food_secondary && d.food_secondary.length > 0 && (
                           <span>, {d.food_secondary.join(', ')}</span>
                         )}
@@ -627,11 +627,11 @@ export function PlaceDetailSheet({ place, isOpen, onClose }: PlaceDetailSheetPro
               )}
 
               {/* Format experience */}
-              {d?.format_experience && (
+              {d?.format_experience && d.format_experience.length > 0 && (
                 <div className="flex items-center gap-2 text-sm">
                   <Heart className="w-4 h-4 text-primary" />
                   <span className="text-muted-foreground">Esperienza: </span>
-                  <span className="font-medium">{d.format_experience}</span>
+                  <span className="font-medium">{d.format_experience.join(', ')}</span>
                 </div>
               )}
 

@@ -500,6 +500,34 @@ export default function PlaceDetail() {
           </Card>
         )}
 
+        {/* Chi siamo */}
+        {((place as any).about_us || (place as any).contact_phone || (place as any).contact_email || (place as any).contact_website) && (
+          <Card>
+            <CardContent className="p-4 space-y-3">
+              <h3 className="text-sm font-semibold">👤 Chi siamo</h3>
+              {(place as any).about_us && (
+                <p className="text-sm leading-relaxed text-muted-foreground">
+                  {(place as any).about_us}
+                </p>
+              )}
+              {((place as any).contact_phone || (place as any).contact_email || (place as any).contact_website) && (
+                <div className="space-y-1.5 pt-2 border-t border-border/50">
+                  <span className="text-xs font-medium text-muted-foreground">Contatti</span>
+                  {(place as any).contact_phone && (
+                    <p className="text-sm">📞 <a href={`tel:${(place as any).contact_phone}`} className="text-primary hover:underline">{(place as any).contact_phone}</a></p>
+                  )}
+                  {(place as any).contact_email && (
+                    <p className="text-sm">✉️ <a href={`mailto:${(place as any).contact_email}`} className="text-primary hover:underline">{(place as any).contact_email}</a></p>
+                  )}
+                  {(place as any).contact_website && (
+                    <p className="text-sm">🌐 <a href={(place as any).contact_website} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">{(place as any).contact_website}</a></p>
+                  )}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        )}
+
         {/* Quality score */}
         <Card>
           <CardContent className="p-4 flex items-center justify-between">

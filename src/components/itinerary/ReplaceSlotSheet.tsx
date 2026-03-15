@@ -30,7 +30,7 @@ interface AlternativePlace {
   duration_minutes: number | null;
   price_range: string | null;
   cuisine_type: string | null;
-  food_primary: string | null;
+  food_primary: string[] | null;
   photo_url: string | null;
   indoor_outdoor: string | null;
   vibe_touristy_to_local: number | null;
@@ -130,11 +130,11 @@ export function ReplaceSlotSheet({
 
   // Get unique food categories for filter chips
   const foodCategories = isFood
-    ? [...new Set(alternatives.map((a) => a.food_primary).filter(Boolean))]
+    ? [...new Set(alternatives.flatMap((a) => a.food_primary || []).filter(Boolean))]
     : [];
 
   const filteredAlternatives = selectedFilter
-    ? alternatives.filter((a) => a.food_primary === selectedFilter)
+    ? alternatives.filter((a) => (a.food_primary || []).includes(selectedFilter))
     : alternatives;
 
   const getPriceLabel = (priceRange: string | null) => {
@@ -184,11 +184,11 @@ export function ReplaceSlotSheet({
                 Tutti
               </button>
               {foodCategories.map((cat) => {
-                const info = foodCategoryLabels[cat!] || { label: cat, emoji: '🍽️' };
+                const info = foodCategoryLabels[cat] || { label: cat, emoji: '🍽️' };
                 return (
                   <button
                     key={cat}
-                    onClick={() => setSelectedFilter(cat === selectedFilter ? null : cat!)}
+                    onClick={() => setSelectedFilter(cat === selectedFilter ? null : cat)}
                     className={`flex-shrink-0 px-3 py-1.5 rounded-full text-sm font-medium transition-colors flex items-center gap-1.5 ${
                       selectedFilter === cat
                         ? 'bg-primary text-primary-foreground'
@@ -279,12 +279,12 @@ export function ReplaceSlotSheet({
                       {/* Food info badges */}
                       {isFood && (
                         <div className="flex flex-wrap gap-1.5 mt-2">
-                          {alt.food_primary && (
-                            <span className="text-xs bg-secondary rounded-full px-2 py-0.5 font-medium">
-                              {foodCategoryLabels[alt.food_primary]?.emoji || '🍽️'}{' '}
-                              {foodCategoryLabels[alt.food_primary]?.label || alt.food_primary}
+                          {alt.food_primary && alt.food_primary.length > 0 && alt.food_primary.map((fp: string) => (
+                            <span key={fp} className="text-xs bg-secondary rounded-full px-2 py-0.5 font-medium">
+                              {foodCategoryLabels[fp]?.emoji || '🍽️'}{' '}
+                              {foodCategoryLabels[fp]?.label || fp}
                             </span>
-                          )}
+                          ))}
                           {alt.cuisine_type && (
                             <span className="text-xs bg-secondary rounded-full px-2 py-0.5 text-muted-foreground">
                               {alt.cuisine_type}

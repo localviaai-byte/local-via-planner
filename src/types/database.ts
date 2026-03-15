@@ -610,9 +610,15 @@ export interface Place {
   price_range: 'budget' | 'moderate' | 'expensive' | 'luxury' | null;
   meal_time: 'lunch' | 'dinner' | 'both' | null;
   shared_tables: boolean;
-  food_primary: FoodPrimary | null;
+  food_primary: FoodPrimary[];
   food_secondary: FoodSecondary[];
-  format_experience: FormatExperience | null;
+  format_experience: FormatExperience[];
+  
+  // Chi siamo
+  about_us: string | null;
+  contact_phone: string | null;
+  contact_email: string | null;
+  contact_website: string | null;
   
   // Bar-specific
   bar_time: 'aperitivo' | 'after_dinner' | 'both' | null;
@@ -820,10 +826,16 @@ export interface PlaceFormData {
   price_range: 'budget' | 'moderate' | 'expensive' | 'luxury' | null;
   meal_time: 'lunch' | 'dinner' | 'both' | null;
   shared_tables: boolean;
-  food_primary: FoodPrimary | null;
+  food_primary: FoodPrimary[];
   food_secondary: FoodSecondary[];
-  format_experience: FormatExperience | null;
+  format_experience: FormatExperience[];
   dietary_options: string[];
+  
+  // Chi siamo
+  about_us: string;
+  contact_phone: string;
+  contact_email: string;
+  contact_website: string;
   
   // Bar
   bar_time: 'aperitivo' | 'after_dinner' | 'both' | null;
@@ -895,9 +907,13 @@ export const DEFAULT_PLACE_FORM_DATA: PlaceFormData = {
   price_range: null,
   meal_time: null,
   shared_tables: false,
-  food_primary: null,
+  food_primary: [],
   food_secondary: [],
-  format_experience: null,
+  format_experience: [],
+  about_us: '',
+  contact_phone: '',
+  contact_email: '',
+  contact_website: '',
   dietary_options: [],
   bar_time: null,
   standing_ok: true,

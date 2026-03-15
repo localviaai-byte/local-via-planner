@@ -18,6 +18,7 @@ import {
 } from '@/types/database';
 import type { PlaceFormData } from '@/types/database';
 import { dietaryRestrictions } from '@/lib/mockData';
+import { Textarea } from '@/components/ui/textarea';
 
 interface StepIdentityProps {
   formData: PlaceFormData;
@@ -64,12 +65,30 @@ export default function StepIdentity({
     });
   };
 
+  const toggleFoodPrimary = (id: string) => {
+    const current = [...(formData.food_primary || [])];
+    if (current.includes(id as FoodPrimary)) {
+      onUpdate({ food_primary: current.filter(s => s !== id) as FoodPrimary[] });
+    } else {
+      onUpdate({ food_primary: [...current, id as FoodPrimary] });
+    }
+  };
+
   const toggleFoodSecondary = (id: string) => {
     const current = [...(formData.food_secondary || [])];
     if (current.includes(id as FoodSecondary)) {
       onUpdate({ food_secondary: current.filter(s => s !== id) as FoodSecondary[] });
     } else {
       onUpdate({ food_secondary: [...current, id as FoodSecondary] });
+    }
+  };
+
+  const toggleFormatExperience = (id: string) => {
+    const current = [...(formData.format_experience || [])];
+    if (current.includes(id as FormatExperience)) {
+      onUpdate({ format_experience: current.filter(s => s !== id) as FormatExperience[] });
+    } else {
+      onUpdate({ format_experience: [...current, id as FormatExperience] });
     }
   };
 
@@ -193,7 +212,7 @@ export default function StepIdentity({
             {isRestaurant ? '🍽️ Info ristorante' : '🍷 Info locale'}
           </p>
           
-          {/* Food Primary (single select) */}
+          {/* Food Primary (multi select) */}
           <div className="space-y-2">
             <Label>Cucina principale *</Label>
             <div className="grid grid-cols-2 gap-2">
@@ -201,10 +220,10 @@ export default function StepIdentity({
                 <button
                   key={opt.id}
                   type="button"
-                  onClick={() => onUpdate({ food_primary: opt.id as FoodPrimary })}
+                  onClick={() => toggleFoodPrimary(opt.id)}
                   className={`
                     p-3 rounded-2xl text-left transition-all duration-200 cursor-pointer flex items-center gap-2 border-2
-                    ${formData.food_primary === opt.id
+                    ${(formData.food_primary || []).includes(opt.id as FoodPrimary)
                       ? 'bg-primary/15 border-primary shadow-md'
                       : 'bg-card border-transparent hover:shadow-soft'
                     }
@@ -241,7 +260,7 @@ export default function StepIdentity({
             </div>
           </div>
 
-          {/* Format / Experience (single select) */}
+          {/* Format / Experience (multi select) */}
           <div className="space-y-2">
             <Label>Formato / Esperienza</Label>
             <div className="grid grid-cols-2 gap-2">
@@ -249,10 +268,10 @@ export default function StepIdentity({
                 <button
                   key={opt.id}
                   type="button"
-                  onClick={() => onUpdate({ format_experience: opt.id as FormatExperience })}
+                  onClick={() => toggleFormatExperience(opt.id)}
                   className={`
                     p-3 rounded-2xl text-left transition-all duration-200 cursor-pointer flex items-center gap-2 border-2
-                    ${formData.format_experience === opt.id
+                    ${(formData.format_experience || []).includes(opt.id as FormatExperience)
                       ? 'bg-primary/15 border-primary shadow-md'
                       : 'bg-card border-transparent hover:shadow-soft'
                     }
@@ -307,6 +326,62 @@ export default function StepIdentity({
           </div>
         </div>
       )}
+
+      {/* Chi siamo */}
+      <div className="space-y-5 pt-2 border-t border-border/50">
+        <p className="text-sm font-medium text-muted-foreground">
+          👤 Chi siamo
+        </p>
+        
+        <div className="space-y-2">
+          <Label htmlFor="about_us">Descrizione attività</Label>
+          <Textarea
+            id="about_us"
+            value={formData.about_us || ''}
+            onChange={(e) => {
+              if (e.target.value.length <= 300) {
+                onUpdate({ about_us: e.target.value });
+              }
+            }}
+            placeholder="Racconta brevemente chi siete, la vostra storia, cosa vi rende unici..."
+            className="bg-card resize-none"
+            rows={3}
+            maxLength={300}
+          />
+          <p className="text-xs text-muted-foreground text-right">
+            {(formData.about_us || '').length}/300
+          </p>
+        </div>
+
+        <div className="space-y-3">
+          <Label>Contatti</Label>
+          <div className="space-y-2">
+            <Input
+              value={formData.contact_phone || ''}
+              onChange={(e) => onUpdate({ contact_phone: e.target.value })}
+              placeholder="📞 Telefono"
+              className="bg-card"
+              maxLength={30}
+            />
+            <Input
+              type="email"
+              value={formData.contact_email || ''}
+              onChange={(e) => onUpdate({ contact_email: e.target.value })}
+              placeholder="✉️ Email"
+              className="bg-card"
+              maxLength={100}
+            />
+            <Input
+              type="url"
+              value={formData.contact_website || ''}
+              onChange={(e) => onUpdate({ contact_website: e.target.value })}
+              placeholder="🌐 Sito web"
+              className="bg-card"
+              maxLength={200}
+            />
+          </div>
+        </div>
+      </div>
 
       {/* Photo URL */}
       <div className="space-y-2">
