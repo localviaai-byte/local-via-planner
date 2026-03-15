@@ -127,6 +127,9 @@ export function useCreatePlace() {
         contact_phone: formData.contact_phone || null,
         contact_email: formData.contact_email || null,
         contact_website: formData.contact_website || null,
+        // Shopping-specific
+        shop_category: formData.shop_category || null,
+        shop_format: formData.shop_format || null,
       };
       
       const { data, error } = await supabase
