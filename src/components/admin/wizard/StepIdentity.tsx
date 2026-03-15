@@ -45,6 +45,7 @@ export default function StepIdentity({
   const isRestaurant = formData.place_type === 'restaurant';
   const isBar = formData.place_type === 'bar';
   const isFoodPlace = isRestaurant || isBar;
+  const isShopping = formData.place_type === 'shopping';
 
   const handleAIPrefill = async () => {
     const updates = await prefillPlace(
