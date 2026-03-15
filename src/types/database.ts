@@ -610,9 +610,15 @@ export interface Place {
   price_range: 'budget' | 'moderate' | 'expensive' | 'luxury' | null;
   meal_time: 'lunch' | 'dinner' | 'both' | null;
   shared_tables: boolean;
-  food_primary: FoodPrimary | null;
+  food_primary: FoodPrimary[];
   food_secondary: FoodSecondary[];
-  format_experience: FormatExperience | null;
+  format_experience: FormatExperience[];
+  
+  // Chi siamo
+  about_us: string | null;
+  contact_phone: string | null;
+  contact_email: string | null;
+  contact_website: string | null;
   
   // Bar-specific
   bar_time: 'aperitivo' | 'after_dinner' | 'both' | null;
