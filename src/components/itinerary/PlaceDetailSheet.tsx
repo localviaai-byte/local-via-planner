@@ -68,7 +68,7 @@ interface FullPlaceData {
   mental_effort: number | null;
   suggested_stay: string | null;
   dress_code: string | null;
-  food_primary: string | null;
+  food_primary: string[] | null;
   food_secondary: string[] | null;
   dietary_options: string[] | null;
   solo_friendly: boolean | null;
