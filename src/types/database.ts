@@ -675,6 +675,10 @@ export interface Place {
   time_to_spend: string | null;
   best_period: 'day' | 'evening' | 'night' | 'anytime' | null;
   
+  // Shopping-specific
+  shop_category: ShopCategory | null;
+  shop_format: ShopFormat | null;
+  
   // Metadata
   status: PlaceStatus;
   quality_score: number;
