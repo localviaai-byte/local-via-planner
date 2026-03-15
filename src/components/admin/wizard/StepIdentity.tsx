@@ -18,6 +18,7 @@ import {
 } from '@/types/database';
 import type { PlaceFormData } from '@/types/database';
 import { dietaryRestrictions } from '@/lib/mockData';
+import { Textarea } from '@/components/ui/textarea';
 
 interface StepIdentityProps {
   formData: PlaceFormData;

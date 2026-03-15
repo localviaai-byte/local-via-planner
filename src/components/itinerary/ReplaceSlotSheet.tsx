@@ -279,12 +279,12 @@ export function ReplaceSlotSheet({
                       {/* Food info badges */}
                       {isFood && (
                         <div className="flex flex-wrap gap-1.5 mt-2">
-                          {alt.food_primary && (
-                            <span className="text-xs bg-secondary rounded-full px-2 py-0.5 font-medium">
-                              {foodCategoryLabels[alt.food_primary]?.emoji || '🍽️'}{' '}
-                              {foodCategoryLabels[alt.food_primary]?.label || alt.food_primary}
+                          {alt.food_primary && alt.food_primary.length > 0 && alt.food_primary.map((fp: string) => (
+                            <span key={fp} className="text-xs bg-secondary rounded-full px-2 py-0.5 font-medium">
+                              {foodCategoryLabels[fp]?.emoji || '🍽️'}{' '}
+                              {foodCategoryLabels[fp]?.label || fp}
                             </span>
-                          )}
+                          ))}
                           {alt.cuisine_type && (
                             <span className="text-xs bg-secondary rounded-full px-2 py-0.5 text-muted-foreground">
                               {alt.cuisine_type}
