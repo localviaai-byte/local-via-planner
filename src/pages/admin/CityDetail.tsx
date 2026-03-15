@@ -322,8 +322,8 @@ export default function CityDetail() {
                 <div key={i} className="h-20 rounded-xl skeleton-sand" />
               ))}
             </div>
-          ) : places && places.length > 0 ? (
-            places.map(place => (
+          ) : filteredPlaces && filteredPlaces.length > 0 ? (
+            filteredPlaces.map(place => (
               <PlaceRow 
                 key={place.id} 
                 place={place} 
