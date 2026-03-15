@@ -895,6 +895,10 @@ export interface PlaceFormData {
   // Zone
   time_to_spend: string;
   best_period: 'day' | 'evening' | 'night' | 'anytime' | null;
+  
+  // Shopping
+  shop_category: ShopCategory | null;
+  shop_format: ShopFormat | null;
 }
 
 export const DEFAULT_PLACE_FORM_DATA: PlaceFormData = {
