@@ -184,11 +184,11 @@ export function ReplaceSlotSheet({
                 Tutti
               </button>
               {foodCategories.map((cat) => {
-                const info = foodCategoryLabels[cat!] || { label: cat, emoji: '🍽️' };
+                const info = foodCategoryLabels[cat] || { label: cat, emoji: '🍽️' };
                 return (
                   <button
                     key={cat}
-                    onClick={() => setSelectedFilter(cat === selectedFilter ? null : cat!)}
+                    onClick={() => setSelectedFilter(cat === selectedFilter ? null : cat)}
                     className={`flex-shrink-0 px-3 py-1.5 rounded-full text-sm font-medium transition-colors flex items-center gap-1.5 ${
                       selectedFilter === cat
                         ? 'bg-primary text-primary-foreground'
