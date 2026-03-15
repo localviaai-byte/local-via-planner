@@ -327,6 +327,62 @@ export default function StepIdentity({
         </div>
       )}
 
+      {/* Chi siamo */}
+      <div className="space-y-5 pt-2 border-t border-border/50">
+        <p className="text-sm font-medium text-muted-foreground">
+          👤 Chi siamo
+        </p>
+        
+        <div className="space-y-2">
+          <Label htmlFor="about_us">Descrizione attività</Label>
+          <Textarea
+            id="about_us"
+            value={formData.about_us || ''}
+            onChange={(e) => {
+              if (e.target.value.length <= 300) {
+                onUpdate({ about_us: e.target.value });
+              }
+            }}
+            placeholder="Racconta brevemente chi siete, la vostra storia, cosa vi rende unici..."
+            className="bg-card resize-none"
+            rows={3}
+            maxLength={300}
+          />
+          <p className="text-xs text-muted-foreground text-right">
+            {(formData.about_us || '').length}/300
+          </p>
+        </div>
+
+        <div className="space-y-3">
+          <Label>Contatti</Label>
+          <div className="space-y-2">
+            <Input
+              value={formData.contact_phone || ''}
+              onChange={(e) => onUpdate({ contact_phone: e.target.value })}
+              placeholder="📞 Telefono"
+              className="bg-card"
+              maxLength={30}
+            />
+            <Input
+              type="email"
+              value={formData.contact_email || ''}
+              onChange={(e) => onUpdate({ contact_email: e.target.value })}
+              placeholder="✉️ Email"
+              className="bg-card"
+              maxLength={100}
+            />
+            <Input
+              type="url"
+              value={formData.contact_website || ''}
+              onChange={(e) => onUpdate({ contact_website: e.target.value })}
+              placeholder="🌐 Sito web"
+              className="bg-card"
+              maxLength={200}
+            />
+          </div>
+        </div>
+      </div>
+
       {/* Photo URL */}
       <div className="space-y-2">
         <Label htmlFor="photo">Foto (URL)</Label>
