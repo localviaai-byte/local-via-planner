@@ -402,7 +402,30 @@ export const PLACE_TYPE_OPTIONS = [
   { id: 'club', label: 'Club / Nightlife', icon: '🎶', description: 'Disco, live music, notte' },
   { id: 'experience', label: 'Esperienza', icon: '✨', description: 'Tour, workshop, attività' },
   { id: 'view', label: 'Vista / Panorama', icon: '🌅', description: 'Punti panoramici' },
+  { id: 'shopping', label: 'Shopping', icon: '🛍️', description: 'Negozi, boutique, centri commerciali' },
   { id: 'zone', label: 'Zona / Area', icon: '🧭', description: 'Quartieri da esplorare' },
+] as const;
+
+export const SHOP_CATEGORY_OPTIONS = [
+  { id: 'fast_fashion', label: 'Fast Fashion', icon: '👕' },
+  { id: 'luxury_fashion', label: 'Luxury Fashion', icon: '👗' },
+  { id: 'calzature', label: 'Calzature', icon: '👟' },
+  { id: 'gioielleria', label: 'Gioielleria', icon: '💎' },
+  { id: 'ottica', label: 'Ottica', icon: '👓' },
+  { id: 'profumeria_cosmetica', label: 'Profumeria e cosmetica', icon: '💄' },
+  { id: 'enoteca', label: 'Enoteca', icon: '🍷' },
+  { id: 'gastronomia_tipici', label: 'Gastronomia / prodotti tipici', icon: '🧀' },
+  { id: 'souvenir', label: 'Souvenir', icon: '🎁' },
+  { id: 'artigianato_locale', label: 'Artigianato locale', icon: '🏺' },
+  { id: 'cartoleria_regalo', label: 'Cartoleria e articoli regalo', icon: '🎀' },
+  { id: 'libri_librerie', label: 'Libri e librerie', icon: '📚' },
+  { id: 'elettronica_telefonia', label: 'Elettronica e telefonia', icon: '📱' },
+  { id: 'casa_arredamento', label: 'Casa e arredamento', icon: '🏠' },
+] as const;
+
+export const SHOP_FORMAT_OPTIONS = [
+  { id: 'shopping_mall', label: 'Centro commerciale', icon: '🏬', description: 'Mall, outlet, grandi superfici' },
+  { id: 'shopping_point', label: 'Punto vendita', icon: '🏪', description: 'Singolo negozio, boutique' },
 ] as const;
 
 // Indoor/Outdoor options
