@@ -527,14 +527,6 @@ export default function PlaceDetail() {
             </CardContent>
           </Card>
         )}
-            <CardContent className="p-4">
-              <h3 className="text-sm font-semibold mb-1 flex items-center gap-1">
-                <AlertTriangle className="w-4 h-4 text-gold" /> Avvertenza locale
-              </h3>
-              <p className="text-sm text-muted-foreground">{place.local_warning}</p>
-            </CardContent>
-          </Card>
-        )}
 
         {/* Quality score */}
         <Card>
