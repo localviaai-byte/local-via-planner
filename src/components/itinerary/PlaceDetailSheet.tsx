@@ -592,13 +592,13 @@ export function PlaceDetailSheet({ place, isOpen, onClose }: PlaceDetailSheetPro
               )}
 
               {/* Food details */}
-              {(d?.food_primary || (d?.dietary_options && d.dietary_options.length > 0)) && (
+              {(d?.food_primary?.length || (d?.dietary_options && d.dietary_options.length > 0)) && (
                 <div>
                   <h3 className="text-sm font-semibold text-foreground mb-2">Dettagli cucina</h3>
                   <div className="space-y-2">
-                    {d?.food_primary && (
+                    {d?.food_primary && d.food_primary.length > 0 && (
                       <p className="text-sm text-muted-foreground">
-                        Specialità: <span className="font-medium text-foreground">{d.food_primary}</span>
+                        Specialità: <span className="font-medium text-foreground">{d.food_primary.join(', ')}</span>
                         {d.food_secondary && d.food_secondary.length > 0 && (
                           <span>, {d.food_secondary.join(', ')}</span>
                         )}
