@@ -627,11 +627,11 @@ export function PlaceDetailSheet({ place, isOpen, onClose }: PlaceDetailSheetPro
               )}
 
               {/* Format experience */}
-              {d?.format_experience && (
+              {d?.format_experience && d.format_experience.length > 0 && (
                 <div className="flex items-center gap-2 text-sm">
                   <Heart className="w-4 h-4 text-primary" />
                   <span className="text-muted-foreground">Esperienza: </span>
-                  <span className="font-medium">{d.format_experience}</span>
+                  <span className="font-medium">{d.format_experience.join(', ')}</span>
                 </div>
               )}
 
