@@ -44,6 +44,7 @@ export default function CityDetail() {
   const queryClient = useQueryClient();
   const [isBackfilling, setIsBackfilling] = useState(false);
   const [isPhotoBackfilling, setIsPhotoBackfilling] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
   
   const { data: city, isLoading: cityLoading } = useCity(cityId);
   const { data: zones } = useCityZones(cityId);
