@@ -86,6 +86,67 @@ export default function PlaceDetail() {
   const { role } = useAuth();
   const { data: place, isLoading } = usePlace(placeId);
   const { data: city } = useCity(place?.city_id);
+  const updatePlace = useUpdatePlace();
+  const queryClient = useQueryClient();
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [generatedDescription, setGeneratedDescription] = useState<string | null>(null);
+
+  const handleGenerateDescription = async () => {
+    if (!place || !city) return;
+    setIsGenerating(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('generate-place-description', {
+        body: {
+          placeName: place.name,
+          placeType: place.place_type,
+          cityName: city.name,
+          cityRegion: city.region,
+          zone: place.zone,
+          whyPeopleGo: place.why_people_go,
+          localOneLiner: place.local_one_liner,
+          moodPrimary: place.mood_primary,
+          moodSecondary: place.mood_secondary,
+          idealFor: place.ideal_for,
+          bestTimes: place.best_times,
+          localWarning: place.local_warning,
+          cuisineType: place.cuisine_type,
+          priceRange: place.price_range,
+          soloFriendly: place.solo_friendly,
+          groupFriendly: place.group_friendly,
+          localSecret: place.local_secret,
+          touristTrap: place.tourist_trap,
+          vibeCalm: place.vibe_calm_to_energetic,
+          vibeTouristy: place.vibe_touristy_to_local,
+        },
+      });
+      if (error) throw error;
+      if (data?.description) {
+        setGeneratedDescription(data.description);
+      } else {
+        throw new Error('Nessuna descrizione generata');
+      }
+    } catch (e: any) {
+      console.error(e);
+      toast.error(e?.message || 'Errore nella generazione della descrizione');
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+
+  const handleSaveDescription = async (description: string) => {
+    if (!place) return;
+    updatePlace.mutate(
+      { id: place.id, description } as any,
+      {
+        onSuccess: () => {
+          toast.success('Descrizione salvata');
+          setGeneratedDescription(null);
+          queryClient.invalidateQueries({ queryKey: ['place', place.id] });
+        },
+        onError: () => toast.error('Errore nel salvataggio'),
+      }
+    );
+  };
 
   // Fetch place media
   const { data: media } = useQuery({
