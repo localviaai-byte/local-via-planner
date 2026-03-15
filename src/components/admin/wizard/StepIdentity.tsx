@@ -260,7 +260,7 @@ export default function StepIdentity({
             </div>
           </div>
 
-          {/* Format / Experience (single select) */}
+          {/* Format / Experience (multi select) */}
           <div className="space-y-2">
             <Label>Formato / Esperienza</Label>
             <div className="grid grid-cols-2 gap-2">
@@ -268,10 +268,10 @@ export default function StepIdentity({
                 <button
                   key={opt.id}
                   type="button"
-                  onClick={() => onUpdate({ format_experience: opt.id as FormatExperience })}
+                  onClick={() => toggleFormatExperience(opt.id)}
                   className={`
                     p-3 rounded-2xl text-left transition-all duration-200 cursor-pointer flex items-center gap-2 border-2
-                    ${formData.format_experience === opt.id
+                    ${(formData.format_experience || []).includes(opt.id as FormatExperience)
                       ? 'bg-primary/15 border-primary shadow-md'
                       : 'bg-card border-transparent hover:shadow-soft'
                     }
