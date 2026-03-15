@@ -7,7 +7,16 @@ export type AppRole = 'admin' | 'local_contributor' | 'editor' | 'referral_partn
 export type PartnerType = 'referral' | 'affiliate';
 export type PartnerStatus = 'pending' | 'active' | 'suspended' | 'churned';
 
-export type PlaceType = 'attraction' | 'bar' | 'restaurant' | 'club' | 'zone' | 'experience' | 'view';
+export type PlaceType = 'attraction' | 'bar' | 'restaurant' | 'club' | 'zone' | 'experience' | 'view' | 'shopping';
+
+// Shopping-specific types
+export type ShopCategory = 
+  | 'fast_fashion' | 'luxury_fashion' | 'calzature' | 'gioielleria'
+  | 'ottica' | 'profumeria_cosmetica' | 'enoteca' | 'gastronomia_tipici'
+  | 'souvenir' | 'artigianato_locale' | 'cartoleria_regalo'
+  | 'libri_librerie' | 'elettronica_telefonia' | 'casa_arredamento';
+
+export type ShopFormat = 'shopping_mall' | 'shopping_point';
 
 export type PlaceStatus = 'draft' | 'pending_review' | 'approved' | 'rejected' | 'archived';
 
