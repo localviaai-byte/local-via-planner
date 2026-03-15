@@ -7,6 +7,8 @@ interface SelectedProduct {
   anchorPlaceId?: string;
   anchorPlaceName?: string;
   addedAt: Date;
+  quantity: number;
+  preferredTime?: string; // HH:mm format, modifiable based on TO availability
 }
 
 interface DismissedProduct {
@@ -18,8 +20,10 @@ interface DismissedProduct {
 interface SelectedProductsContextType {
   // Selected products (cart)
   selectedProducts: SelectedProduct[];
-  addProduct: (product: ProductSuggestion, dayIndex: number, anchorPlaceId?: string, anchorPlaceName?: string) => void;
+  addProduct: (product: ProductSuggestion, dayIndex: number, anchorPlaceId?: string, anchorPlaceName?: string, quantity?: number, preferredTime?: string) => void;
   removeProduct: (productId: string, dayIndex: number) => void;
+  updateProductQuantity: (productId: string, dayIndex: number, quantity: number) => void;
+  updateProductTime: (productId: string, dayIndex: number, time: string) => void;
   isProductSelected: (productId: string, dayIndex: number) => boolean;
   getProductsByDay: (dayIndex: number) => SelectedProduct[];
   getTotalPrice: () => number;
@@ -56,7 +60,9 @@ export function SelectedProductsProvider({
     product: ProductSuggestion, 
     dayIndex: number, 
     anchorPlaceId?: string, 
-    anchorPlaceName?: string
+    anchorPlaceName?: string,
+    quantity: number = 1,
+    preferredTime?: string,
   ) => {
     setSelectedProducts(prev => {
       // Check if already selected
@@ -67,7 +73,7 @@ export function SelectedProductsProvider({
       // Check day limit
       const dayCount = prev.filter(p => p.dayIndex === dayIndex).length;
       if (dayCount >= maxPerDay) {
-        return prev; // Silently ignore, UI should prevent this
+        return prev;
       }
       
       return [...prev, {
@@ -76,6 +82,8 @@ export function SelectedProductsProvider({
         anchorPlaceId,
         anchorPlaceName,
         addedAt: new Date(),
+        quantity,
+        preferredTime,
       }];
     });
   }, [maxPerDay]);
@@ -85,12 +93,31 @@ export function SelectedProductsProvider({
       prev.filter(p => !(p.product.id === productId && p.dayIndex === dayIndex))
     );
     
-    // Track as dismissed when removed
     setDismissedProducts(prev => [...prev, {
       productId,
       dayIndex,
       dismissedAt: new Date(),
     }]);
+  }, []);
+
+  const updateProductQuantity = useCallback((productId: string, dayIndex: number, quantity: number) => {
+    setSelectedProducts(prev =>
+      prev.map(p =>
+        p.product.id === productId && p.dayIndex === dayIndex
+          ? { ...p, quantity: Math.max(1, Math.min(20, quantity)) }
+          : p
+      )
+    );
+  }, []);
+
+  const updateProductTime = useCallback((productId: string, dayIndex: number, time: string) => {
+    setSelectedProducts(prev =>
+      prev.map(p =>
+        p.product.id === productId && p.dayIndex === dayIndex
+          ? { ...p, preferredTime: time }
+          : p
+      )
+    );
   }, []);
 
   const isProductSelected = useCallback((productId: string, dayIndex: number) => {
@@ -102,7 +129,7 @@ export function SelectedProductsProvider({
   }, [selectedProducts]);
 
   const getTotalPrice = useCallback(() => {
-    return selectedProducts.reduce((sum, p) => sum + (p.product.price_cents || 0), 0);
+    return selectedProducts.reduce((sum, p) => sum + (p.product.price_cents || 0) * p.quantity, 0);
   }, [selectedProducts]);
 
   const clearProducts = useCallback(() => {
@@ -124,10 +151,6 @@ export function SelectedProductsProvider({
   const shouldShowSuggestions = useCallback((dayIndex: number) => {
     const dismissals = getDismissalCountForDay(dayIndex);
     const selected = getProductsByDay(dayIndex).length;
-    
-    // Hide suggestions if:
-    // 1. User dismissed 2+ products for this day
-    // 2. User already has max products for this day
     return dismissals < maxDismissalsBeforeHide && selected < maxPerDay;
   }, [getDismissalCountForDay, getProductsByDay, maxDismissalsBeforeHide, maxPerDay]);
 
@@ -135,6 +158,8 @@ export function SelectedProductsProvider({
     selectedProducts,
     addProduct,
     removeProduct,
+    updateProductQuantity,
+    updateProductTime,
     isProductSelected,
     getProductsByDay,
     getTotalPrice,

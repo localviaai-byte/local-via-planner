@@ -24,7 +24,7 @@ interface TimelineSlotRealProps {
   dayIndex: number;
   onReplace: () => void;
   onMove: () => void;
-  onAddProduct?: (product: ProductSuggestion, placeName?: string) => void;
+  onAddProduct?: (product: ProductSuggestion, placeName?: string, quantity?: number, preferredTime?: string) => void;
   userRhythm?: string;
   showSuggestions?: boolean;
 }
@@ -99,21 +99,14 @@ export function TimelineSlotReal({
     setSelectedProduct(product);
   };
 
-  const handleAddProduct = async () => {
+  const handleAddProduct = async (quantity: number = 1, preferredTime?: string) => {
     if (!selectedProduct) return;
     
     setIsAddingProduct(true);
     try {
-      // Call parent handler if provided
-      onAddProduct?.(selectedProduct, place?.name);
-      
-      // Mark as added locally
+      onAddProduct?.(selectedProduct, place?.name, quantity, preferredTime);
       setAddedProducts(prev => new Set(prev).add(selectedProduct.id));
-      
-      // Show success toast
       toast.success('Esperienza aggiunta al piano! 🎉');
-      
-      // Close sheet
       setSelectedProduct(null);
     } catch (error) {
       toast.error('Errore nell\'aggiunta dell\'esperienza');

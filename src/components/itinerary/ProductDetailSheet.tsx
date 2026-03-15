@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { 
   Clock, 
   MapPin, 
@@ -10,9 +11,20 @@ import {
   Camera,
   Car,
   Palette,
-  Wine
+  Wine,
+  Minus,
+  Plus,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import {
   Drawer,
   DrawerContent,
@@ -26,7 +38,7 @@ interface ProductDetailSheetProps {
   product: ProductSuggestion | null;
   isOpen: boolean;
   onClose: () => void;
-  onAdd: () => void;
+  onAdd: (quantity: number, preferredTime?: string) => void;
   isAdding?: boolean;
   slotContext?: {
     placeName?: string;
@@ -60,6 +72,22 @@ const getProductTypeLabel = (type?: string) => {
   }
 };
 
+// Generate available time slots based on product type
+const getAvailableTimeSlots = (productType?: string): string[] => {
+  const morning = ['08:00', '08:30', '09:00', '09:30', '10:00', '10:30', '11:00', '11:30'];
+  const afternoon = ['12:00', '12:30', '13:00', '13:30', '14:00', '14:30', '15:00', '15:30', '16:00', '16:30'];
+  const evening = ['17:00', '17:30', '18:00', '18:30', '19:00', '19:30', '20:00', '20:30', '21:00'];
+
+  switch (productType) {
+    case 'dining_experience':
+      return [...afternoon.slice(3), ...evening];
+    case 'tasting':
+      return [...morning.slice(2), ...afternoon, ...evening.slice(0, 4)];
+    default:
+      return [...morning, ...afternoon, ...evening.slice(0, 5)];
+  }
+};
+
 export function ProductDetailSheet({
   product,
   isOpen,
@@ -68,17 +96,20 @@ export function ProductDetailSheet({
   isAdding = false,
   slotContext,
 }: ProductDetailSheetProps) {
+  const [quantity, setQuantity] = useState(1);
+  const [preferredTime, setPreferredTime] = useState<string>('');
+
   if (!product) return null;
 
   const Icon = getProductIcon(product.product_type);
-  const formattedPrice = product.price_cents 
-    ? `€${(product.price_cents / 100).toFixed(0)}` 
-    : 'Prezzo su richiesta';
+  const unitPrice = product.price_cents || 0;
+  const totalPrice = unitPrice * quantity;
+  const formattedUnitPrice = unitPrice ? `€${(unitPrice / 100).toFixed(0)}` : 'Prezzo su richiesta';
+  const formattedTotalPrice = totalPrice ? `€${(totalPrice / 100).toFixed(0)}` : 'Prezzo su richiesta';
 
-  // Generate bullet points for "Cosa farai" from description or pitch
+  const availableSlots = getAvailableTimeSlots(product.product_type);
+
   const getWhatYouWillDo = (): string[] => {
-    // In a real app, this would come from the product data
-    // For now, generate from short_pitch
     return [
       'Esplora con una guida esperta locale',
       'Scopri storie e dettagli nascosti',
@@ -88,12 +119,17 @@ export function ProductDetailSheet({
   };
 
   const handleAdd = () => {
-    onAdd();
-    // Don't close immediately - let the parent handle it after success
+    onAdd(quantity, preferredTime || undefined);
+  };
+
+  const handleClose = () => {
+    setQuantity(1);
+    setPreferredTime('');
+    onClose();
   };
 
   return (
-    <Drawer open={isOpen} onOpenChange={(open) => !open && onClose()}>
+    <Drawer open={isOpen} onOpenChange={(open) => !open && handleClose()}>
       <DrawerContent className="max-h-[90vh]">
         {/* Header */}
         <DrawerHeader className="relative pb-2 border-b border-border">
@@ -113,7 +149,7 @@ export function ProductDetailSheet({
                 {product.title}
               </DrawerTitle>
               <p className="text-sm text-muted-foreground mt-1">
-                A partire da <span className="font-semibold text-foreground">{formattedPrice}</span>
+                A partire da <span className="font-semibold text-foreground">{formattedUnitPrice}</span> / persona
               </p>
             </div>
           </div>
@@ -125,6 +161,71 @@ export function ProductDetailSheet({
           <p className="text-sm text-foreground/90 leading-relaxed">
             {product.short_pitch}
           </p>
+
+          {/* Quantity & Time selection */}
+          <section className="bg-secondary/50 rounded-xl p-4 space-y-4">
+            <h4 className="font-semibold text-sm text-foreground flex items-center gap-2">
+              <span className="text-base">🎟️</span>
+              Configura la tua esperienza
+            </h4>
+            
+            {/* Quantity */}
+            <div className="space-y-2">
+              <Label className="text-sm text-foreground/80">Numero partecipanti</Label>
+              <div className="flex items-center gap-3">
+                <Button
+                  variant="outline"
+                  size="icon"
+                  className="h-9 w-9 shrink-0"
+                  onClick={() => setQuantity(Math.max(1, quantity - 1))}
+                  disabled={quantity <= 1}
+                >
+                  <Minus className="w-4 h-4" />
+                </Button>
+                <Input
+                  type="number"
+                  min={1}
+                  max={20}
+                  value={quantity}
+                  onChange={(e) => {
+                    const val = parseInt(e.target.value);
+                    if (!isNaN(val) && val >= 1 && val <= 20) setQuantity(val);
+                  }}
+                  className="w-16 text-center font-semibold [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                />
+                <Button
+                  variant="outline"
+                  size="icon"
+                  className="h-9 w-9 shrink-0"
+                  onClick={() => setQuantity(Math.min(20, quantity + 1))}
+                  disabled={quantity >= 20}
+                >
+                  <Plus className="w-4 h-4" />
+                </Button>
+                <span className="text-sm text-muted-foreground ml-1">
+                  {quantity === 1 ? 'persona' : 'persone'}
+                </span>
+              </div>
+            </div>
+
+            {/* Preferred Time */}
+            <div className="space-y-2">
+              <Label className="text-sm text-foreground/80">Orario preferito</Label>
+              <Select value={preferredTime} onValueChange={setPreferredTime}>
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="Seleziona un orario disponibile" />
+                </SelectTrigger>
+                <SelectContent>
+                  {availableSlots.map(slot => (
+                    <SelectItem key={slot} value={slot}>{slot}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-muted-foreground">
+                L'orario definitivo verrà confermato dal Tour Operator in base alla disponibilità.
+              </p>
+            </div>
+          </section>
 
           {/* Cosa farai */}
           <section>
@@ -243,11 +344,16 @@ export function ProductDetailSheet({
           </section>
         </div>
 
-        {/* Fixed footer - The decision point */}
+        {/* Fixed footer */}
         <div className="border-t border-border p-4 bg-background">
           <div className="flex items-center justify-between gap-4">
             <div>
-              <span className="text-lg font-bold text-foreground">{formattedPrice}</span>
+              <span className="text-lg font-bold text-foreground">{formattedTotalPrice}</span>
+              {quantity > 1 && (
+                <span className="text-xs text-muted-foreground ml-1.5">
+                  ({formattedUnitPrice} × {quantity})
+                </span>
+              )}
               {product.duration_minutes && (
                 <span className="text-sm text-muted-foreground ml-2">· {product.duration_minutes} min</span>
               )}

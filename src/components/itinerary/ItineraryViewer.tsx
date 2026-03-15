@@ -489,8 +489,8 @@ export function ItineraryViewer({ preferences, generatedData, onBack, onRegenera
                   dayIndex={dayIndex}
                   onReplace={() => setReplaceTarget({ slot, dayIndex })}
                   onMove={() => setMoveTarget({ slot, dayIndex })}
-                  onAddProduct={(product, placeName) => {
-                    addProduct(product, dayIndex, slot.place?.id, placeName);
+                  onAddProduct={(product, placeName, quantity, preferredTime) => {
+                    addProduct(product, dayIndex, slot.place?.id, placeName, quantity, preferredTime);
                   }}
                 />
               ))}
