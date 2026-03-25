@@ -127,16 +127,8 @@ export const cities: City[] = [
     description: 'L\'antica città romana sepolta dall\'eruzione del Vesuvio nel 79 d.C.',
     popularFor: ['Archeologia', 'Storia Romana', 'UNESCO'],
   },
-  {
-    id: 'napoli',
-    name: 'Napoli',
-    region: 'Campania',
-    country: 'Italia',
-    coordinates: { lat: 40.8518, lng: 14.2681 },
-    image: '/placeholder.svg',
-    description: 'Vibrante città partenopea, culla della pizza e dell\'arte barocca.',
-    popularFor: ['Gastronomia', 'Arte', 'Cultura', 'Mare'],
-  },
+  // Napoli hidden for now
+
   {
     id: 'amalfi',
     name: 'Costiera Amalfitana',
