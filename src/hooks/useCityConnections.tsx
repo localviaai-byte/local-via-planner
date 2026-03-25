@@ -117,6 +117,42 @@ export function useCreateConnection() {
       formData: CityConnectionFormData;
       userId: string;
     }) => {
+      // Check if connection already exists
+      const { data: existing } = await supabase
+        .from('city_connections')
+        .select('id')
+        .eq('city_id_from', cityIdFrom)
+        .eq('city_id_to', formData.city_id_to)
+        .eq('connection_type', formData.connection_type)
+        .maybeSingle();
+
+      if (existing) {
+        // Update existing connection
+        const { data, error } = await supabase
+          .from('city_connections')
+          .update({
+            primary_mode: formData.primary_mode,
+            typical_min_minutes: formData.typical_min_minutes,
+            typical_max_minutes: formData.typical_max_minutes,
+            cost_note: formData.cost_note || null,
+            reliability_score: formData.reliability_score,
+            friction_score: formData.friction_score,
+            best_departure_time: formData.best_departure_time.length > 0 ? formData.best_departure_time : null,
+            best_return_time: formData.best_return_time.length > 0 ? formData.best_return_time : null,
+            local_tip: formData.local_tip || null,
+            warning: formData.warning || null,
+            seasonality_note: formData.seasonality_note || null,
+            day_worth: formData.day_worth || null,
+            distance_km: formData.distance_km,
+            is_active: true,
+          })
+          .eq('id', existing.id)
+          .select()
+          .single();
+        if (error) throw error;
+        return data;
+      }
+
       const { data, error } = await supabase
         .from('city_connections')
         .insert({
