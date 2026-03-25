@@ -598,9 +598,9 @@ export function PlaceDetailSheet({ place, isOpen, onClose }: PlaceDetailSheetPro
                   <div className="space-y-2">
                     {d?.food_primary && d.food_primary.length > 0 && (
                       <p className="text-sm text-muted-foreground">
-                        Specialità: <span className="font-medium text-foreground">{d.food_primary.join(', ')}</span>
+                        Specialità: <span className="font-medium text-foreground">{d.food_primary.map(k => formatTagLabel(k, foodCategoryLabels)).join(', ')}</span>
                         {d.food_secondary && d.food_secondary.length > 0 && (
-                          <span>, {d.food_secondary.join(', ')}</span>
+                          <span>, {d.food_secondary.map(k => formatTagLabel(k, foodCategoryLabels)).join(', ')}</span>
                         )}
                       </p>
                     )}
@@ -631,7 +631,7 @@ export function PlaceDetailSheet({ place, isOpen, onClose }: PlaceDetailSheetPro
                 <div className="flex items-center gap-2 text-sm">
                   <Heart className="w-4 h-4 text-primary" />
                   <span className="text-muted-foreground">Esperienza: </span>
-                  <span className="font-medium">{d.format_experience.join(', ')}</span>
+                  <span className="font-medium">{d.format_experience.map(k => formatTagLabel(k, formatExperienceLabels)).join(', ')}</span>
                 </div>
               )}
 
