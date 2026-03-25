@@ -129,17 +129,7 @@ export const cities: City[] = [
     popularFor: ['Archeologia', 'Storia Romana', 'UNESCO'],
   },
   // Napoli hidden for now
-
-  {
-    id: 'amalfi',
-    name: 'Costiera Amalfitana',
-    region: 'Campania',
-    country: 'Italia',
-    coordinates: { lat: 40.6333, lng: 14.6029 },
-    image: '/placeholder.svg',
-    description: 'Spettacolare costa mediterranea con villaggi colorati a picco sul mare.',
-    popularFor: ['Panorami', 'Mare', 'Limoni', 'Romantico'],
-  },
+  // Amalfi hidden - no approved places yet
 ];
 
 export const places: Place[] = [
