@@ -19,7 +19,7 @@ interface StepFoodProps {
 
 export function StepFood({ preferences, onUpdate }: StepFoodProps) {
   const [showSecondary, setShowSecondary] = useState(false);
-  const { data: availableOptions, isLoading: isLoadingOptions } = useAvailableFoodOptions(preferences.city);
+  const { data: availableOptions, isLoading: isLoadingOptions } = useAvailableFoodOptions(preferences.cities?.[0] || preferences.city);
 
   const isMultiDay = preferences.numDays > 1;
 

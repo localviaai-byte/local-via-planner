@@ -72,7 +72,7 @@ export function useGenerateItinerary() {
   const [error, setError] = useState<string | null>(null);
 
   const generate = async (preferences: TripPreferences): Promise<GeneratedItinerary | null> => {
-    if (!preferences.city) {
+    if (!preferences.city && (!preferences.cities || preferences.cities.length === 0)) {
       toast.error('Seleziona prima una città');
       return null;
     }
