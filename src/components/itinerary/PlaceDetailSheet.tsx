@@ -28,6 +28,7 @@ import {
 } from '@/components/ui/sheet';
 import { supabase } from '@/integrations/supabase/client';
 import type { ItineraryPlace } from '@/hooks/useGenerateItinerary';
+import { formatTagLabel, foodCategoryLabels, formatExperienceLabels } from '@/lib/tagLabels';
 
 interface FullPlaceData {
   id: string;
