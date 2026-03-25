@@ -67,9 +67,15 @@ export function StepDestination({ preferences, onUpdate }: StepDestinationProps)
                   } else {
                     newCities = [...currentCities, city.id];
                   }
+                  // Auto-set startingCity: keep current if still valid, else first city
+                  let startingCity = preferences.startingCity;
+                  if (!startingCity || !newCities.includes(startingCity)) {
+                    startingCity = newCities[0] || '';
+                  }
                   onUpdate({ 
                     cities: newCities,
                     city: newCities[0] || '',
+                    startingCity: newCities.length >= 2 ? startingCity : undefined,
                   });
                 }}
                 className={`
@@ -111,6 +117,44 @@ export function StepDestination({ preferences, onUpdate }: StepDestinationProps)
             );
           })}
         </div>
+
+        {/* Starting city selector - shown when 2+ cities selected */}
+        {(preferences.cities?.length ?? 0) >= 2 && (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: 'auto' }}
+            className="space-y-2 mt-3"
+          >
+            <label className="flex items-center gap-2 text-xs font-medium text-muted-foreground uppercase tracking-wide">
+              <MapPin className="w-3.5 h-3.5" />
+              Da dove parti?
+            </label>
+            <div className="grid gap-1.5">
+              {preferences.cities.map((cityId) => {
+                const cityData = cities.find(c => c.id === cityId);
+                if (!cityData) return null;
+                const isStarting = preferences.startingCity === cityId;
+                return (
+                  <Button
+                    key={cityId}
+                    type="button"
+                    variant={isStarting ? 'default' : 'outline'}
+                    onClick={() => onUpdate({ startingCity: cityId })}
+                    className="h-auto py-2.5 px-3 justify-start text-left"
+                  >
+                    <span className="text-base mr-2">
+                      {cityId === 'pompei' ? '🏛️' : cityId === 'napoli' ? '🌋' : '🌊'}
+                    </span>
+                    <span className="text-sm font-medium">{cityData.name}</span>
+                    {isStarting && (
+                      <span className="ml-auto text-[10px] opacity-80">📍 Partenza</span>
+                    )}
+                  </Button>
+                );
+              })}
+            </div>
+          </motion.div>
+        )}
 
         {/* Travel distance preference - replaces old nearbyAreas toggle */}
         {(preferences.cities?.length > 0 || preferences.city) && (
