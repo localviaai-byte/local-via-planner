@@ -18,6 +18,7 @@ interface TravelPeriod {
 
 interface TripPreferences {
   city: string;
+  cities?: string[];
   nearbyAreas: boolean;
   maxTravelMinutes: number;
   numDays: number;
@@ -113,35 +114,43 @@ serve(async (req) => {
     const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, supabaseKey);
 
-    console.log(`Generating itinerary for ${preferences.city}, ${preferences.numDays} days`);
+    // Resolve all selected cities
+    const citySlugs = preferences.cities?.length ? preferences.cities : [preferences.city];
+    console.log(`Generating itinerary for ${citySlugs.join(', ')}, ${preferences.numDays} days`);
 
-    // Fetch city info
-    const { data: cityData, error: cityError } = await supabase
-      .from("cities")
-      .select("*")
-      .eq("slug", preferences.city)
-      .maybeSingle();
-
-    if (cityError || !cityData) {
-      // Try by ID
-      const { data: cityById } = await supabase
+    // Fetch all city info
+    const allCities: any[] = [];
+    for (const slug of citySlugs) {
+      let { data: cityData } = await supabase
         .from("cities")
         .select("*")
-        .eq("id", preferences.city)
+        .eq("slug", slug)
         .maybeSingle();
-      
-      if (!cityById) {
-        return new Response(
-          JSON.stringify({ error: "Città non trovata" }),
-          { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-        );
+
+      if (!cityData) {
+        const { data: cityById } = await supabase
+          .from("cities")
+          .select("*")
+          .eq("id", slug)
+          .maybeSingle();
+        cityData = cityById;
       }
+
+      if (cityData) allCities.push(cityData);
     }
 
-    const city = cityData || (await supabase.from("cities").select("*").eq("id", preferences.city).single()).data;
-    const cityId = city.id;
+    if (allCities.length === 0) {
+      return new Response(
+        JSON.stringify({ error: "Nessuna città trovata" }),
+        { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
 
-    // Fetch approved places for the city
+    const city = allCities[0]; // primary city for backward compat
+    const cityId = city.id;
+    const allCityIds = allCities.map((c: any) => c.id);
+
+    // Fetch approved places for ALL selected cities
     const { data: places, error: placesError } = await supabase
       .from("places")
       .select(`
@@ -154,9 +163,10 @@ serve(async (req) => {
         vibe_touristy_to_local, social_level,
         physical_effort, mental_effort,
         why_people_go, mood_primary,
-        latitude, longitude
+        latitude, longitude,
+        city_id
       `)
-      .eq("city_id", cityId)
+      .in("city_id", allCityIds)
       .eq("status", "approved");
 
     if (placesError) {
@@ -164,34 +174,34 @@ serve(async (req) => {
       throw new Error("Errore nel caricamento dei luoghi");
     }
 
-    // Fetch approved products for add-on suggestions
+    // Fetch approved products for ALL selected cities
     const { data: products, error: productsError } = await supabase
       .from("products")
       .select(`
         id, title, short_pitch, price_cents, 
         duration_minutes, product_type, preferred_time_buckets
       `)
-      .eq("city_id", cityId)
+      .in("city_id", allCityIds)
       .eq("status", "approved");
 
     if (productsError) {
       console.error("Error fetching products:", productsError);
     }
 
-    // Fetch city zones
+    // Fetch city zones for ALL selected cities
     const { data: zones } = await supabase
       .from("city_zones")
       .select("id, name, vibe_primary, best_time, touristy_score, local_tip")
-      .eq("city_id", cityId)
+      .in("city_id", allCityIds)
       .eq("status", "approved");
 
-    console.log(`Found ${places?.length || 0} places, ${products?.length || 0} products, ${zones?.length || 0} zones`);
+    console.log(`Found ${places?.length || 0} places, ${products?.length || 0} products, ${zones?.length || 0} zones across ${allCities.length} cities`);
 
     // If no places in database, return helpful message
     if (!places || places.length === 0) {
       return new Response(
         JSON.stringify({ 
-          error: "Nessun luogo approvato per questa città",
+          error: "Nessun luogo approvato per queste città",
           message: "Aggiungi prima dei luoghi nel backoffice e approvali"
         }),
         { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } }
