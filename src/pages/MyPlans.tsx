@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ArrowLeft, MapPin, Calendar, Clock, Trash2, ChevronRight, Map as MapIcon } from 'lucide-react';
+import { ArrowLeft, MapPin, Calendar, Clock, Trash2, ChevronRight, Map as MapIcon, Eye } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { useTripPlans, useDeleteTripPlan, usePlanItems } from '@/hooks/useTripPlans';
@@ -150,17 +150,29 @@ export default function MyPlans() {
                             Creato {format(new Date(plan.created_at), 'd MMM yyyy', { locale: it })}
                           </p>
                         </div>
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            if (confirm('Eliminare questo piano?')) {
-                              deletePlan.mutate(plan.id);
-                            }
-                          }}
-                          className="p-2 hover:bg-destructive/10 rounded-lg transition-colors text-muted-foreground hover:text-destructive"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
+                        <div className="flex items-center gap-1">
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              navigate(`/my-plans/${plan.id}`);
+                            }}
+                            className="p-2 hover:bg-primary/10 rounded-lg transition-colors text-muted-foreground hover:text-primary"
+                            title="Vedi itinerario"
+                          >
+                            <Eye className="w-4 h-4" />
+                          </button>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              if (confirm('Eliminare questo piano?')) {
+                                deletePlan.mutate(plan.id);
+                              }
+                            }}
+                            className="p-2 hover:bg-destructive/10 rounded-lg transition-colors text-muted-foreground hover:text-destructive"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
                       </div>
 
                       {/* Expanded: show plan items */}
