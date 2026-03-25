@@ -67,12 +67,17 @@ export function TripPlanProvider({ children }: TripPlanProviderProps) {
     try {
       const { data: { user } } = await supabase.auth.getUser();
       
+      if (!user) {
+        toast.error('Devi accedere per salvare il piano');
+        return false;
+      }
+      
       // Create the trip plan
       const { data: plan, error: planError } = await supabase
         .from('trip_plans')
         .insert({
           city_id: params.cityId,
-          user_id: user?.id || null,
+          user_id: user.id,
           title: params.title || null,
           days: params.days || 1,
           preferences: (params.preferences || {}) as Json,
