@@ -39,16 +39,8 @@ interface AlternativePlace {
   dietary_options: string[] | null;
 }
 
-const foodCategoryLabels: Record<string, { label: string; emoji: string }> = {
-  pesce: { label: 'Pesce', emoji: '🐟' },
-  carne: { label: 'Carne', emoji: '🥩' },
-  pizza: { label: 'Pizza', emoji: '🍕' },
-  pasta: { label: 'Pasta', emoji: '🍝' },
-  vegetariano: { label: 'Vegetariano', emoji: '🥗' },
-  street_food: { label: 'Street Food', emoji: '🌮' },
-  dolci: { label: 'Dolci', emoji: '🍰' },
-  misto: { label: 'Misto', emoji: '🍽️' },
-};
+import { foodCategoryLabels } from '@/lib/tagLabels';
+
 
 const placeTypeLabels: Record<string, { label: string; emoji: string }> = {
   restaurant: { label: 'Ristorante', emoji: '🍽️' },
