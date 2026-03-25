@@ -164,7 +164,7 @@ serve(async (req) => {
         physical_effort, mental_effort,
         why_people_go, mood_primary,
         latitude, longitude,
-        city_id
+        city_id, shop_category, shop_format
       `)
       .in("city_id", allCityIds)
       .eq("status", "approved");
