@@ -33,7 +33,7 @@ export function PlanningWizard({ onComplete }: PlanningWizardProps) {
   const canProceed = () => {
     switch (currentStep) {
       case 0:
-        return preferences.city !== '';
+        return (preferences.cities?.length > 0) || preferences.city !== '';
       case 1:
         return preferences.interests.length > 0;
       case 2:

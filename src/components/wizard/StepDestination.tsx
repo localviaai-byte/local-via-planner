@@ -113,7 +113,7 @@ export function StepDestination({ preferences, onUpdate }: StepDestinationProps)
         </div>
 
         {/* Travel distance preference - replaces old nearbyAreas toggle */}
-        {preferences.city && (
+        {(preferences.cities?.length > 0 || preferences.city) && (
           <motion.div
             initial={{ opacity: 0, height: 0 }}
             animate={{ opacity: 1, height: 'auto' }}
