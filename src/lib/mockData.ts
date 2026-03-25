@@ -82,6 +82,7 @@ export interface TravelPeriod {
 export interface TripPreferences {
   city: string; // primary city (first selected, backward compat)
   cities: string[]; // all selected city slugs
+  startingCity?: string; // which city to start from (slug)
   nearbyAreas: boolean;
   maxTravelMinutes: 0 | 30 | 60 | 90;
   dates: { start: Date; end: Date } | null;
