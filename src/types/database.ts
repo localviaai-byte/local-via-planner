@@ -421,6 +421,9 @@ export const SHOP_CATEGORY_OPTIONS = [
   { id: 'libri_librerie', label: 'Libri e librerie', icon: '📚' },
   { id: 'elettronica_telefonia', label: 'Elettronica e telefonia', icon: '📱' },
   { id: 'casa_arredamento', label: 'Casa e arredamento', icon: '🏠' },
+  { id: 'gelateria', label: 'Gelateria', icon: '🍦' },
+  { id: 'pasticceria', label: 'Pasticceria', icon: '🍰' },
+  { id: 'parrucchiere_estetista', label: 'Parrucchiere / Estetista', icon: '💇' },
 ] as const;
 
 export const SHOP_FORMAT_OPTIONS = [
