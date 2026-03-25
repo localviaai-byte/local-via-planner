@@ -219,10 +219,12 @@ export function TimelineSlotReal({
                 )}
               </div>
 
-              {/* Reason */}
-              <p className="mt-3 text-sm text-foreground/80 bg-secondary/50 rounded-lg p-3">
-                💡 {slot.reason}
-              </p>
+              {/* Reason - hide if identical to one-liner */}
+              {slot.reason && slot.reason !== place.local_one_liner && (
+                <p className="mt-3 text-sm text-foreground/80 bg-secondary/50 rounded-lg p-3">
+                  💡 {slot.reason}
+                </p>
+              )}
             </div>
 
             {/* Product Suggestions - Inline for single, expandable for multiple */}
