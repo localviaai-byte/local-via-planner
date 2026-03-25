@@ -28,6 +28,7 @@ import AcceptPartnerInvite from "./pages/partner/AcceptPartnerInvite";
 import PartnersPage from "./pages/admin/PartnersPage";
 import AuthPage from "./pages/Auth";
 import MyPlans from "./pages/MyPlans";
+import SavedPlanViewer from "./pages/SavedPlanViewer";
 
 const queryClient = new QueryClient();
 
@@ -235,6 +236,7 @@ const App = () => (
             {/* Public auth */}
             <Route path="/auth" element={<AuthPage />} />
             <Route path="/my-plans" element={<MyPlans />} />
+            <Route path="/my-plans/:planId" element={<SavedPlanViewer />} />
             
             {/* Admin routes */}
             <Route path="/admin/login" element={<AdminLogin />} />
