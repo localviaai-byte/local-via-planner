@@ -80,7 +80,8 @@ export interface TravelPeriod {
 }
 
 export interface TripPreferences {
-  city: string;
+  city: string; // primary city (first selected, backward compat)
+  cities: string[]; // all selected city slugs
   nearbyAreas: boolean;
   maxTravelMinutes: 0 | 30 | 60 | 90;
   dates: { start: Date; end: Date } | null;
@@ -454,6 +455,7 @@ export const maxTravelOptions = [
 
 export const defaultPreferences: TripPreferences = {
   city: '',
+  cities: [],
   nearbyAreas: false,
   maxTravelMinutes: 0,
   dates: null,
