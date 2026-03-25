@@ -1,0 +1,1 @@
+UPDATE public.cities SET is_active = false WHERE id = '6b2384e5-dc34-4256-8ed8-707c98631614';
