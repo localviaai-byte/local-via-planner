@@ -67,9 +67,15 @@ export function StepDestination({ preferences, onUpdate }: StepDestinationProps)
                   } else {
                     newCities = [...currentCities, city.id];
                   }
+                  // Auto-set startingCity: keep current if still valid, else first city
+                  let startingCity = preferences.startingCity;
+                  if (!startingCity || !newCities.includes(startingCity)) {
+                    startingCity = newCities[0] || '';
+                  }
                   onUpdate({ 
                     cities: newCities,
                     city: newCities[0] || '',
+                    startingCity: newCities.length >= 2 ? startingCity : undefined,
                   });
                 }}
                 className={`
