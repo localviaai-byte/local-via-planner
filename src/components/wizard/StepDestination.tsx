@@ -53,43 +53,63 @@ export function StepDestination({ preferences, onUpdate }: StepDestinationProps)
           Destinazione
         </label>
         <div className="grid gap-2">
-          {cities.map((city) => (
-            <motion.button
-              key={city.id}
-              type="button"
-              onClick={() => onUpdate({ city: city.id })}
-              className={`
-                relative p-3 rounded-xl text-left transition-all duration-200 border-2
-                ${preferences.city === city.id
-                  ? 'bg-primary/5 border-primary shadow-card'
-                  : 'bg-card border-transparent hover:shadow-soft'
-                }
-              `}
-              whileTap={{ scale: 0.98 }}
-            >
-              <div className="flex items-center gap-3">
-                <div className={`w-10 h-10 sm:w-12 sm:h-12 rounded-lg flex items-center justify-center text-xl sm:text-2xl flex-shrink-0 transition-colors ${
-                  preferences.city === city.id ? 'bg-primary/15' : 'bg-secondary'
-                }`}>
-                  {city.id === 'pompei' ? '🏛️' : city.id === 'napoli' ? '🌋' : '🌊'}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <h3 className="font-display text-base font-semibold text-foreground">{city.name}</h3>
-                  <p className="text-xs text-muted-foreground line-clamp-1">{city.description}</p>
-                  <div className="flex flex-wrap gap-1.5 mt-1.5">
-                    {city.popularFor.slice(0, 3).map((tag) => (
-                      <span
-                        key={tag}
-                        className="px-1.5 py-0.5 bg-secondary text-[10px] text-muted-foreground rounded-full"
-                      >
-                        {tag}
-                      </span>
-                    ))}
+          {cities.map((city) => {
+            const isSelected = preferences.cities?.includes(city.id) || preferences.city === city.id;
+            return (
+              <motion.button
+                key={city.id}
+                type="button"
+                onClick={() => {
+                  const currentCities = preferences.cities || (preferences.city ? [preferences.city] : []);
+                  let newCities: string[];
+                  if (currentCities.includes(city.id)) {
+                    newCities = currentCities.filter(c => c !== city.id);
+                  } else {
+                    newCities = [...currentCities, city.id];
+                  }
+                  onUpdate({ 
+                    cities: newCities,
+                    city: newCities[0] || '',
+                  });
+                }}
+                className={`
+                  relative p-3 rounded-xl text-left transition-all duration-200 border-2
+                  ${isSelected
+                    ? 'bg-primary/5 border-primary shadow-card'
+                    : 'bg-card border-transparent hover:shadow-soft'
+                  }
+                `}
+                whileTap={{ scale: 0.98 }}
+              >
+                <div className="flex items-center gap-3">
+                  <div className={`w-10 h-10 sm:w-12 sm:h-12 rounded-lg flex items-center justify-center text-xl sm:text-2xl flex-shrink-0 transition-colors ${
+                    isSelected ? 'bg-primary/15' : 'bg-secondary'
+                  }`}>
+                    {city.id === 'pompei' ? '🏛️' : city.id === 'napoli' ? '🌋' : '🌊'}
                   </div>
+                  <div className="flex-1 min-w-0">
+                    <h3 className="font-display text-base font-semibold text-foreground">{city.name}</h3>
+                    <p className="text-xs text-muted-foreground line-clamp-1">{city.description}</p>
+                    <div className="flex flex-wrap gap-1.5 mt-1.5">
+                      {city.popularFor.slice(0, 3).map((tag) => (
+                        <span
+                          key={tag}
+                          className="px-1.5 py-0.5 bg-secondary text-[10px] text-muted-foreground rounded-full"
+                        >
+                          {tag}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                  {isSelected && (
+                    <div className="w-5 h-5 rounded-full bg-primary flex items-center justify-center flex-shrink-0">
+                      <span className="text-primary-foreground text-xs">✓</span>
+                    </div>
+                  )}
                 </div>
-              </div>
-            </motion.button>
-          ))}
+              </motion.button>
+            );
+          })}
         </div>
 
         {/* Travel distance preference - replaces old nearbyAreas toggle */}
