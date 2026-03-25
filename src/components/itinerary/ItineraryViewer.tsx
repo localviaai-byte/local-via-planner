@@ -222,6 +222,19 @@ export function ItineraryViewer({ preferences, generatedData, onBack, onRegenera
 
   // Handle save plan
   const handleSavePlan = async () => {
+    // Require authentication before saving
+    if (!user) {
+      toast.error('Accedi per salvare il piano', {
+        description: 'Effettua il login per salvare i tuoi itinerari',
+        action: {
+          label: 'Accedi',
+          onClick: () => {
+            window.location.href = '/auth?redirect=' + encodeURIComponent(window.location.pathname);
+          },
+        },
+      });
+      return;
+    }
     // Build slots from itinerary data
     const slots = itineraryData.flatMap((day, dayIndex) =>
       day.slots
