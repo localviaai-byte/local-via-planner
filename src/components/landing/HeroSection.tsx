@@ -1,9 +1,10 @@
 import { motion } from 'framer-motion';
-import { ChevronRight, Compass, LayoutDashboard, Sparkles, MapPin, Clock } from 'lucide-react';
+import { ChevronRight, Compass, LayoutDashboard, Sparkles, MapPin, Clock, Mail } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/hooks/useAuth';
 import heroImage from '@/assets/hero-italy.jpg';
 import logoWhite from '@/assets/logo-white.png';
+import logoColor from '@/assets/logo-color.png';
 
 interface HeroSectionProps {
   onStart: () => void;
@@ -167,13 +168,26 @@ export function HeroSection({ onStart }: HeroSectionProps) {
         </motion.div>
 
         {/* Footer */}
-        <div className="mt-3 pb-1 text-center">
-          <a
-            href="mailto:info@localvia.app"
-            className="text-[10px] text-muted-foreground hover:text-foreground transition-colors"
-          >
-            info@localvia.app
-          </a>
+        <div className="mt-3 pb-1 flex items-center justify-center gap-3">
+          <img src={logoColor} alt="LocalVia" className="h-4 w-auto opacity-60" />
+          <span className="text-muted-foreground/30">|</span>
+          <div className="flex items-center gap-2.5">
+            <a href="mailto:info@localvia.app" aria-label="Email" className="text-muted-foreground hover:text-foreground transition-colors">
+              <Mail className="w-3.5 h-3.5" />
+            </a>
+            <a href="https://instagram.com/localvia.app" target="_blank" rel="noopener noreferrer" aria-label="Instagram" className="text-muted-foreground hover:text-foreground transition-colors">
+              <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <rect width="20" height="20" x="2" y="2" rx="5" ry="5" />
+                <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z" />
+                <line x1="17.5" x2="17.51" y1="6.5" y2="6.5" />
+              </svg>
+            </a>
+            <a href="https://tiktok.com/@localvia.app" target="_blank" rel="noopener noreferrer" aria-label="TikTok" className="text-muted-foreground hover:text-foreground transition-colors">
+              <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-2.88 2.5 2.89 2.89 0 0 1-2.89-2.89 2.89 2.89 0 0 1 2.89-2.89c.28 0 .54.04.79.1v-3.5a6.37 6.37 0 0 0-.79-.05A6.34 6.34 0 0 0 3.15 15a6.34 6.34 0 0 0 6.34 6.34 6.34 6.34 0 0 0 6.34-6.34V8.7a8.18 8.18 0 0 0 4.76 1.52v-3.4a4.85 4.85 0 0 1-1-.13z" />
+              </svg>
+            </a>
+          </div>
         </div>
       </div>
     </div>
