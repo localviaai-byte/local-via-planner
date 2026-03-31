@@ -20,6 +20,7 @@ const steps = [
 
 interface PlanningWizardProps {
   onComplete: (preferences: TripPreferences) => void;
+  onBack?: () => void;
 }
 
 export function PlanningWizard({ onComplete }: PlanningWizardProps) {
