@@ -168,9 +168,7 @@ export default function AuthPage() {
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="w-full max-w-sm">
         {/* Logo */}
         <div className="text-center mb-8">
-          <h1 className="font-display text-3xl font-semibold text-foreground">
-            Local<span className="text-primary">Via</span>
-          </h1>
+          <img src="/assets/logo-color.png" alt="LocalVia" className="h-8 mx-auto" />
           <p className="text-sm text-muted-foreground mt-2">
             {isSignUp ? 'Crea il tuo account per salvare i tuoi itinerari' : 'Accedi per sbloccare l\'itinerario completo'}
           </p>

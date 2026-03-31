@@ -67,13 +67,8 @@ export function AdminLayout() {
           {/* Logo */}
           <div className="p-4 border-b flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-full bg-terracotta/10 flex items-center justify-center">
-                <MapPin className="w-5 h-5 text-terracotta" />
-              </div>
-              <div>
-                <h1 className="font-display text-lg font-semibold">LocalVia</h1>
-                <p className="text-xs text-muted-foreground capitalize">{role}</p>
-              </div>
+              <img src="/assets/logo-color.png" alt="LocalVia" className="h-7" />
+              <p className="text-xs text-muted-foreground capitalize">{role}</p>
             </div>
             <Button 
               variant="ghost" 

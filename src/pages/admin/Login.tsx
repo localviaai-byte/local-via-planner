@@ -195,12 +195,7 @@ export default function AdminLogin() {
       >
         {/* Logo */}
         <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-primary/10 mb-4">
-            <MapPin className="w-6 h-6 text-primary" />
-          </div>
-          <h1 className="font-display text-2xl font-semibold text-foreground">
-            LocalVia
-          </h1>
+          <img src="/assets/logo-color.png" alt="LocalVia" className="h-8 mx-auto mb-4" />
           <p className="text-sm text-muted-foreground mt-1">
             Area Contributors
           </p>
