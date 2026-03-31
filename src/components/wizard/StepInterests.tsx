@@ -12,25 +12,14 @@ export function StepInterests({ preferences, onUpdate }: StepInterestsProps) {
     const currentInterests = [...preferences.interests];
     
     if (currentInterests.includes(id)) {
-      // Remove from interests
       const newInterests = currentInterests.filter(i => i !== id);
-      // Top interests are always the first 3 selected
-      onUpdate({
-        interests: newInterests,
-        topInterests: newInterests.slice(0, 3),
-      });
+      onUpdate({ interests: newInterests, topInterests: newInterests.slice(0, 3) });
     } else {
-      // Add to interests
       const newInterests = [...currentInterests, id];
-      // Top interests are always the first 3 selected
-      onUpdate({
-        interests: newInterests,
-        topInterests: newInterests.slice(0, 3),
-      });
+      onUpdate({ interests: newInterests, topInterests: newInterests.slice(0, 3) });
     }
   };
 
-  // Show badge number for ALL selected interests (order of selection)
   const getPriority = (id: string) => {
     const index = preferences.interests.indexOf(id);
     return index === -1 ? 0 : index + 1;
@@ -38,33 +27,33 @@ export function StepInterests({ preferences, onUpdate }: StepInterestsProps) {
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 20 }}
+      initial={{ opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, y: -20 }}
-      className="space-y-8"
+      exit={{ opacity: 0, y: -12 }}
+      className="space-y-4"
     >
-      {/* Editorial header */}
-      <div className="text-center mb-8">
-        <h2 className="font-display text-3xl font-semibold text-foreground mb-3 tracking-tight">
+      {/* Header */}
+      <div className="text-center mb-1">
+        <h2 className="font-display text-xl font-semibold text-foreground tracking-tight">
           Cosa ti interessa?
         </h2>
-        <p className="text-muted-foreground">
+        <p className="text-xs text-muted-foreground mt-0.5">
           Rispondi come se stessi parlando a un amico
         </p>
       </div>
 
-      {/* Selected count indicator - subtle */}
+      {/* Selected count */}
       {preferences.interests.length > 0 && (
         <motion.div 
-          initial={{ opacity: 0, y: -10 }}
+          initial={{ opacity: 0, y: -6 }}
           animate={{ opacity: 1, y: 0 }}
-          className="text-center text-sm text-muted-foreground"
+          className="text-center text-xs text-muted-foreground"
         >
           <span className="font-medium text-primary">{preferences.interests.length}</span>
           {' '}selezionati
           {preferences.topInterests.length > 0 && (
             <span>
-              {' '}• Top: {preferences.topInterests.slice(0, 3).map(id => 
+              {' '}· Top: {preferences.topInterests.slice(0, 3).map(id => 
                 interests.find(i => i.id === id)?.label
               ).join(', ')}
             </span>
@@ -72,14 +61,14 @@ export function StepInterests({ preferences, onUpdate }: StepInterestsProps) {
         </motion.div>
       )}
 
-      {/* Interest chips grid - 2 columns for mobile */}
-      <div className="grid grid-cols-2 gap-3">
+      {/* Interest chips */}
+      <div className="grid grid-cols-2 gap-2">
         {interests.map((interest, index) => (
           <motion.div
             key={interest.id}
-            initial={{ opacity: 0, y: 20 }}
+            initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: index * 0.03 }}
+            transition={{ delay: index * 0.02 }}
           >
             <InterestChip
               id={interest.id}
@@ -94,13 +83,9 @@ export function StepInterests({ preferences, onUpdate }: StepInterestsProps) {
       </div>
 
       {preferences.interests.length === 0 && (
-        <motion.p
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          className="text-center text-sm text-muted-foreground"
-        >
+        <p className="text-center text-xs text-muted-foreground">
           Seleziona almeno un interesse per continuare
-        </motion.p>
+        </p>
       )}
     </motion.div>
   );
