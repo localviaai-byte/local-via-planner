@@ -162,9 +162,6 @@ export function HeroSection({ onStart }: HeroSectionProps) {
             Dove vuoi andare?
             <ChevronRight className="w-5 h-5 ml-1" />
           </Button>
-          <p className="text-center text-[10px] text-muted-foreground mt-2">
-            Gratis · Nessuna registrazione richiesta
-          </p>
         </motion.div>
 
         {/* Footer */}
