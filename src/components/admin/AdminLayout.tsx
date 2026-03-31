@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import logoColor from '@/assets/logo-color.png';
 import { useNavigate, useLocation, Outlet } from 'react-router-dom';
 import { 
   Building2, 
