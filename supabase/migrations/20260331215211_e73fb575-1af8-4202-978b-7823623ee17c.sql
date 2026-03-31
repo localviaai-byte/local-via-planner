@@ -1,0 +1,2 @@
+ALTER TABLE public.place_suggestions DROP CONSTRAINT IF EXISTS place_suggestions_status_check;
+ALTER TABLE public.place_suggestions ADD CONSTRAINT place_suggestions_status_check CHECK (status IN ('pending', 'accepted', 'rejected', 'ai_cached'));
