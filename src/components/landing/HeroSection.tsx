@@ -3,6 +3,7 @@ import { ChevronRight, MapPin, Compass, LayoutDashboard } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/hooks/useAuth';
 import heroImage from '@/assets/hero-pompeii.jpg';
+import logoWhite from '@/assets/logo-white.png';
 
 interface HeroSectionProps {
   onStart: () => void;
