@@ -23,7 +23,7 @@ interface PlanningWizardProps {
   onBack?: () => void;
 }
 
-export function PlanningWizard({ onComplete }: PlanningWizardProps) {
+export function PlanningWizard({ onComplete, onBack }: PlanningWizardProps) {
   const [currentStep, setCurrentStep] = useState(0);
   const [preferences, setPreferences] = useState<TripPreferences>(defaultPreferences);
 
