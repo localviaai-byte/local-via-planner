@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import logoColor from '@/assets/logo-color.png';
 import { useNavigate, useLocation, Outlet } from 'react-router-dom';
 import { 
   Building2, 
@@ -67,13 +68,8 @@ export function AdminLayout() {
           {/* Logo */}
           <div className="p-4 border-b flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-full bg-terracotta/10 flex items-center justify-center">
-                <MapPin className="w-5 h-5 text-terracotta" />
-              </div>
-              <div>
-                <h1 className="font-display text-lg font-semibold">LocalVia</h1>
-                <p className="text-xs text-muted-foreground capitalize">{role}</p>
-              </div>
+              <img src={logoColor} alt="LocalVia" className="h-7" />
+              <p className="text-xs text-muted-foreground capitalize">{role}</p>
             </div>
             <Button 
               variant="ghost" 
@@ -141,10 +137,7 @@ export function AdminLayout() {
             >
               <Menu className="w-5 h-5" />
             </Button>
-            <div className="flex items-center gap-2">
-              <MapPin className="w-5 h-5 text-terracotta" />
-              <span className="font-display font-semibold">LocalVia</span>
-            </div>
+            <img src={logoColor} alt="LocalVia" className="h-6" />
           </div>
         </header>
 

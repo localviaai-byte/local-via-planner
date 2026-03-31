@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import logoColor from '@/assets/logo-color.png';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
@@ -101,9 +102,7 @@ export default function AdminLogin() {
         >
           {/* Logo */}
           <div className="text-center mb-8">
-            <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-primary/10 mb-4">
-              <MapPin className="w-6 h-6 text-primary" />
-            </div>
+          <img src={logoColor} alt="LocalVia" className="h-8 mx-auto mb-4" />
             <h1 className="font-display text-2xl font-semibold text-foreground">
               Recupera Password
             </h1>
@@ -197,12 +196,7 @@ export default function AdminLogin() {
       >
         {/* Logo */}
         <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-primary/10 mb-4">
-            <MapPin className="w-6 h-6 text-primary" />
-          </div>
-          <h1 className="font-display text-2xl font-semibold text-foreground">
-            LocalVia
-          </h1>
+          <img src={logoColor} alt="LocalVia" className="h-8 mx-auto mb-4" />
           <p className="text-sm text-muted-foreground mt-1">
             Area Contributors
           </p>
