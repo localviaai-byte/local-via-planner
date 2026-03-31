@@ -371,12 +371,18 @@ Rispondi con un JSON array.`
               status: 'ai_cached',
             }));
 
-            const { error: cacheError } = await supabase
-              .from("place_suggestions")
-              .upsert(rows, { onConflict: 'city_id,name', ignoreDuplicates: true });
+            // Try to insert, ignore duplicates by checking name
+            const existingNames = new Set(
+              ((await supabase.from("place_suggestions").select("name").eq("city_id", cityId)).data || [])
+                .map((r: any) => r.name.toLowerCase())
+            );
+            const newRows = rows.filter(r => !existingNames.has(r.name.toLowerCase()));
             
-            if (cacheError) console.error("Error caching AI places:", cacheError);
-            else console.log(`Cached ${rows.length} AI-discovered places`);
+            if (newRows.length > 0) {
+              const { error: cacheError } = await supabase.from("place_suggestions").insert(newRows);
+              if (cacheError) console.error("Error caching AI places:", cacheError);
+              else console.log(`Cached ${newRows.length} AI-discovered places`);
+            }
           }
         } catch (parseError) {
           console.error("Error parsing AI discovery:", parseError, content?.substring(0, 500));
