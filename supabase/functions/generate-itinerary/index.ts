@@ -351,7 +351,12 @@ Rispondi con un JSON array.`
         const content = discoveryData.choices?.[0]?.message?.content;
         
         try {
-          const parsed = JSON.parse(content);
+          // Sanitize control characters that break JSON.parse
+          const sanitized = (content || '').replace(/[\x00-\x1F\x7F]/g, (ch: string) => {
+            if (ch === '\n' || ch === '\r' || ch === '\t') return ch;
+            return '';
+          });
+          const parsed = JSON.parse(sanitized);
           aiGeneratedPlaces = Array.isArray(parsed) ? parsed : (parsed.places || parsed.locations || parsed.results || []);
           usingAIPlaces = true;
           console.log(`AI discovered ${aiGeneratedPlaces.length} places`);
