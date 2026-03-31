@@ -1,9 +1,10 @@
 import { motion } from 'framer-motion';
-import { ChevronRight, Compass, LayoutDashboard, Sparkles, MapPin, Clock } from 'lucide-react';
+import { ChevronRight, Compass, LayoutDashboard, Sparkles, MapPin, Clock, Mail } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/hooks/useAuth';
 import heroImage from '@/assets/hero-italy.jpg';
 import logoWhite from '@/assets/logo-white.png';
+import logoColor from '@/assets/logo-color.png';
 
 interface HeroSectionProps {
   onStart: () => void;
