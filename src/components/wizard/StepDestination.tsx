@@ -1,8 +1,9 @@
-import { useState } from 'react';
-import { motion } from 'framer-motion';
-import { MapPin, Calendar, Users, Train, Sun } from 'lucide-react';
-import { cities, maxTravelOptions, type TripPreferences, type TravelPeriodType, type Season } from '@/lib/mockData';
+import { useState, useEffect, useRef } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { MapPin, Calendar, Users, Train, Sun, Search, X, Sparkles } from 'lucide-react';
+import { maxTravelOptions, type TripPreferences, type TravelPeriodType, type Season, type CityObject } from '@/lib/mockData';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { format } from 'date-fns';
 import { it } from 'date-fns/locale';
 import { Calendar as CalendarComponent } from '@/components/ui/calendar';
@@ -15,19 +16,129 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { supabase } from '@/integrations/supabase/client';
 
 interface StepDestinationProps {
   preferences: TripPreferences;
   onUpdate: (updates: Partial<TripPreferences>) => void;
 }
 
+interface CityResult {
+  id: string;
+  name: string;
+  region: string | null;
+  slug: string;
+  status: string | null;
+}
+
 export function StepDestination({ preferences, onUpdate }: StepDestinationProps) {
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchResults, setSearchResults] = useState<CityResult[]>([]);
+  const [isSearching, setIsSearching] = useState(false);
+  const [showDropdown, setShowDropdown] = useState(false);
+  const searchRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  const selectedCities = preferences.cityObjects || [];
+
   const travelWithOptions = [
     { value: 'couple', label: 'In coppia', icon: '💑' },
     { value: 'family', label: 'Famiglia', icon: '👨‍👩‍👧‍👦' },
     { value: 'friends', label: 'Amici', icon: '👥' },
     { value: 'solo', label: 'Da solo', icon: '🧳' },
   ];
+
+  // Search cities in DB
+  useEffect(() => {
+    const query = searchQuery.trim();
+    if (query.length < 2) {
+      setSearchResults([]);
+      setShowDropdown(false);
+      return;
+    }
+
+    const timer = setTimeout(async () => {
+      setIsSearching(true);
+      try {
+        const { data } = await supabase
+          .from('cities')
+          .select('id, name, region, slug, status')
+          .ilike('name', `%${query}%`)
+          .eq('is_active', true)
+          .order('name')
+          .limit(8);
+
+        setSearchResults(data || []);
+        setShowDropdown(true);
+      } catch {
+        setSearchResults([]);
+      } finally {
+        setIsSearching(false);
+      }
+    }, 300);
+
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
+
+  // Close dropdown on outside click
+  useEffect(() => {
+    const handleClick = (e: MouseEvent) => {
+      if (searchRef.current && !searchRef.current.contains(e.target as Node)) {
+        setShowDropdown(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClick);
+    return () => document.removeEventListener('mousedown', handleClick);
+  }, []);
+
+  const addCity = (city: CityObject) => {
+    // Don't add duplicates
+    const exists = selectedCities.some(c => 
+      (c.id && c.id === city.id) || c.name.toLowerCase() === city.name.toLowerCase()
+    );
+    if (exists) return;
+
+    const newCities = [...selectedCities, city];
+    let startingCity = preferences.startingCity;
+    if (!startingCity || !newCities.some(c => (c.id || c.name) === startingCity)) {
+      startingCity = newCities[0]?.id || newCities[0]?.name || '';
+    }
+
+    onUpdate({
+      cityObjects: newCities,
+      cities: newCities.map(c => c.slug || c.id || c.name),
+      city: newCities[0]?.slug || newCities[0]?.id || newCities[0]?.name || '',
+      startingCity: newCities.length >= 2 ? startingCity : undefined,
+    });
+    setSearchQuery('');
+    setShowDropdown(false);
+  };
+
+  const removeCity = (index: number) => {
+    const newCities = selectedCities.filter((_, i) => i !== index);
+    let startingCity = preferences.startingCity;
+    if (startingCity && !newCities.some(c => (c.id || c.name) === startingCity)) {
+      startingCity = newCities[0]?.id || newCities[0]?.name || '';
+    }
+    
+    onUpdate({
+      cityObjects: newCities,
+      cities: newCities.map(c => c.slug || c.id || c.name),
+      city: newCities[0]?.slug || newCities[0]?.id || newCities[0]?.name || '',
+      startingCity: newCities.length >= 2 ? startingCity : undefined,
+    });
+  };
+
+  const getStatusBadge = (city: CityResult) => {
+    if (city.status === 'active') return { label: 'Curata', color: 'bg-green-100 text-green-700' };
+    if (city.status === 'building') return { label: 'In costruzione', color: 'bg-amber-100 text-amber-700' };
+    return null;
+  };
+
+  // Check if search query matches a new city (not in results and not already selected)
+  const canAddCustom = searchQuery.trim().length >= 2 && 
+    !searchResults.some(r => r.name.toLowerCase() === searchQuery.trim().toLowerCase()) &&
+    !selectedCities.some(c => c.name.toLowerCase() === searchQuery.trim().toLowerCase());
 
   return (
     <motion.div
@@ -36,157 +147,215 @@ export function StepDestination({ preferences, onUpdate }: StepDestinationProps)
       exit={{ opacity: 0, y: -20 }}
       className="space-y-6"
     >
-      {/* Editorial header - more compact on mobile */}
       <div className="text-center mb-4">
         <h2 className="font-display text-2xl sm:text-3xl font-semibold text-foreground mb-2 tracking-tight">
           Dove vuoi andare?
         </h2>
         <p className="text-sm text-muted-foreground">
-          Raccontaci come sarà questo viaggio
+          Cerca una città italiana e pianifica il tuo viaggio
         </p>
       </div>
 
-      {/* City Selection - Compact mobile cards */}
+      {/* City Search */}
       <div className="space-y-3">
         <label className="flex items-center gap-2 text-xs font-medium text-muted-foreground uppercase tracking-wide">
           <MapPin className="w-3.5 h-3.5" />
           Destinazione
         </label>
-        <div className="grid gap-2">
-          {cities.map((city) => {
-            const isSelected = preferences.cities?.includes(city.id) || preferences.city === city.id;
-            return (
-              <motion.button
-                key={city.id}
-                type="button"
-                onClick={() => {
-                  const currentCities = preferences.cities || (preferences.city ? [preferences.city] : []);
-                  let newCities: string[];
-                  if (currentCities.includes(city.id)) {
-                    newCities = currentCities.filter(c => c !== city.id);
-                  } else {
-                    newCities = [...currentCities, city.id];
-                  }
-                  // Auto-set startingCity: keep current if still valid, else first city
-                  let startingCity = preferences.startingCity;
-                  if (!startingCity || !newCities.includes(startingCity)) {
-                    startingCity = newCities[0] || '';
-                  }
-                  onUpdate({ 
-                    cities: newCities,
-                    city: newCities[0] || '',
-                    startingCity: newCities.length >= 2 ? startingCity : undefined,
-                  });
-                }}
-                className={`
-                  relative p-3 rounded-xl text-left transition-all duration-200 border-2
-                  ${isSelected
-                    ? 'bg-primary/5 border-primary shadow-card'
-                    : 'bg-card border-transparent hover:shadow-soft'
-                  }
-                `}
-                whileTap={{ scale: 0.98 }}
+
+        {/* Selected cities chips */}
+        {selectedCities.length > 0 && (
+          <div className="flex flex-wrap gap-2">
+            {selectedCities.map((city, idx) => (
+              <motion.div
+                key={city.id || city.name}
+                initial={{ opacity: 0, scale: 0.8 }}
+                animate={{ opacity: 1, scale: 1 }}
+                className="flex items-center gap-2 px-3 py-2 bg-primary/10 border border-primary/20 rounded-xl"
               >
-                <div className="flex items-center gap-3">
-                  <div className={`w-10 h-10 sm:w-12 sm:h-12 rounded-lg flex items-center justify-center text-xl sm:text-2xl flex-shrink-0 transition-colors ${
-                    isSelected ? 'bg-primary/15' : 'bg-secondary'
-                  }`}>
-                    {city.id === 'pompei' ? '🏛️' : city.id === 'napoli' ? '🌋' : '🌊'}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <h3 className="font-display text-base font-semibold text-foreground">{city.name}</h3>
-                    <p className="text-xs text-muted-foreground line-clamp-1">{city.description}</p>
-                    <div className="flex flex-wrap gap-1.5 mt-1.5">
-                      {city.popularFor.slice(0, 3).map((tag) => (
-                        <span
-                          key={tag}
-                          className="px-1.5 py-0.5 bg-secondary text-[10px] text-muted-foreground rounded-full"
-                        >
-                          {tag}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-                  {isSelected && (
-                    <div className="w-5 h-5 rounded-full bg-primary flex items-center justify-center flex-shrink-0">
-                      <span className="text-primary-foreground text-xs">✓</span>
-                    </div>
-                  )}
-                </div>
-              </motion.button>
-            );
-          })}
-        </div>
-
-        {/* Starting city selector - shown when 2+ cities selected */}
-        {(preferences.cities?.length ?? 0) >= 2 && (
-          <motion.div
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: 'auto' }}
-            className="space-y-2 mt-3"
-          >
-            <label className="flex items-center gap-2 text-xs font-medium text-muted-foreground uppercase tracking-wide">
-              <MapPin className="w-3.5 h-3.5" />
-              Da dove parti?
-            </label>
-            <div className="grid gap-1.5">
-              {preferences.cities.map((cityId) => {
-                const cityData = cities.find(c => c.id === cityId);
-                if (!cityData) return null;
-                const isStarting = preferences.startingCity === cityId;
-                return (
-                  <Button
-                    key={cityId}
-                    type="button"
-                    variant={isStarting ? 'default' : 'outline'}
-                    onClick={() => onUpdate({ startingCity: cityId })}
-                    className="h-auto py-2.5 px-3 justify-start text-left"
-                  >
-                    <span className="text-base mr-2">
-                      {cityId === 'pompei' ? '🏛️' : cityId === 'napoli' ? '🌋' : '🌊'}
-                    </span>
-                    <span className="text-sm font-medium">{cityData.name}</span>
-                    {isStarting && (
-                      <span className="ml-auto text-[10px] opacity-80">📍 Partenza</span>
-                    )}
-                  </Button>
-                );
-              })}
-            </div>
-          </motion.div>
-        )}
-
-        {/* Travel distance preference - replaces old nearbyAreas toggle */}
-        {(preferences.cities?.length > 0 || preferences.city) && (
-          <motion.div
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: 'auto' }}
-            className="space-y-2 mt-3"
-          >
-            <label className="flex items-center gap-2 text-xs font-medium text-muted-foreground uppercase tracking-wide">
-              <Train className="w-3.5 h-3.5" />
-              Ti va di spostarti fuori città?
-            </label>
-            <div className="grid grid-cols-2 gap-1.5">
-              {maxTravelOptions.map((option) => (
-                <Button
-                  key={option.id}
+                <span className="text-sm font-medium text-foreground">{city.name}</span>
+                {city.region && <span className="text-xs text-muted-foreground">({city.region})</span>}
+                {city.isNew && (
+                  <span className="flex items-center gap-0.5 px-1.5 py-0.5 bg-accent/20 text-accent-foreground text-[10px] rounded-full">
+                    <Sparkles className="w-2.5 h-2.5" /> AI
+                  </span>
+                )}
+                <button
                   type="button"
-                  variant={preferences.maxTravelMinutes === option.id ? 'default' : 'outline'}
-                  onClick={() => onUpdate({ 
-                    maxTravelMinutes: option.id,
-                    nearbyAreas: option.id > 0 
-                  })}
-                  className="h-auto py-2 px-2 flex flex-col items-start text-left overflow-hidden"
+                  onClick={() => removeCity(idx)}
+                  className="p-0.5 rounded-full hover:bg-destructive/10 transition-colors"
                 >
-                  <span className="font-medium text-sm truncate w-full">{option.label}</span>
-                  <span className="text-[10px] opacity-70 font-normal truncate w-full">{option.description}</span>
-                </Button>
-              ))}
-            </div>
-          </motion.div>
+                  <X className="w-3.5 h-3.5 text-muted-foreground" />
+                </button>
+              </motion.div>
+            ))}
+          </div>
         )}
+
+        {/* Search input */}
+        <div ref={searchRef} className="relative">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+            <Input
+              ref={inputRef}
+              type="text"
+              placeholder="Cerca una città... (es. Roma, Firenze, Milano)"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              onFocus={() => searchQuery.trim().length >= 2 && setShowDropdown(true)}
+              className="pl-10 h-12 rounded-xl text-base"
+            />
+            {isSearching && (
+              <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                <div className="w-4 h-4 border-2 border-primary/30 border-t-primary rounded-full animate-spin" />
+              </div>
+            )}
+          </div>
+
+          {/* Dropdown results */}
+          <AnimatePresence>
+            {showDropdown && (searchResults.length > 0 || canAddCustom) && (
+              <motion.div
+                initial={{ opacity: 0, y: -4 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -4 }}
+                className="absolute top-full left-0 right-0 z-50 mt-1 bg-card border border-border rounded-xl shadow-lg overflow-hidden"
+              >
+                {/* DB results */}
+                {searchResults.map((city) => {
+                  const badge = getStatusBadge(city);
+                  const isAlreadySelected = selectedCities.some(c => c.id === city.id);
+                  return (
+                    <button
+                      key={city.id}
+                      type="button"
+                      disabled={isAlreadySelected}
+                      onClick={() => addCity({ 
+                        id: city.id, 
+                        name: city.name, 
+                        region: city.region || undefined,
+                        slug: city.slug,
+                        isNew: false 
+                      })}
+                      className={cn(
+                        "w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-secondary/50 transition-colors border-b border-border/50 last:border-0",
+                        isAlreadySelected && "opacity-40 cursor-not-allowed"
+                      )}
+                    >
+                      <MapPin className="w-4 h-4 text-primary flex-shrink-0" />
+                      <div className="flex-1 min-w-0">
+                        <span className="text-sm font-medium text-foreground">{city.name}</span>
+                        {city.region && (
+                          <span className="text-xs text-muted-foreground ml-1.5">— {city.region}</span>
+                        )}
+                      </div>
+                      {badge && (
+                        <span className={cn("px-2 py-0.5 text-[10px] font-medium rounded-full", badge.color)}>
+                          {badge.label}
+                        </span>
+                      )}
+                    </button>
+                  );
+                })}
+
+                {/* Custom city option */}
+                {canAddCustom && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const name = searchQuery.trim();
+                      addCity({ name, isNew: true });
+                    }}
+                    className="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-accent/10 transition-colors bg-secondary/30"
+                  >
+                    <Sparkles className="w-4 h-4 text-primary flex-shrink-0" />
+                    <div className="flex-1">
+                      <span className="text-sm font-medium text-foreground">
+                        Esplora "{searchQuery.trim()}"
+                      </span>
+                      <p className="text-[11px] text-muted-foreground">
+                        L'AI scoprirà i luoghi migliori per te
+                      </p>
+                    </div>
+                    <span className="px-2 py-0.5 bg-primary/10 text-primary text-[10px] font-medium rounded-full">
+                      AI
+                    </span>
+                  </button>
+                )}
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
       </div>
+
+      {/* Starting city selector - shown when 2+ cities selected */}
+      {selectedCities.length >= 2 && (
+        <motion.div
+          initial={{ opacity: 0, height: 0 }}
+          animate={{ opacity: 1, height: 'auto' }}
+          className="space-y-2"
+        >
+          <label className="flex items-center gap-2 text-xs font-medium text-muted-foreground uppercase tracking-wide">
+            <MapPin className="w-3.5 h-3.5" />
+            Da dove parti?
+          </label>
+          <div className="grid gap-1.5">
+            {selectedCities.map((city) => {
+              const cityKey = city.id || city.name;
+              const isStarting = preferences.startingCity === cityKey;
+              return (
+                <Button
+                  key={cityKey}
+                  type="button"
+                  variant={isStarting ? 'default' : 'outline'}
+                  onClick={() => onUpdate({ startingCity: cityKey })}
+                  className="h-auto py-2.5 px-3 justify-start text-left"
+                >
+                  <MapPin className="w-4 h-4 mr-2" />
+                  <span className="text-sm font-medium">{city.name}</span>
+                  {city.isNew && (
+                    <span className="ml-1.5 text-[10px] opacity-70">✨ AI</span>
+                  )}
+                  {isStarting && (
+                    <span className="ml-auto text-[10px] opacity-80">📍 Partenza</span>
+                  )}
+                </Button>
+              );
+            })}
+          </div>
+        </motion.div>
+      )}
+
+      {/* Travel distance preference */}
+      {selectedCities.length > 0 && (
+        <motion.div
+          initial={{ opacity: 0, height: 0 }}
+          animate={{ opacity: 1, height: 'auto' }}
+          className="space-y-2"
+        >
+          <label className="flex items-center gap-2 text-xs font-medium text-muted-foreground uppercase tracking-wide">
+            <Train className="w-3.5 h-3.5" />
+            Ti va di spostarti fuori città?
+          </label>
+          <div className="grid grid-cols-2 gap-1.5">
+            {maxTravelOptions.map((option) => (
+              <Button
+                key={option.id}
+                type="button"
+                variant={preferences.maxTravelMinutes === option.id ? 'default' : 'outline'}
+                onClick={() => onUpdate({ 
+                  maxTravelMinutes: option.id,
+                  nearbyAreas: option.id > 0 
+                })}
+                className="h-auto py-2 px-2 flex flex-col items-start text-left overflow-hidden"
+              >
+                <span className="font-medium text-sm truncate w-full">{option.label}</span>
+                <span className="text-[10px] opacity-70 font-normal truncate w-full">{option.description}</span>
+              </Button>
+            ))}
+          </div>
+        </motion.div>
+      )}
 
       {/* Duration */}
       <div className="space-y-3">
@@ -216,7 +385,6 @@ export function StepDestination({ preferences, onUpdate }: StepDestinationProps)
           Quando pensi di andare?
         </label>
         
-        {/* Period type selector */}
         <div className="grid grid-cols-3 gap-1.5">
           {([
             { value: 'season' as TravelPeriodType, label: 'Stagione', icon: '🌤️' },
@@ -341,7 +509,7 @@ export function StepDestination({ preferences, onUpdate }: StepDestinationProps)
           </motion.div>
         )}
 
-        {/* Arrival time - shown when dates are selected */}
+        {/* Arrival time */}
         {preferences.travelPeriod?.type === 'dates' && preferences.travelPeriod?.dates?.start && (
           <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} className="space-y-2">
             <p className="text-xs text-muted-foreground font-medium">🕐 A che ora inizi il primo giorno?</p>
@@ -367,7 +535,6 @@ export function StepDestination({ preferences, onUpdate }: StepDestinationProps)
           </motion.div>
         )}
 
-        {/* "Non lo so ancora" option */}
         {preferences.travelPeriod?.type !== 'none' && (
           <button
             type="button"
@@ -379,7 +546,7 @@ export function StepDestination({ preferences, onUpdate }: StepDestinationProps)
         )}
       </div>
 
-      {/* Travel Composition - more compact */}
+      {/* Travel Composition */}
       <div className="space-y-3">
         <label className="flex items-center gap-2 text-xs font-medium text-muted-foreground uppercase tracking-wide">
           <Users className="w-3.5 h-3.5" />
