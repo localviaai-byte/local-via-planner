@@ -81,8 +81,15 @@ export function PlanningWizard({ onComplete, onBack }: PlanningWizardProps) {
     <div className="h-[100dvh] bg-background flex flex-col overflow-hidden">
       {/* Header — fixed */}
       <header className="shrink-0 bg-background border-b border-border/40">
-        <div className="max-w-lg mx-auto px-4 py-3">
-          <WizardProgress currentStep={currentStep} totalSteps={steps.length} steps={steps} />
+        <div className="max-w-lg mx-auto px-4 py-3 flex items-center gap-3">
+          {onBack && (
+            <button onClick={currentStep === 0 ? onBack : handleBack} className="p-1 -ml-1 text-muted-foreground hover:text-foreground transition-colors">
+              <ArrowLeft className="w-5 h-5" />
+            </button>
+          )}
+          <div className="flex-1">
+            <WizardProgress currentStep={currentStep} totalSteps={steps.length} steps={steps} />
+          </div>
         </div>
       </header>
 

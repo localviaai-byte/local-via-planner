@@ -108,7 +108,7 @@ const Index = () => {
           exit={{ opacity: 0 }}
           transition={{ duration: 0.2 }}
         >
-          <PlanningWizard onComplete={handleWizardComplete} />
+          <PlanningWizard onComplete={handleWizardComplete} onBack={() => setAppState('landing')} />
         </motion.div>
       )}
 
