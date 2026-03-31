@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ArrowLeft, ArrowRight, Sparkles } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Sparkles, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { WizardProgress } from '@/components/ui/WizardProgress';
 import { StepDestination } from './StepDestination';
