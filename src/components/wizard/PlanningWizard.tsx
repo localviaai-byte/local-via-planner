@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ArrowLeft, ArrowRight, Sparkles } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Sparkles, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { WizardProgress } from '@/components/ui/WizardProgress';
 import { StepDestination } from './StepDestination';
@@ -20,9 +20,10 @@ const steps = [
 
 interface PlanningWizardProps {
   onComplete: (preferences: TripPreferences) => void;
+  onBack?: () => void;
 }
 
-export function PlanningWizard({ onComplete }: PlanningWizardProps) {
+export function PlanningWizard({ onComplete, onBack }: PlanningWizardProps) {
   const [currentStep, setCurrentStep] = useState(0);
   const [preferences, setPreferences] = useState<TripPreferences>(defaultPreferences);
 
@@ -80,8 +81,15 @@ export function PlanningWizard({ onComplete }: PlanningWizardProps) {
     <div className="h-[100dvh] bg-background flex flex-col overflow-hidden">
       {/* Header — fixed */}
       <header className="shrink-0 bg-background border-b border-border/40">
-        <div className="max-w-lg mx-auto px-4 py-3">
-          <WizardProgress currentStep={currentStep} totalSteps={steps.length} steps={steps} />
+        <div className="max-w-lg mx-auto px-4 py-3 flex items-center gap-3">
+          {onBack && (
+            <button onClick={currentStep === 0 ? onBack : handleBack} className="p-1 -ml-1 text-muted-foreground hover:text-foreground transition-colors">
+              <ArrowLeft className="w-5 h-5" />
+            </button>
+          )}
+          <div className="flex-1">
+            <WizardProgress currentStep={currentStep} totalSteps={steps.length} steps={steps} />
+          </div>
         </div>
       </header>
 
