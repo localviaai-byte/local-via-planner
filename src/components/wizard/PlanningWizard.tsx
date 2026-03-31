@@ -48,7 +48,6 @@ export function PlanningWizard({ onComplete }: PlanningWizardProps) {
   const handleNext = () => {
     if (currentStep < steps.length - 1) {
       setCurrentStep((prev) => prev + 1);
-      window.scrollTo(0, 0);
     } else {
       onComplete(preferences);
     }
@@ -57,7 +56,6 @@ export function PlanningWizard({ onComplete }: PlanningWizardProps) {
   const handleBack = () => {
     if (currentStep > 0) {
       setCurrentStep((prev) => prev - 1);
-      window.scrollTo(0, 0);
     }
   };
 
@@ -79,39 +77,41 @@ export function PlanningWizard({ onComplete }: PlanningWizardProps) {
   };
 
   return (
-    <div className="min-h-screen bg-background flex flex-col">
-      {/* Header with Progress - clean, minimal */}
-      <header className="sticky top-0 z-50 bg-background/95 backdrop-blur-sm">
-        <div className="container max-w-2xl py-4">
+    <div className="h-[100dvh] bg-background flex flex-col overflow-hidden">
+      {/* Header — fixed */}
+      <header className="shrink-0 bg-background border-b border-border/40">
+        <div className="max-w-lg mx-auto px-4 py-3">
           <WizardProgress currentStep={currentStep} totalSteps={steps.length} steps={steps} />
         </div>
       </header>
 
-      {/* Step Content */}
-      <main className="flex-1 container max-w-2xl py-6 px-5">
-        <AnimatePresence mode="wait">
-          <motion.div
-            key={currentStep}
-            initial={{ opacity: 0, x: 20 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: -20 }}
-            transition={{ duration: 0.3 }}
-          >
-            {renderStep()}
-          </motion.div>
-        </AnimatePresence>
+      {/* Scrollable content */}
+      <main className="flex-1 overflow-y-auto overscroll-contain">
+        <div className="max-w-lg mx-auto px-4 py-4">
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={currentStep}
+              initial={{ opacity: 0, x: 16 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -16 }}
+              transition={{ duration: 0.2 }}
+            >
+              {renderStep()}
+            </motion.div>
+          </AnimatePresence>
+        </div>
       </main>
 
-      {/* Navigation Footer - Sticky CTA, thumb-friendly */}
-      <footer className="sticky bottom-0 bg-background/95 backdrop-blur-sm pb-safe-bottom">
-        <div className="container max-w-2xl py-4 px-5 flex gap-3">
+      {/* Footer — fixed */}
+      <footer className="shrink-0 bg-background border-t border-border/40 pb-safe-bottom">
+        <div className="max-w-lg mx-auto px-4 py-3 flex gap-3">
           {currentStep > 0 && (
             <Button
               variant="outline"
               onClick={handleBack}
-              className="flex-1"
+              className="flex-1 h-11"
             >
-              <ArrowLeft className="w-4 h-4 mr-2" />
+              <ArrowLeft className="w-4 h-4 mr-1.5" />
               Indietro
             </Button>
           )}
@@ -119,17 +119,17 @@ export function PlanningWizard({ onComplete }: PlanningWizardProps) {
             onClick={handleNext}
             disabled={!canProceed()}
             variant={currentStep === steps.length - 1 ? 'hero' : 'default'}
-            className={`flex-1 ${currentStep === 0 ? 'w-full' : ''}`}
+            className={`flex-1 h-11 ${currentStep === 0 ? 'w-full' : ''}`}
           >
             {currentStep === steps.length - 1 ? (
               <>
-                <Sparkles className="w-4 h-4 mr-2" />
+                <Sparkles className="w-4 h-4 mr-1.5" />
                 Genera Itinerario
               </>
             ) : (
               <>
                 Continua
-                <ArrowRight className="w-4 h-4 ml-2" />
+                <ArrowRight className="w-4 h-4 ml-1.5" />
               </>
             )}
           </Button>
