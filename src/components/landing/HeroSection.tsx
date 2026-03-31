@@ -77,9 +77,7 @@ export function HeroSection({ onStart }: HeroSectionProps) {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
           >
-            <h1 className="font-display text-[2.75rem] md:text-6xl font-semibold text-white leading-[1.05] tracking-tight">
-              Local<span className="text-gold">Via</span>
-            </h1>
+            <img src={logoWhite} alt="LocalVia" className="h-12 md:h-16 w-auto" />
             <p className="mt-2 text-base text-white/80 max-w-xs leading-snug font-light">
               Itinerari curati da chi il posto lo vive davvero
             </p>
