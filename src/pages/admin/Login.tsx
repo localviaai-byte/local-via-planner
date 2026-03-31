@@ -102,7 +102,7 @@ export default function AdminLogin() {
         >
           {/* Logo */}
           <div className="text-center mb-8">
-          <img src="/assets/logo-color.png" alt="LocalVia" className="h-8 mx-auto mb-4" />
+          <img src={logoColor} alt="LocalVia" className="h-8 mx-auto mb-4" />
             <h1 className="font-display text-2xl font-semibold text-foreground">
               Recupera Password
             </h1>
