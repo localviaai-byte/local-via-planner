@@ -1,22 +1,16 @@
 import { motion } from 'framer-motion';
-import { ChevronRight, MapPin, Compass, LayoutDashboard } from 'lucide-react';
+import { ChevronRight, Compass, LayoutDashboard, Sparkles, MapPin, Clock } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/hooks/useAuth';
-import heroImage from '@/assets/hero-pompeii.jpg';
+import heroImage from '@/assets/hero-italy.jpg';
 import logoWhite from '@/assets/logo-white.png';
 
 interface HeroSectionProps {
   onStart: () => void;
 }
 
-const destinations = [
-  { name: 'Pompei', emoji: '🏛️' },
-  { name: 'Napoli', emoji: '🍕' },
-  { name: 'Costiera', emoji: '🌊' },
-];
-
 export function HeroSection({ onStart }: HeroSectionProps) {
-  const { user, role, isPartner, isContributor, isAdmin, isEditor } = useAuth();
+  const { user, isPartner, isContributor, isAdmin, isEditor } = useAuth();
 
   const getDashboardLink = () => {
     if (isPartner) return '/partner';
@@ -30,15 +24,15 @@ export function HeroSection({ onStart }: HeroSectionProps) {
   return (
     <div className="min-h-[100dvh] bg-background flex flex-col relative overflow-hidden">
       {/* ── Full-screen hero image ── */}
-      <div className="relative h-[55dvh] min-h-[320px] overflow-hidden">
+      <div className="relative h-[60dvh] min-h-[360px] overflow-hidden">
         <img
           src={heroImage}
-          alt="Pompei ruins with Mount Vesuvius"
+          alt="Veduta panoramica di un borgo italiano sulla costa"
           className="absolute inset-0 w-full h-full object-cover"
           loading="eager"
         />
         {/* Cinematic gradient overlay */}
-        <div className="absolute inset-0 bg-gradient-to-b from-black/20 via-transparent to-black/70" />
+        <div className="absolute inset-0 bg-gradient-to-b from-black/30 via-black/10 to-black/70" />
 
         {/* Auth — subtle top-right */}
         <div className="absolute top-safe-top mt-4 right-4 z-20 flex items-center gap-2">
@@ -71,20 +65,21 @@ export function HeroSection({ onStart }: HeroSectionProps) {
         </div>
 
         {/* Hero headline — anchored to bottom of image */}
-        <div className="absolute inset-x-0 bottom-0 z-10 px-6 pb-8">
+        <div className="absolute inset-x-0 bottom-0 z-10 px-6 pb-10">
           <motion.div
             initial={{ opacity: 0, y: 24 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
           >
-            <img src={logoWhite} alt="LocalVia" className="h-12 md:h-16 w-auto" />
-            <p className="mt-2 text-base text-white/80 max-w-xs leading-snug font-light">
-              Itinerari curati da chi il posto lo vive davvero
+            <img src={logoWhite} alt="LocalVia" className="h-10 md:h-14 w-auto" />
+            <p className="mt-3 text-[15px] text-white/85 max-w-[280px] leading-snug font-light">
+              Scegli una città italiana.<br />
+              Noi costruiamo il tuo itinerario perfetto.
             </p>
           </motion.div>
         </div>
 
-        {/* Smooth curve transition into content */}
+        {/* Smooth curve transition */}
         <div className="absolute -bottom-px left-0 right-0">
           <svg viewBox="0 0 1440 60" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-full block">
             <path
@@ -96,7 +91,7 @@ export function HeroSection({ onStart }: HeroSectionProps) {
       </div>
 
       {/* ── Content below the fold ── */}
-      <div className="flex-1 flex flex-col px-5 pt-4 pb-6 max-w-lg mx-auto w-full">
+      <div className="flex-1 flex flex-col px-5 pt-5 pb-6 max-w-lg mx-auto w-full">
         {/* Editorial tagline */}
         <motion.p
           initial={{ opacity: 0 }}
@@ -104,58 +99,54 @@ export function HeroSection({ onStart }: HeroSectionProps) {
           transition={{ delay: 0.3, duration: 0.5 }}
           className="font-display text-lg text-foreground/90 leading-relaxed text-center"
         >
-          Non sembra un'app.{' '}
+          Non il solito itinerario.{' '}
           <span className="text-muted-foreground">
-            Sembra il consiglio giusto, al momento giusto.
+            È quello che ti consiglierebbe un amico del posto.
           </span>
         </motion.p>
 
-        {/* Value props — compact horizontal cards */}
+        {/* Value props — 3 cards */}
         <motion.div
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.45, duration: 0.5 }}
-          className="mt-6 grid grid-cols-3 gap-2"
+          className="mt-6 grid grid-cols-3 gap-2.5"
         >
           {[
-            { emoji: '🏛️', label: 'Curato', sub: 'da locali veri' },
-            { emoji: '🧠', label: 'AI smart', sub: 'non inventa' },
-            { emoji: '⏱️', label: 'Realistico', sub: 'tempi su misura' },
+            { icon: MapPin, label: 'Curato da locali', sub: 'Consigli di chi vive lì', color: 'text-primary' },
+            { icon: Sparkles, label: 'AI che non inventa', sub: 'Dati veri, zero allucinazioni', color: 'text-gold' },
+            { icon: Clock, label: 'Tempi realistici', sub: 'Ritmo su misura per te', color: 'text-olive' },
           ].map((f) => (
             <div
               key={f.label}
-              className="flex flex-col items-center gap-1.5 p-3 bg-card rounded-2xl shadow-soft text-center"
+              className="flex flex-col items-center gap-2 p-3.5 bg-card rounded-2xl shadow-soft text-center"
             >
-              <span className="text-xl">{f.emoji}</span>
-              <span className="text-xs font-medium text-foreground leading-tight">{f.label}</span>
+              <div className={`w-8 h-8 rounded-xl bg-muted/60 flex items-center justify-center ${f.color}`}>
+                <f.icon className="w-4 h-4" />
+              </div>
+              <span className="text-[11px] font-semibold text-foreground leading-tight">{f.label}</span>
               <span className="text-[10px] text-muted-foreground leading-tight">{f.sub}</span>
             </div>
           ))}
         </motion.div>
 
-        {/* Available destinations */}
+        {/* Italy badge */}
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.6, duration: 0.5 }}
           className="mt-5 flex items-center justify-center gap-2"
         >
-          <MapPin className="w-3.5 h-3.5 text-muted-foreground" />
-          <div className="flex items-center gap-1.5">
-            {destinations.map((d, i) => (
-              <span key={d.name} className="text-xs text-muted-foreground">
-                <span className="mr-0.5">{d.emoji}</span>
-                <span className="font-medium text-foreground">{d.name}</span>
-                {i < destinations.length - 1 && <span className="ml-1.5">·</span>}
-              </span>
-            ))}
-          </div>
+          <span className="text-sm">🇮🇹</span>
+          <span className="text-xs text-muted-foreground">
+            Disponibile per <span className="font-medium text-foreground">qualsiasi città italiana</span>
+          </span>
         </motion.div>
 
-        {/* Spacer to push CTA to bottom */}
+        {/* Spacer */}
         <div className="flex-1 min-h-4" />
 
-        {/* CTA — fixed visual weight */}
+        {/* CTA */}
         <motion.div
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
@@ -168,7 +159,7 @@ export function HeroSection({ onStart }: HeroSectionProps) {
             size="lg"
             className="w-full h-14 text-base font-medium"
           >
-            Inizia a pianificare
+            Dove vuoi andare?
             <ChevronRight className="w-5 h-5 ml-1" />
           </Button>
           <p className="text-center text-[11px] text-muted-foreground mt-3">
