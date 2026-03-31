@@ -64,6 +64,7 @@ export interface GeneratedItinerary {
   meta: {
     placesUsed: number;
     productsAvailable: number;
+    isAIGenerated?: boolean;
   };
 }
 

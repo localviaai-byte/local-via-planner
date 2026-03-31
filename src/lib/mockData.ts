@@ -79,10 +79,19 @@ export interface TravelPeriod {
   dates?: { start: Date; end: Date };
 }
 
+export interface CityObject {
+  id?: string;
+  name: string;
+  region?: string;
+  slug?: string;
+  isNew?: boolean; // true = AI-discovered, false = human-curated in DB
+}
+
 export interface TripPreferences {
   city: string; // primary city (first selected, backward compat)
-  cities: string[]; // all selected city slugs
-  startingCity?: string; // which city to start from (slug)
+  cities: string[]; // all selected city slugs/names
+  cityObjects?: CityObject[]; // full city info for each selection
+  startingCity?: string; // which city to start from (slug or name)
   nearbyAreas: boolean;
   maxTravelMinutes: 0 | 30 | 60 | 90;
   dates: { start: Date; end: Date } | null;

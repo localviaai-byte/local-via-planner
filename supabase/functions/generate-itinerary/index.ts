@@ -12,13 +12,22 @@ type Season = 'spring' | 'summer' | 'autumn' | 'winter';
 interface TravelPeriod {
   type: TravelPeriodType;
   season?: Season;
-  month?: number; // 0-11
-  dates?: { start: string; end: string }; // ISO strings
+  month?: number;
+  dates?: { start: string; end: string };
+}
+
+interface CityObject {
+  id?: string;
+  name: string;
+  region?: string;
+  slug?: string;
+  isNew?: boolean;
 }
 
 interface TripPreferences {
   city: string;
   cities?: string[];
+  cityObjects?: CityObject[];
   nearbyAreas: boolean;
   maxTravelMinutes: number;
   numDays: number;
@@ -30,13 +39,11 @@ interface TripPreferences {
   rhythm: number;
   startTime: string;
   lunchStyle: string;
-  // New structured food preferences
   foodPrimary: string[];
   foodSecondary: string[];
   atmospherePreferences: string[];
   foodBudget: 'budget' | 'moderate' | 'expensive' | 'luxury';
   dietaryRestrictions: string[];
-  // Legacy
   cuisinePreferences: string[];
   budget: number;
   activityStyle: string;
@@ -68,6 +75,9 @@ interface ItinerarySlot {
     indoor_outdoor: string | null;
     crowd_level: string | null;
     vibe_touristy_to_local: number | null;
+    latitude: number | null;
+    longitude: number | null;
+    is_ai_generated?: boolean;
   };
   reason: string;
   alternatives?: { id: string; name: string; type: string }[];
@@ -89,6 +99,25 @@ interface ItineraryDay {
   summary: string;
 }
 
+// AI-generated place structure
+interface AIGeneratedPlace {
+  name: string;
+  place_type: string;
+  zone: string;
+  address: string;
+  description: string;
+  local_one_liner: string;
+  why_people_go: string[];
+  best_times: string[];
+  duration_minutes: number;
+  price_range: string;
+  cuisine_type: string | null;
+  indoor_outdoor: string;
+  crowd_level: string;
+  latitude: number | null;
+  longitude: number | null;
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -97,7 +126,11 @@ serve(async (req) => {
   try {
     const { preferences }: { preferences: TripPreferences } = await req.json();
 
-    if (!preferences?.city) {
+    // Validate we have at least one city
+    const cityObjects = preferences.cityObjects || [];
+    const citySlugs = preferences.cities?.length ? preferences.cities : (preferences.city ? [preferences.city] : []);
+    
+    if (cityObjects.length === 0 && citySlugs.length === 0) {
       return new Response(
         JSON.stringify({ error: "Seleziona una città" }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
@@ -109,34 +142,70 @@ serve(async (req) => {
       throw new Error("LOVABLE_API_KEY is not configured");
     }
 
-    // Initialize Supabase client
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, supabaseKey);
 
-    // Resolve all selected cities
-    const citySlugs = preferences.cities?.length ? preferences.cities : [preferences.city];
-    console.log(`Generating itinerary for ${citySlugs.join(', ')}, ${preferences.numDays} days`);
-
-    // Fetch all city info
+    // Resolve cities - support both DB cities and new (AI) cities
     const allCities: any[] = [];
-    for (const slug of citySlugs) {
-      let { data: cityData } = await supabase
-        .from("cities")
-        .select("*")
-        .eq("slug", slug)
-        .maybeSingle();
+    const newCityNames: string[] = []; // cities not in DB, need AI discovery
 
-      if (!cityData) {
-        const { data: cityById } = await supabase
-          .from("cities")
-          .select("*")
-          .eq("id", slug)
-          .maybeSingle();
-        cityData = cityById;
+    if (cityObjects.length > 0) {
+      for (const co of cityObjects) {
+        if (co.id) {
+          // DB city - fetch by ID
+          const { data } = await supabase.from("cities").select("*").eq("id", co.id).maybeSingle();
+          if (data) allCities.push(data);
+        } else if (co.slug) {
+          const { data } = await supabase.from("cities").select("*").eq("slug", co.slug).maybeSingle();
+          if (data) allCities.push(data);
+        } else if (co.isNew && co.name) {
+          // Try to find by name first (maybe it was created before)
+          const { data } = await supabase.from("cities").select("*").ilike("name", co.name).maybeSingle();
+          if (data) {
+            allCities.push(data);
+          } else {
+            newCityNames.push(co.name);
+          }
+        }
       }
+    } else {
+      // Legacy fallback: resolve by slug/id
+      for (const slug of citySlugs) {
+        let { data: cityData } = await supabase.from("cities").select("*").eq("slug", slug).maybeSingle();
+        if (!cityData) {
+          const { data: cityById } = await supabase.from("cities").select("*").eq("id", slug).maybeSingle();
+          cityData = cityById;
+        }
+        if (!cityData) {
+          // Try by name
+          const { data: cityByName } = await supabase.from("cities").select("*").ilike("name", slug).maybeSingle();
+          cityData = cityByName;
+        }
+        if (cityData) allCities.push(cityData);
+        else newCityNames.push(slug);
+      }
+    }
 
-      if (cityData) allCities.push(cityData);
+    // For new cities: auto-create city records
+    for (const cityName of newCityNames) {
+      const slug = cityName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+      const { data: newCity, error: createError } = await supabase.from("cities").insert({
+        name: cityName,
+        slug,
+        country: 'Italia',
+        is_active: true,
+        status: 'empty',
+      }).select().single();
+
+      if (createError) {
+        console.error("Error creating city:", createError);
+        // Try to find it again (race condition)
+        const { data: existing } = await supabase.from("cities").select("*").eq("slug", slug).maybeSingle();
+        if (existing) allCities.push(existing);
+      } else if (newCity) {
+        allCities.push(newCity);
+      }
     }
 
     if (allCities.length === 0) {
@@ -146,11 +215,11 @@ serve(async (req) => {
       );
     }
 
-    const city = allCities[0]; // primary city for backward compat
+    const city = allCities[0];
     const cityId = city.id;
     const allCityIds = allCities.map((c: any) => c.id);
 
-    // Fetch approved places for ALL selected cities
+    // Fetch approved places for all cities
     const { data: places, error: placesError } = await supabase
       .from("places")
       .select(`
@@ -174,42 +243,158 @@ serve(async (req) => {
       throw new Error("Errore nel caricamento dei luoghi");
     }
 
-    // Fetch approved products for ALL selected cities
+    // Fetch products
     const { data: products, error: productsError } = await supabase
       .from("products")
-      .select(`
-        id, title, short_pitch, price_cents, 
-        duration_minutes, product_type, preferred_time_buckets
-      `)
+      .select(`id, title, short_pitch, price_cents, duration_minutes, product_type, preferred_time_buckets`)
       .in("city_id", allCityIds)
       .eq("status", "approved");
+    if (productsError) console.error("Error fetching products:", productsError);
 
-    if (productsError) {
-      console.error("Error fetching products:", productsError);
-    }
-
-    // Fetch city zones for ALL selected cities
+    // Fetch zones
     const { data: zones } = await supabase
       .from("city_zones")
       .select("id, name, vibe_primary, best_time, touristy_score, local_tip")
       .in("city_id", allCityIds)
       .eq("status", "approved");
 
-    console.log(`Found ${places?.length || 0} places, ${products?.length || 0} products, ${zones?.length || 0} zones across ${allCities.length} cities`);
+    console.log(`Found ${places?.length || 0} DB places, ${products?.length || 0} products for ${allCities.map((c:any)=>c.name).join(', ')}`);
 
-    // If no places in database, return helpful message
+    // ===== AI FALLBACK: If no approved places, discover via AI =====
+    let aiGeneratedPlaces: AIGeneratedPlace[] = [];
+    let usingAIPlaces = false;
+
     if (!places || places.length === 0) {
-      return new Response(
-        JSON.stringify({ 
-          error: "Nessun luogo approvato per queste città",
-          message: "Aggiungi prima dei luoghi nel backoffice e approvali"
-        }),
-        { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
+      console.log("No approved places found - triggering AI discovery");
+      
+      // Check for cached suggestions first
+      const { data: cachedSuggestions } = await supabase
+        .from("place_suggestions")
+        .select("*")
+        .in("city_id", allCityIds)
+        .eq("status", "ai_cached")
+        .order("confidence", { ascending: false });
+
+      if (cachedSuggestions && cachedSuggestions.length >= 5) {
+        console.log(`Using ${cachedSuggestions.length} cached AI suggestions`);
+        aiGeneratedPlaces = cachedSuggestions.map(s => ({
+          name: s.name,
+          place_type: s.place_type,
+          zone: s.zone || 'Centro',
+          address: s.address || '',
+          description: s.description || '',
+          local_one_liner: s.description || s.name,
+          why_people_go: s.why_people_go || [],
+          best_times: s.best_times || [],
+          duration_minutes: 60,
+          price_range: 'moderate',
+          cuisine_type: ['restaurant', 'bar'].includes(s.place_type) ? 'locale' : null,
+          indoor_outdoor: 'both',
+          crowd_level: 'medium',
+          latitude: null,
+          longitude: null,
+        }));
+        usingAIPlaces = true;
+      } else {
+        // Generate places via AI
+        const cityNamesStr = allCities.map((c: any) => `${c.name}${c.region ? ` (${c.region})` : ''}, Italia`).join('; ');
+        
+        const discoveryResponse = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${LOVABLE_API_KEY}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            model: "google/gemini-3-flash-preview",
+            messages: [
+              {
+                role: "system",
+                content: `Sei un esperto locale italiano. Genera una lista di 15-20 luoghi imperdibili per una città, includendo attrazioni, ristoranti, bar e esperienze autentiche. Rispondi SOLO con JSON valido.`
+              },
+              {
+                role: "user",
+                content: `Genera i luoghi migliori per: ${cityNamesStr}
+
+Per ogni luogo fornisci:
+- name: nome del luogo
+- place_type: uno tra "attraction", "restaurant", "bar", "experience", "view", "club"
+- zone: quartiere/zona della città
+- address: indirizzo approssimativo
+- description: descrizione breve (max 100 char)
+- local_one_liner: frase da local (max 80 char)
+- why_people_go: array di 2-3 motivi
+- best_times: array tra "morning", "afternoon", "evening", "night"
+- duration_minutes: tempo consigliato
+- price_range: "budget", "moderate", "expensive"
+- cuisine_type: tipo cucina (solo per restaurant/bar, null per altri)
+- indoor_outdoor: "indoor", "outdoor", "both"
+- crowd_level: "low", "medium", "high"
+
+Includi un mix equilibrato di: 5-6 attrazioni principali, 4-5 ristoranti/trattorie locali, 2-3 bar/caffè, 2-3 esperienze uniche, 1-2 panorami/viste.
+Rispondi con un JSON array.`
+              }
+            ],
+            response_format: { type: "json_object" },
+          }),
+        });
+
+        if (!discoveryResponse.ok) {
+          console.error("AI discovery failed:", discoveryResponse.status);
+          return new Response(
+            JSON.stringify({ error: "Impossibile scoprire i luoghi per questa città. Riprova." }),
+            { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          );
+        }
+
+        const discoveryData = await discoveryResponse.json();
+        const content = discoveryData.choices?.[0]?.message?.content;
+        
+        try {
+          const parsed = JSON.parse(content);
+          aiGeneratedPlaces = Array.isArray(parsed) ? parsed : (parsed.places || parsed.locations || parsed.results || []);
+          usingAIPlaces = true;
+          console.log(`AI discovered ${aiGeneratedPlaces.length} places`);
+
+          // Cache the discovered places to place_suggestions
+          if (aiGeneratedPlaces.length > 0) {
+            const rows = aiGeneratedPlaces.map((p, idx) => ({
+              city_id: cityId,
+              name: p.name,
+              place_type: p.place_type || 'attraction',
+              zone: p.zone || null,
+              address: p.address || null,
+              description: p.local_one_liner || p.description || null,
+              why_people_go: p.why_people_go || [],
+              best_times: p.best_times || [],
+              confidence: Math.max(0.5, 1 - (idx * 0.03)),
+              status: 'ai_cached',
+            }));
+
+            // Try to insert, ignore duplicates by checking name
+            const existingNames = new Set(
+              ((await supabase.from("place_suggestions").select("name").eq("city_id", cityId)).data || [])
+                .map((r: any) => r.name.toLowerCase())
+            );
+            const newRows = rows.filter(r => !existingNames.has(r.name.toLowerCase()));
+            
+            if (newRows.length > 0) {
+              const { error: cacheError } = await supabase.from("place_suggestions").insert(newRows);
+              if (cacheError) console.error("Error caching AI places:", cacheError);
+              else console.log(`Cached ${newRows.length} AI-discovered places`);
+            }
+          }
+        } catch (parseError) {
+          console.error("Error parsing AI discovery:", parseError, content?.substring(0, 500));
+          return new Response(
+            JSON.stringify({ error: "Errore nell'analisi dei luoghi. Riprova." }),
+            { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          );
+        }
+      }
     }
 
-    // Prepare data for AI
-    // Map foodBudget to price_range for filtering
+    // Build places data for AI itinerary generation
     const budgetToPrice: Record<string, string[]> = {
       budget: ['budget'],
       moderate: ['budget', 'moderate'],
@@ -218,32 +403,65 @@ serve(async (req) => {
     };
     const allowedPriceRanges = budgetToPrice[preferences.foodBudget] || ['budget', 'moderate', 'expensive', 'luxury'];
 
-    const placesForAI = places.map(p => ({
-      id: p.id,
-      name: p.name,
-      type: p.place_type,
-      zone: p.zone,
-      one_liner: p.local_one_liner,
-      warning: p.local_warning,
-      duration: p.duration_minutes || 60,
-      price: p.price_range,
-      cuisine: p.cuisine_type,
-      food_primary: p.food_primary,
-      food_secondary: p.food_secondary,
-      meal_time: p.meal_time,
-      best_times: p.best_times,
-      ideal_for: p.ideal_for,
-      touristy: p.vibe_touristy_to_local,
-      effort: p.physical_effort,
-      indoor_outdoor: p.indoor_outdoor,
-      crowd: p.crowd_level,
-      mood: p.mood_primary,
-      why: p.why_people_go,
-      budget_match: !p.price_range || allowedPriceRanges.includes(p.price_range),
-      // Shopping fields
-      shop_category: p.shop_category,
-      shop_format: p.shop_format,
-    }));
+    let placesForAI: any[];
+    
+    if (usingAIPlaces) {
+      // Use AI-generated places
+      placesForAI = aiGeneratedPlaces.map((p, idx) => ({
+        id: `ai-${idx}`,
+        name: p.name,
+        type: p.place_type || 'attraction',
+        zone: p.zone,
+        one_liner: p.local_one_liner || p.description,
+        warning: null,
+        duration: p.duration_minutes || 60,
+        price: p.price_range,
+        cuisine: p.cuisine_type,
+        food_primary: [],
+        food_secondary: [],
+        meal_time: null,
+        best_times: p.best_times,
+        ideal_for: [],
+        touristy: null,
+        effort: null,
+        indoor_outdoor: p.indoor_outdoor,
+        crowd: p.crowd_level,
+        mood: null,
+        why: p.why_people_go,
+        budget_match: !p.price_range || allowedPriceRanges.includes(p.price_range),
+        shop_category: null,
+        shop_format: null,
+        is_ai_generated: true,
+      }));
+    } else {
+      // Use DB places (current flow)
+      placesForAI = (places || []).map(p => ({
+        id: p.id,
+        name: p.name,
+        type: p.place_type,
+        zone: p.zone,
+        one_liner: p.local_one_liner,
+        warning: p.local_warning,
+        duration: p.duration_minutes || 60,
+        price: p.price_range,
+        cuisine: p.cuisine_type,
+        food_primary: p.food_primary,
+        food_secondary: p.food_secondary,
+        meal_time: p.meal_time,
+        best_times: p.best_times,
+        ideal_for: p.ideal_for,
+        touristy: p.vibe_touristy_to_local,
+        effort: p.physical_effort,
+        indoor_outdoor: p.indoor_outdoor,
+        crowd: p.crowd_level,
+        mood: p.mood_primary,
+        why: p.why_people_go,
+        budget_match: !p.price_range || allowedPriceRanges.includes(p.price_range),
+        shop_category: p.shop_category,
+        shop_format: p.shop_format,
+        is_ai_generated: false,
+      }));
+    }
 
     const productsForAI = (products || []).map(p => ({
       id: p.id,
@@ -264,7 +482,7 @@ serve(async (req) => {
       tip: z.local_tip,
     }));
 
-    // Build budget label for prompt
+    // Build labels
     const budgetLabels: Record<string, string> = {
       budget: '€ (economico)',
       moderate: '€€ (medio)',
@@ -273,29 +491,23 @@ serve(async (req) => {
     };
     const foodBudgetLabel = budgetLabels[preferences.foodBudget] || '€€ (medio)';
 
-    // Build travel period label and compute start date for itinerary
     const seasonLabels: Record<string, string> = {
-      spring: 'primavera (marzo-maggio) — clima mite, meno folla, fioritura',
-      summer: 'estate (giugno-agosto) — caldo intenso, alta stagione turistica, serate vivaci',
-      autumn: 'autunno (settembre-novembre) — temperatura piacevole, folla ridotta, prodotti tipici',
-      winter: 'inverno (dicembre-febbraio) — freddo, poca folla, atmosfera raccolta',
+      spring: 'primavera (marzo-maggio)',
+      summer: 'estate (giugno-agosto)',
+      autumn: 'autunno (settembre-novembre)',
+      winter: 'inverno (dicembre-febbraio)',
     };
     const monthNames = ['gennaio','febbraio','marzo','aprile','maggio','giugno','luglio','agosto','settembre','ottobre','novembre','dicembre'];
-
-    // Season → middle month (1-indexed for Date constructor month-1)
     const seasonMidMonth: Record<string, number> = { spring: 4, summer: 7, autumn: 10, winter: 1 };
-    // Season → representative year (winter of current year could be next year's Jan)
     const getSeasonYear = (season: string) => {
       const currentYear = new Date().getFullYear();
-      // If winter and we're past October, use next year's January
       if (season === 'winter' && new Date().getMonth() >= 10) return currentYear + 1;
       return currentYear;
     };
 
     let travelPeriodLabel = 'non specificato';
-    // Use a local-date safe constructor: new Date(year, month0indexed, day) — no UTC shift issues
     let itineraryStartYear = new Date().getFullYear();
-    let itineraryStartMonth0 = new Date().getMonth(); // 0-indexed
+    let itineraryStartMonth0 = new Date().getMonth();
     let itineraryStartDay = new Date().getDate();
 
     const tp = preferences.travelPeriod;
@@ -303,22 +515,17 @@ serve(async (req) => {
       if (tp.type === 'season' && tp.season) {
         travelPeriodLabel = seasonLabels[tp.season] || tp.season;
         itineraryStartYear = getSeasonYear(tp.season);
-        itineraryStartMonth0 = seasonMidMonth[tp.season] - 1; // convert to 0-indexed
+        itineraryStartMonth0 = seasonMidMonth[tp.season] - 1;
         itineraryStartDay = 15;
       } else if (tp.type === 'month' && tp.month !== undefined) {
-        // tp.month is already 0-indexed (0=gennaio, 7=agosto)
         travelPeriodLabel = monthNames[tp.month];
         itineraryStartYear = new Date().getFullYear();
-        // If the selected month is already past, use next year
         if (tp.month < new Date().getMonth()) itineraryStartYear += 1;
         itineraryStartMonth0 = tp.month;
         itineraryStartDay = 15;
       } else if (tp.type === 'dates' && tp.dates?.start) {
-        // Dates from frontend are ISO strings (serialized Date objects)
-        // Parse as local date to avoid UTC midnight → previous day shift
         const parseLocalDate = (d: string | Date): { y: number; m: number; day: number } => {
           const s = typeof d === 'string' ? d : d.toISOString();
-          // ISO string: "2026-08-13T00:00:00.000Z" or "2026-08-13"
           const match = s.match(/^(\d{4})-(\d{2})-(\d{2})/);
           if (match) return { y: parseInt(match[1]), m: parseInt(match[2]) - 1, day: parseInt(match[3]) };
           const fd = new Date(s);
@@ -329,68 +536,62 @@ serve(async (req) => {
         itineraryStartYear = start.y;
         itineraryStartMonth0 = start.m;
         itineraryStartDay = start.day;
-
-        const fmt = (v: { y: number; m: number; day: number }) =>
-          `${v.day} ${monthNames[v.m]} ${v.y}`;
+        const fmt = (v: { y: number; m: number; day: number }) => `${v.day} ${monthNames[v.m]} ${v.y}`;
         const endStr = tp.dates.end ? ` → ${fmt(endRaw)}` : '';
         travelPeriodLabel = `date precise: ${fmt(start)}${endStr}`;
       }
     }
 
-    // Build the base start date using local-safe constructor (avoids UTC timezone shifts)
     const itineraryStartDate = new Date(itineraryStartYear, itineraryStartMonth0, itineraryStartDay);
 
-    // Build comprehensive prompt
+    const aiPlaceNote = usingAIPlaces 
+      ? '\nNOTA: Questi luoghi sono stati scoperti dall\'AI, non sono verificati da local contributors. Usa il tuo giudizio per un ordine logico e tempi realistici.'
+      : '';
+
+    // Build prompt
     const systemPrompt = `Sei un esperto planner di viaggi locale italiano che crea itinerari personalizzati.
-Hai accesso a un database curato di luoghi, ristoranti, bar, shopping e esperienze verificati da local contributors.
-Per lo SHOPPING: se l'utente ha "shopping" tra i suoi interessi, inserisci punti vendita autentici consigliati dai local. Usa shop_category e shop_format per scegliere negozi coerenti con lo stile del viaggiatore (es. luxury fashion per coppie, artigianato locale per chi cerca autenticità). Distingui tra centri commerciali (shopping_mall) e singoli negozi (shopping_point).
+Hai accesso a un database ${usingAIPlaces ? 'generato dall\'AI' : 'curato da local contributors'} di luoghi, ristoranti, bar, shopping e esperienze.
+${aiPlaceNote}
 
 REGOLE CRITICHE:
 1. Usa SOLO i luoghi dal database fornito - non inventare posti
 2. Rispetta il ritmo scelto: ${preferences.rhythm <= 2 ? 'Calmo - max 2 attività/giorno' : preferences.rhythm <= 3 ? 'Moderato - 3-4 attività/giorno' : 'Intenso - 4-5 attività/giorno'}
-3. BUDGET PASTI: ${foodBudgetLabel} — PREFERISCI FORTEMENTE luoghi con budget_match=true. Evita luoghi con budget_match=false a meno che non ci siano alternative.
-4. Preferenze cibo: ${(preferences.foodPrimary || []).join(', ') || 'qualsiasi'} ${(preferences.foodSecondary || []).length > 0 ? '(dettagli: ' + preferences.foodSecondary.join(', ') + ')' : ''}
+3. BUDGET PASTI: ${foodBudgetLabel} — PREFERISCI luoghi con budget_match=true
+4. Preferenze cibo: ${(preferences.foodPrimary || []).join(', ') || 'qualsiasi'}
 5. Atmosfera preferita: ${(preferences.atmospherePreferences || []).join(', ') || 'qualsiasi'}
 6. Evita: ${(preferences.avoid || []).join(', ') || 'niente di specifico'}
 7. Interessi principali: ${(preferences.topInterests || []).join(', ') || (preferences.interests || []).join(', ')}
-8. Chi viaggia: ${preferences.travelWith} - adatta il mood di conseguenza
+8. Chi viaggia: ${preferences.travelWith}
 9. Tolleranza camminata: ${preferences.walkingTolerance}
 10. Orario inizio: ${preferences.startTime === 'early' ? '8:00-9:00' : preferences.startTime === 'normal' ? '9:30-10:00' : '11:00+'}
 11. Stile pranzo: ${preferences.lunchStyle === 'long' ? 'Lungo (90min)' : 'Veloce (45min)'}
-12. Visite guidate: ${preferences.guidedTours === 'guided' ? 'Preferisce tour guidati - suggerisci SEMPRE prodotti/esperienze guidate' : preferences.guidedTours === 'autonomous' ? 'Preferisce visitare in autonomia - suggerisci prodotti SOLO se molto rilevanti' : 'Non ha preferenze - suggerisci prodotti quando migliorano l\'esperienza'}
-13. Restrizioni alimentari: ${(preferences.dietaryRestrictions || []).join(', ') || 'nessuna'} — se presenti, scegli ristoranti che le supportano (campo dietary_options)
-14. PERIODO DI VIAGGIO: ${travelPeriodLabel} — FONDAMENTALE: adatta TUTTE le tue scelte tenendo conto di questo periodo. Menziona esplicitamente il periodo nel "reason" di ogni slot (es. "perfetto in estate per..." o "in agosto consigliamo di..."). Considera: affollamento stagionale, orari estivi/invernali, condizioni meteo, aperture speciali/chiusure.
+12. Visite guidate: ${preferences.guidedTours === 'guided' ? 'Preferisce tour guidati' : preferences.guidedTours === 'autonomous' ? 'Visita in autonomia' : 'Nessuna preferenza'}
+13. Restrizioni alimentari: ${(preferences.dietaryRestrictions || []).join(', ') || 'nessuna'}
+14. PERIODO DI VIAGGIO: ${travelPeriodLabel}
 
-Per ogni slot suggerisci prodotti/esperienze add-on seguendo le preferenze dell'utente.
-Usa il campo "local_one_liner" come base per le descrizioni - è il DNA del posto.`;
+Usa il campo "one_liner" come base per le motivazioni.`;
 
-    const userPrompt = `Crea un itinerario di ${preferences.numDays} ${preferences.numDays === 1 ? 'giorno' : 'giorni'} a ${city.name}.
+    const cityNameLabel = allCities.map((c: any) => c.name).join(' e ');
 
-PERIODO DEL VIAGGIO: ${travelPeriodLabel}
-Tieni SEMPRE presente il periodo in ogni scelta e nella motivazione degli slot.
+    const userPrompt = `Crea un itinerario di ${preferences.numDays} ${preferences.numDays === 1 ? 'giorno' : 'giorni'} a ${cityNameLabel}.
 
-DATABASE LUOGHI DISPONIBILI:
+PERIODO: ${travelPeriodLabel}
+
+LUOGHI DISPONIBILI:
 ${JSON.stringify(placesForAI, null, 2)}
 
-PRODOTTI/ESPERIENZE ADD-ON DISPONIBILI:
-${JSON.stringify(productsForAI, null, 2)}
+${productsForAI.length > 0 ? `PRODOTTI ADD-ON:\n${JSON.stringify(productsForAI, null, 2)}` : ''}
 
-ZONE DELLA CITTÀ:
-${JSON.stringify(zonesForAI, null, 2)}
+${zonesForAI.length > 0 ? `ZONE:\n${JSON.stringify(zonesForAI, null, 2)}` : ''}
 
-PREFERENZE VIAGGIATORE:
+PREFERENZE:
 - Interessi: ${(preferences.interests || []).join(', ')}
-- Top priority: ${(preferences.topInterests || []).join(', ')}
 - Budget pasti: ${foodBudgetLabel}
-- Cibo preferito: ${(preferences.foodPrimary || []).join(', ') || 'qualsiasi'}
 - Ritmo: ${preferences.rhythm}/5
 - Viaggia: ${preferences.travelWith}
-- Restrizioni alimentari: ${(preferences.dietaryRestrictions || []).join(', ') || 'nessuna'}
-- Desideri speciali: ${preferences.wishes || 'nessuno'}
+- Desideri: ${preferences.wishes || 'nessuno'}
 
-Genera l'itinerario ottimale usando SOLO luoghi dal database, raggruppando per zone quando possibile per minimizzare spostamenti.
-Per ogni slot indica un motivo personalizzato basato sulle preferenze E sul periodo di viaggio.
-Suggerisci prodotti add-on dove appropriato (es. tour guidato prima di un museo, degustazione dopo pranzo).`;
+Genera l'itinerario usando SOLO i luoghi dal database, raggruppando per zone.`;
 
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
@@ -424,35 +625,15 @@ Suggerisci prodotti add-on dove appropriato (es. tour guidato prima di un museo,
                           items: {
                             type: "object",
                             properties: {
-                              type: { 
-                                type: "string", 
-                                enum: ["activity", "meal", "break"] 
-                              },
+                              type: { type: "string", enum: ["activity", "meal", "break"] },
                               startTime: { type: "string", description: "HH:MM format" },
                               endTime: { type: "string", description: "HH:MM format" },
-                              placeId: { 
-                                type: "string", 
-                                description: "ID del luogo dal database" 
-                              },
-                              reason: { 
-                                type: "string", 
-                                description: "Motivazione personalizzata per questa scelta" 
-                              },
-                              alternativeIds: {
-                                type: "array",
-                                items: { type: "string" },
-                                description: "ID di 1-2 alternative"
-                              },
-                              walkingMinutes: { 
-                                type: "number",
-                                description: "Minuti di camminata dallo slot precedente"
-                              },
+                              placeId: { type: "string", description: "ID del luogo dal database" },
+                              reason: { type: "string", description: "Motivazione personalizzata" },
+                              alternativeIds: { type: "array", items: { type: "string" } },
+                              walkingMinutes: { type: "number" },
                               notes: { type: "string" },
-                              productIds: {
-                                type: "array",
-                                items: { type: "string" },
-                                description: "ID di prodotti add-on suggeriti per questo slot"
-                              }
+                              productIds: { type: "array", items: { type: "string" } }
                             },
                             required: ["type", "startTime", "endTime", "reason"]
                           }
@@ -492,11 +673,9 @@ Suggerisci prodotti add-on dove appropriato (es. tour guidato prima di un museo,
     }
 
     const aiData = await response.json();
-    console.log("AI response received");
-
     const toolCall = aiData.choices?.[0]?.message?.tool_calls?.[0];
     if (!toolCall || toolCall.function?.name !== "create_itinerary") {
-      console.error("Unexpected AI response format:", aiData);
+      console.error("Unexpected AI response:", aiData);
       throw new Error("Formato risposta AI non valido");
     }
 
@@ -508,23 +687,21 @@ Suggerisci prodotti add-on dove appropriato (es. tour guidato prima di un museo,
       throw new Error("Errore nel parsing dell'itinerario");
     }
 
-    // Map place IDs to full place data
-    const placeMap = new Map(places.map(p => [p.id, p]));
+    // Map place IDs to full data
+    const placeMap = usingAIPlaces
+      ? new Map(placesForAI.map(p => [p.id, p]))
+      : new Map((places || []).map(p => [p.id, p]));
     const productMap = new Map((products || []).map(p => [p.id, p]));
 
-    const hasExactDates = tp?.type === 'dates' && !!tp.dates?.start;
+    const hasExactDates = tp?.type === 'dates' && !!tp?.dates?.start;
 
-    // Build final itinerary with full place data
     const itinerary: ItineraryDay[] = aiItinerary.days.map((day: any) => {
       let dateLabel: string;
       if (hasExactDates) {
         const baseDate = new Date(itineraryStartDate);
         baseDate.setDate(baseDate.getDate() + day.dayNumber - 1);
         dateLabel = baseDate.toLocaleDateString("it-IT", {
-          weekday: "long",
-          day: "numeric",
-          month: "long",
-          year: "numeric",
+          weekday: "long", day: "numeric", month: "long", year: "numeric",
         });
       } else {
         dateLabel = `Giorno ${day.dayNumber}`;
@@ -539,18 +716,47 @@ Suggerisci prodotti add-on dove appropriato (es. tour guidato prima di un museo,
           const alternatives = (slot.alternativeIds || [])
             .map((id: string) => placeMap.get(id))
             .filter(Boolean)
-            .map((p: any) => ({ id: p.id, name: p.name, type: p.place_type }));
+            .map((p: any) => ({ id: p.id, name: p.name, type: p.place_type || p.type }));
           
           const productSuggestions = (slot.productIds || [])
             .map((id: string) => productMap.get(id))
             .filter(Boolean)
             .map((p: any) => ({
-              id: p.id,
-              title: p.title,
-              short_pitch: p.short_pitch,
-              price_cents: p.price_cents,
-              duration_minutes: p.duration_minutes,
+              id: p.id, title: p.title, short_pitch: p.short_pitch,
+              price_cents: p.price_cents, duration_minutes: p.duration_minutes,
             }));
+
+          if (usingAIPlaces && place) {
+            return {
+              id: `day${day.dayNumber}-slot${idx}`,
+              type: slot.type,
+              startTime: slot.startTime,
+              endTime: slot.endTime,
+              place: {
+                id: place.id,
+                name: place.name,
+                type: place.type,
+                zone: place.zone,
+                address: null,
+                local_one_liner: place.one_liner,
+                duration_minutes: place.duration,
+                price_range: place.price,
+                cuisine_type: place.cuisine,
+                photo_url: null,
+                indoor_outdoor: place.indoor_outdoor,
+                crowd_level: place.crowd,
+                vibe_touristy_to_local: null,
+                latitude: null,
+                longitude: null,
+                is_ai_generated: true,
+              },
+              reason: slot.reason,
+              alternatives,
+              notes: slot.notes,
+              walkingMinutes: slot.walkingMinutes || 0,
+              productSuggestions: productSuggestions.length > 0 ? productSuggestions : undefined,
+            };
+          }
 
           return {
             id: `day${day.dayNumber}-slot${idx}`,
@@ -573,6 +779,7 @@ Suggerisci prodotti add-on dove appropriato (es. tour guidato prima di un museo,
               vibe_touristy_to_local: place.vibe_touristy_to_local,
               latitude: place.latitude,
               longitude: place.longitude,
+              is_ai_generated: false,
             } : undefined,
             reason: slot.reason,
             alternatives,
@@ -584,7 +791,7 @@ Suggerisci prodotti add-on dove appropriato (es. tour guidato prima di un museo,
       };
     });
 
-    console.log(`Generated itinerary with ${itinerary.length} days`);
+    console.log(`Generated itinerary: ${itinerary.length} days, AI places: ${usingAIPlaces}`);
 
     return new Response(
       JSON.stringify({ 
@@ -597,8 +804,9 @@ Suggerisci prodotti add-on dove appropriato (es. tour guidato prima di un museo,
           longitude: city.longitude,
         },
         meta: {
-          placesUsed: places.length,
+          placesUsed: usingAIPlaces ? aiGeneratedPlaces.length : (places?.length || 0),
           productsAvailable: products?.length || 0,
+          isAIGenerated: usingAIPlaces,
         }
       }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
