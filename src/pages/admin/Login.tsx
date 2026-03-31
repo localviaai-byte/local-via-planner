@@ -196,7 +196,7 @@ export default function AdminLogin() {
       >
         {/* Logo */}
         <div className="text-center mb-8">
-          <img src="/assets/logo-color.png" alt="LocalVia" className="h-8 mx-auto mb-4" />
+          <img src={logoColor} alt="LocalVia" className="h-8 mx-auto mb-4" />
           <p className="text-sm text-muted-foreground mt-1">
             Area Contributors
           </p>

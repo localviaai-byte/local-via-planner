@@ -68,7 +68,7 @@ export function AdminLayout() {
           {/* Logo */}
           <div className="p-4 border-b flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <img src="/assets/logo-color.png" alt="LocalVia" className="h-7" />
+              <img src={logoColor} alt="LocalVia" className="h-7" />
               <p className="text-xs text-muted-foreground capitalize">{role}</p>
             </div>
             <Button 
