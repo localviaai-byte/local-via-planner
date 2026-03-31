@@ -137,10 +137,7 @@ export function AdminLayout() {
             >
               <Menu className="w-5 h-5" />
             </Button>
-            <div className="flex items-center gap-2">
-              <MapPin className="w-5 h-5 text-terracotta" />
-              <span className="font-display font-semibold">LocalVia</span>
-            </div>
+            <img src={logoColor} alt="LocalVia" className="h-6" />
           </div>
         </header>
 
